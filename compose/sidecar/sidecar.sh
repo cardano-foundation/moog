@@ -24,7 +24,17 @@ verify_environment_variables() {
 enable_composers() {
     # CONVERGENCE_COMPOSER
     if [ "${CONVERGENCE_COMPOSER,,}" = "true" ]; then
-        ln -snf /opt/composer/convergence /opt/antithesis/test/v1/convergence
+        local src_dir="/opt/composer/convergence"
+        local dest_dir="/opt/antithesis/test/v1/convergence"
+
+        mkdir -p "$dest_dir"
+
+        for file in "$src_dir"/*; do
+            if [ -f "$file" ]; then  # Only process regular files (not directories or symlinks)
+                local filename=$(basename "$file")
+                ln -snf "$file" "$dest_dir/$filename"
+            fi
+        done
     fi
 }
 
