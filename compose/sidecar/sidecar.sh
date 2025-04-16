@@ -21,23 +21,6 @@ verify_environment_variables() {
     fi
 }
 
-enable_composers() {
-    # CONVERGENCE_COMPOSER
-    if [ "${CONVERGENCE_COMPOSER,,}" = "true" ]; then
-        local src_dir="/opt/composer/convergence"
-        local dest_dir="/opt/antithesis/test/v1/convergence"
-
-        mkdir -p "$dest_dir"
-
-        for file in "$src_dir"/*; do
-            if [ -f "$file" ]; then  # Only process regular files (not directories or symlinks)
-                local filename=$(basename "$file")
-                ln -snf "$file" "$dest_dir/$filename"
-            fi
-        done
-    fi
-}
-
 signal_ready() {
     if [ ! -f "${ANTITHESIS_OUTPUT_DIR}/sdk.jsonl" ]; then
         for i in $(seq 1 "${POOLS}"); do
@@ -61,7 +44,6 @@ signal_ready() {
 # Establish run order
 main() {
     verify_environment_variables
-    enable_composers
     signal_ready
     while true; do
         sleep 60

@@ -77,7 +77,7 @@ query: TESTNET ## Query tip of all pools
 	for i in $$(seq 1 $${pools}) ; do docker exec -ti p$${i} timeout 0.05 cardano-cli ping --magic 42 --host 127.0.0.1 --port 3001 --tip --quiet -c1; done ; true
 
 validate: TESTNET ## Check for consensus among all pools
-	docker exec -ti s1 /opt/composer/convergence/eventually_converged.sh
+	docker exec -ti s1 /opt/antithesis/test/v1/convergence/eventually_converged.sh
 
 anti: TESTNET ## Run Antithesis job
 	curl --fail -u "${username}:${password}" -X POST ${url} -H "Content-Type: application/json" -d "$$(jq -n \

@@ -75,12 +75,9 @@ RUN groupadd --gid 10000 cardano && \
 # Create Antithesis directory
 RUN install --directory --owner=cardano --group=cardano --mode=0750 /opt/antithesis/test/v1
 
-# Create Test Composer directory
-RUN install --directory --owner=cardano --group=cardano --mode=0750 /opt/composer
-
 # Copy Antithesis scripts
-COPY composer /opt/composer
-RUN chmod 0755 /opt/composer/*/*
+COPY composer /opt/antithesis/test/v1/
+RUN chmod 0755 /opt/antithesis/test/v1/*/*
 
 # Copy sidecar.sh
 COPY sidecar.sh /
