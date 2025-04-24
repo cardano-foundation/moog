@@ -129,6 +129,18 @@ package ouroboros-network-protocols\n\
 package network-mux\n\
   ghc-options: -fno-ignore-asserts\n\
 \n\
+package ouroboros-consensus\n\
+  flags: +asserts\n\
+\n\
+package ouroboros-consensus-cardano\n\
+  flags: +asserts\n\
+\n\
+package ouroboros-consensus-diffusion\n\
+  flags: +asserts\n\
+\n\
+package ouroboros-consensus-protocol\n\
+  flags: +asserts\n\
+\n\
 jobs: \$ncpus\n\
 semaphore: True" > /usr/local/src/cardano-node/cabal.project.local
 
