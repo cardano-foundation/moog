@@ -6,7 +6,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Pop.Cli where
+module Anti.Cli where
 
 import Data.Aeson (FromJSON, ToJSON, encode, object, (.=))
 import qualified Data.ByteString.Lazy as BL

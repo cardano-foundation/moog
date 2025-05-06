@@ -1,6 +1,6 @@
 module Main where
 
-import qualified Pop.Cli as Cli
+import qualified Anti.Cli as Cli
 import System.Environment (getArgs)
 
 main :: IO ()
