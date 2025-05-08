@@ -1,73 +1,101 @@
-module Anti.CliSpec where
+module Anti.CliSpec
+    ( spec
+    , runDummyServer
+    , anti
+    )
+where
 
-import qualified Data.ByteString.Lazy as BL
-import Network.HTTP.Simple (Response, getResponseStatus)
-import Network.HTTP.Types.Status (status200)
-import Anti.Cli (Result (..), Runtime (..), pop)
-import System.Exit (ExitCode (ExitSuccess))
-import Test.Hspec (Spec, it, shouldReturn, shouldThrow)
+import Anti.Main (main)
+import Anti.Server (appDummy, dummyTxId)
+import Control.Concurrent (threadDelay)
+import Control.Concurrent.Async (async)
+import Data.Aeson (Value)
+import Network.Wai.Handler.Warp (run)
+import System.Environment (withArgs)
+import Test.Hspec
 
--- | A fake runtime that always returns a 200 OK response
-fakeRuntime :: Runtime
-fakeRuntime = Runtime {httpCall = \_ -> pure $ undefined}
+runDummyServer :: IO ()
+runDummyServer = do
+    _ <- async $ do
+        run 8084 appDummy
+    threadDelay 1000000
+    return ()
+
+anti :: [String] -> IO Value
+anti args = do
+    -- Simulate the command line arguments
+    let args' =
+            [ "--host"
+            , "localhost"
+            , "--port"
+            , "8084"
+            , "--token-id"
+            , "dummyTokenId"
+            ]
+                ++ args
+    -- Call the main function with the simulated arguments
+    ev <- withArgs args' main
+    case ev of
+        Left err -> error $ "Error: " ++ show err
+        Right result -> return result
 
 spec :: Spec
-spec = do
-  it "can display --help" $ do
-    let args = ["--help"]
+spec = beforeAll_ runDummyServer $ do
 
-    pop fakeRuntime args `shouldThrow` \e -> e == ExitSuccess
+    it "can request user registration" $ do
+        let args =
+                [ "register-public-key"
+                , "--platform"
+                , "github"
+                , "--username"
+                , "bob"
+                , "--pubkeyhash"
+                , "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                ]
 
-  it "can request user registration" $ do
-    let args =
-          [ "register",
-            "--platform",
-            "github",
-            "--username",
-            "bob",
-            "--pubkeyhash",
-            "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
-          ]
+        anti args `shouldReturn` dummyTxId
 
-    pop fakeRuntime args `shouldReturn` RequestOK {txId = "7db484475883c0b5a36a4b0d419b45fae0b64d770bc0b668d063d21d59489ad8"}
+    it "can request adding user to a project" $ do
+        let args =
+                [ "register-role"
+                , "--platform"
+                , "github"
+                , "--repository"
+                , "cardano-foundation/antithesis"
+                , "--role"
+                , "maintainer"
+                , "--username"
+                , "bob"
+                ]
 
-  it "can request adding user to a project" $ do
-    let args =
-          [ "add-user",
-            "--platform",
-            "github",
-            "--repository",
-            "cardano-foundation/antithesis",
-            "--role",
-            "maintainer",
-            "--user-id",
-            "github/bob"
-          ]
+        anti args `shouldReturn` dummyTxId
 
-    pop fakeRuntime args `shouldReturn` RequestOK {txId = "7db484475883c0b5a36a4b0d419b45fae0b64d770bc0b668d063d21d59489ad8"}
+    it "can request removing user from a project" $ do
+        let args =
+                [ "unregister-role"
+                , "--platform"
+                , "github"
+                , "--repository"
+                , "cardano-foundation/antithesis"
+                , "--role"
+                , "maintainer"
+                , "--username"
+                , "bob"
+                ]
 
-  it "can request antithesis run" $ do
-    let args =
-          [ "request",
-            "--platform",
-            "github",
-            "--repository",
-            "cardano-foundation/antithesis",
-            "--commit",
-            "9114528e2343e6fcf3c92de71364275227e6b16d"
-          ]
+        anti args `shouldReturn` dummyTxId
 
-    pop fakeRuntime args `shouldReturn` RequestOK {txId = "7db484475883c0b5a36a4b0d419b45fae0b64d770bc0b668d063d21d59489ad8"}
+    it "can request antithesis run" $ do
+        let args =
+                [ "request-test"
+                , "--platform"
+                , "github"
+                , "--repository"
+                , "cardano-foundation/antithesis"
+                , "--username"
+                , "bob"
+                , "--commit"
+                , "9114528e2343e6fcf3c92de71364275227e6b16d"
+                ]
 
-  it "can request removing user from a project" $ do
-    let args =
-          [ "remove-user",
-            "--platform",
-            "github",
-            "--repository",
-            "cardano-foundation/antithesis",
-            "--user-id",
-            "github/bob"
-          ]
-
-    pop fakeRuntime args `shouldReturn` RequestOK {txId = "7db484475883c0b5a36a4b0d419b45fae0b64d770bc0b668d063d21d59489ad8"}
+        anti args `shouldReturn` dummyTxId

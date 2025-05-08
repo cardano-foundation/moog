@@ -1,8 +1,13 @@
-module Main where
+module Main (main) where
 
-import qualified Anti.Cli as Cli
-import System.Environment (getArgs)
+import Data.Aeson (encode)
+
+import qualified Anti.Main as Anti
+import qualified Data.ByteString.Lazy.Char8 as BL
 
 main :: IO ()
 main = do
-    getArgs >>= Cli.pop Cli.conduitRuntime >>= print
+    e <- Anti.main
+    case e of
+        Left err -> BL.putStrLn $ encode $ show err
+        Right result -> BL.putStrLn $ encode result

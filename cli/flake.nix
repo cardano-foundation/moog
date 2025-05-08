@@ -54,6 +54,7 @@
           devShells.default = project.shell;
           inherit project;
           inherit version;
+          packages.anti = project.hsPkgs.anti.components.exes.anti;
         };
     in flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] perSystem;
 }
