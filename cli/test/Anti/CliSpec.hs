@@ -7,12 +7,31 @@ where
 
 import Anti.Main (main)
 import Anti.Server (appDummy, dummyTxId)
+import Anti.Types
+    ( Command (..)
+    , Directory (..)
+    , Host (..)
+    , Options (..)
+    , Platform (..)
+    , Port (..)
+    , PublicKeyHash (..)
+    , Repository (..)
+    , Role (..)
+    , SHA1 (..)
+    , TokenId (..)
+    , Username (..)
+    )
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async)
 import Data.Aeson (Value)
 import Network.Wai.Handler.Warp (run)
 import System.Environment (withArgs)
 import Test.Hspec
+    ( Spec
+    , beforeAll_
+    , it
+    , shouldReturn
+    )
 
 runDummyServer :: IO ()
 runDummyServer = do
@@ -21,7 +40,7 @@ runDummyServer = do
     threadDelay 1000000
     return ()
 
-anti :: [String] -> IO Value
+anti :: [String] -> IO (Options, Value)
 anti args = do
     -- Simulate the command line arguments
     let args' =
@@ -36,12 +55,11 @@ anti args = do
     -- Call the main function with the simulated arguments
     ev <- withArgs args' main
     case ev of
-        Left err -> error $ "Error: " ++ show err
-        Right result -> return result
+        (_, Left err) -> error $ "Error: " ++ show err
+        (o, Right result) -> return (o, result)
 
 spec :: Spec
 spec = beforeAll_ runDummyServer $ do
-
     it "can request user registration" $ do
         let args =
                 [ "register-public-key"
@@ -52,8 +70,22 @@ spec = beforeAll_ runDummyServer $ do
                 , "--pubkeyhash"
                 , "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
                 ]
-
-        anti args `shouldReturn` dummyTxId
+        let opts =
+                Options
+                    { tokenId = TokenId "dummyTokenId"
+                    , host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        RegisterPublicKey
+                            { platform = Platform "github"
+                            , username = Username "bob"
+                            , pubkeyhash =
+                                PublicKeyHash
+                                    "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                            }
+                    }
+        anti args
+            `shouldReturn` (opts, dummyTxId)
     it "can request user unregistration" $ do
         let args =
                 [ "unregister-public-key"
@@ -65,7 +97,21 @@ spec = beforeAll_ runDummyServer $ do
                 , "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
                 ]
 
-        anti args `shouldReturn` dummyTxId
+        let opts =
+                Options
+                    { tokenId = TokenId "dummyTokenId"
+                    , host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        UnregisterPublicKey
+                            { platform = Platform "github"
+                            , username = Username "bob"
+                            , pubkeyhash =
+                                PublicKeyHash
+                                    "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                            }
+                    }
+        anti args `shouldReturn` (opts, dummyTxId)
 
     it "can request adding user to a project" $ do
         let args =
@@ -79,8 +125,21 @@ spec = beforeAll_ runDummyServer $ do
                 , "--username"
                 , "bob"
                 ]
+        let opts =
+                Options
+                    { tokenId = TokenId "dummyTokenId"
+                    , host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        RegisterRole
+                            { platform = Platform "github"
+                            , repository = Repository "cardano-foundation" "antithesis"
+                            , role = Role "maintainer"
+                            , username = Username "bob"
+                            }
+                    }
 
-        anti args `shouldReturn` dummyTxId
+        anti args `shouldReturn` (opts, dummyTxId)
 
     it "can request removing user from a project" $ do
         let args =
@@ -94,8 +153,21 @@ spec = beforeAll_ runDummyServer $ do
                 , "--username"
                 , "bob"
                 ]
+        let opts =
+                Options
+                    { tokenId = TokenId "dummyTokenId"
+                    , host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        UnregisterRole
+                            { platform = Platform "github"
+                            , repository = Repository "cardano-foundation" "antithesis"
+                            , role = Role "maintainer"
+                            , username = Username "bob"
+                            }
+                    }
 
-        anti args `shouldReturn` dummyTxId
+        anti args `shouldReturn` (opts, dummyTxId)
 
     it "can request antithesis run" $ do
         let args =
@@ -109,5 +181,18 @@ spec = beforeAll_ runDummyServer $ do
                 , "--commit"
                 , "9114528e2343e6fcf3c92de71364275227e6b16d"
                 ]
-
-        anti args `shouldReturn` dummyTxId
+        let opts =
+                Options
+                    { tokenId = TokenId "dummyTokenId"
+                    , host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        RequestTest
+                            { platform = Platform "github"
+                            , repository = Repository "cardano-foundation" "antithesis"
+                            , username = Username "bob"
+                            , commit = SHA1 "9114528e2343e6fcf3c92de71364275227e6b16d"
+                            , directory = Directory "."
+                            }
+                    }
+        anti args `shouldReturn` (opts, dummyTxId)

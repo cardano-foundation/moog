@@ -1,8 +1,11 @@
+{-# LANGUAGE TupleSections #-}
+
 module Anti.Main (main) where
 
 import Anti.Cli (anti)
 import Anti.Options (parseArgs)
 import Anti.Types (Host (..), Options (Options), Port (..))
+import Data.Aeson (Value)
 import Network.HTTP.Client (defaultManagerSettings, newManager)
 import Servant.Client
     ( BaseUrl
@@ -12,17 +15,17 @@ import Servant.Client
         , baseUrlPort
         , baseUrlScheme
         )
+    , ClientError
     , Scheme (Http)
     , mkClientEnv
-    , runClientM, ClientError
+    , runClientM
     )
 import System.Environment (getArgs)
-import Data.Aeson (Value)
 
-main :: IO (Either ClientError Value)
+main :: IO (Options, Either ClientError Value)
 main = do
     args <- getArgs
-    Options tokenId (Host host) (Port port) command <- parseArgs args
+    o@(Options tokenId (Host host) (Port port) command) <- parseArgs args
     manger <- newManager defaultManagerSettings
     let baseUrl =
             BaseUrl
@@ -32,4 +35,4 @@ main = do
                 , baseUrlPath = ""
                 }
         clientEnv = mkClientEnv manger baseUrl
-    runClientM (anti tokenId command) clientEnv
+    (o,) <$> runClientM (anti tokenId command) clientEnv
