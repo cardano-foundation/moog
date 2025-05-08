@@ -123,6 +123,11 @@ data Command
         , username :: Username
         , pubkeyhash :: PublicKeyHash
         }
+    | UnregisterPublicKey
+        { platform :: Platform
+        , username :: Username
+        , pubkeyhash :: PublicKeyHash
+        }
     | RegisterRole
         { platform :: Platform
         , repository :: Repository

@@ -29,6 +29,8 @@ anti tk command = do
     case command of
         RegisterPublicKey{platform, username, pubkeyhash} ->
             manageUser tk platform username pubkeyhash Insert
+        UnregisterPublicKey{platform, username, pubkeyhash} ->
+            manageUser tk platform username pubkeyhash Delete
         RegisterRole{platform, repository, username, role} ->
             manageRole tk platform repository username role Insert
         UnregisterRole{platform, repository, username, role} ->

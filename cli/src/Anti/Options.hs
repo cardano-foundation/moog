@@ -6,10 +6,7 @@ module Anti.Options (parseArgs) where
 
 import Anti.Types
     ( Command
-        ( RegisterPublicKey
-        , RegisterRole
-        , RequestTest
-        , UnregisterRole
+        (..
         )
     , Directory (..)
     , Host (..)
@@ -129,6 +126,13 @@ addPublicKeyOptions =
         <*> usernameOption
         <*> pubkeyhashOption
 
+removePublicKeyOptions :: Parser Command
+removePublicKeyOptions =
+    UnregisterPublicKey
+        <$> platformOption
+        <*> usernameOption
+        <*> pubkeyhashOption
+
 roleOption :: Parser Role
 roleOption =
     Role
@@ -177,6 +181,9 @@ commandParser =
             <> command
                 "register-public-key"
                 (info addPublicKeyOptions (progDesc "Register a user public key"))
+            <> command
+                "unregister-public-key"
+                (info removePublicKeyOptions (progDesc "Unregister a user public key"))
             <> command
                 "register-role"
                 (info addRoleOptions (progDesc "Add a user to a repository"))

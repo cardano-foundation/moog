@@ -54,6 +54,18 @@ spec = beforeAll_ runDummyServer $ do
                 ]
 
         anti args `shouldReturn` dummyTxId
+    it "can request user unregistration" $ do
+        let args =
+                [ "unregister-public-key"
+                , "--platform"
+                , "github"
+                , "--username"
+                , "bob"
+                , "--pubkeyhash"
+                , "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                ]
+
+        anti args `shouldReturn` dummyTxId
 
     it "can request adding user to a project" $ do
         let args =
