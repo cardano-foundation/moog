@@ -6,3 +6,7 @@
 # compose
 compose/.testnet.yaml
 dist-newstyle
+.direnv
+.vscode/settings.json
+cli/.vscode/settings.json
+cli/result
