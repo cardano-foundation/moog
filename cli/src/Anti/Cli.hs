@@ -2,9 +2,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 
-module Anti.Cli (
-    anti
-) where
+module Anti.Cli
+    ( anti
+    ) where
 
 import Anti.API (request)
 import Anti.Types
@@ -20,9 +20,11 @@ import Anti.Types
     , TokenId
     , Username (..)
     )
-import Data.Aeson (ToJSON (..), Value, object, (.=))
+import Data.Aeson (Value, encode, object, (.=))
 import Data.Text (Text)
-import Servant.Client ( ClientM)
+import Servant.Client (ClientM)
+
+import qualified Data.ByteString.Lazy.Char8 as BL
 
 anti :: TokenId -> Command -> ClientM Value
 anti tk command = do
@@ -54,7 +56,7 @@ manageUser
         request tokenId
             $ Request
                 { key = [platform, username, pubkeyhash]
-                , value = toJSON ()
+                , value = ""
                 , operation
                 }
 
@@ -76,7 +78,7 @@ manageRole
         request tokenId
             $ Request
                 { key = [platform, org, repo, username, role]
-                , value = toJSON ()
+                , value = ""
                 , operation
                 }
 
@@ -99,8 +101,10 @@ requestTest
             $ Request
                 { key = [platform, org, repo, username, sha1, directory]
                 , value =
-                    object
-                        [ "state" .= ("pending" :: Text)
-                        ]
+                    BL.unpack
+                        $ encode
+                        $ object
+                            [ "state" .= ("pending" :: Text)
+                            ]
                 , operation = Insert
                 }

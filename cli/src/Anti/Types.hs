@@ -28,12 +28,11 @@ import Data.Aeson
     , object
     , withObject
     , withText
-    , (.:), encode
+    , (.:)
     )
 import Servant.API (FromHttpApiData (..), ToHttpApiData (..))
 
 import qualified Data.Text as T
-import qualified Data.ByteString.Lazy as BL
 
 newtype Platform = Platform String
     deriving (Eq, Show)
@@ -70,7 +69,7 @@ instance FromHttpApiData TokenId where
 
 data Request = Request
     { key :: [String]
-    , value :: Value
+    , value :: String
     , operation :: Operation
     }
     deriving (Eq, Show)
@@ -79,7 +78,7 @@ instance ToJSON Request where
     toJSON (Request{key, value, operation}) =
         object
             [ "key" .= key
-            , "value" .= BL.unpack (encode value)
+            , "value" .= value
             , "operation" .= operation
             ]
 
