@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 module Anti.CliSpec
     ( spec
     , runDummyServer
@@ -19,7 +20,9 @@ import Anti.Types
     , Role (..)
     , SHA1 (..)
     , TokenId (..)
+    , UserCommand (..)
     , Username (..)
+    , userCommand
     )
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async)
@@ -72,16 +75,21 @@ spec = beforeAll_ runDummyServer $ do
                 ]
         let opts =
                 Options
-                    { tokenId = TokenId "dummyTokenId"
-                    , host = Host "localhost"
+                    { host = Host "localhost"
                     , port = Port 8084
                     , command =
-                        RegisterPublicKey
-                            { platform = Platform "github"
-                            , username = Username "bob"
-                            , pubkeyhash =
-                                PublicKeyHash
-                                    "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                        UserCommand
+                            { userCommand =
+                                RegisterPublicKey
+                                    { platform = Platform "github"
+                                    , username = Username "bob"
+                                    , pubkeyhash =
+                                        PublicKeyHash
+                                            "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                                    }
+                            , tokenId =
+                                TokenId
+                                    "dummyTokenId"
                             }
                     }
         anti args
@@ -99,16 +107,21 @@ spec = beforeAll_ runDummyServer $ do
 
         let opts =
                 Options
-                    { tokenId = TokenId "dummyTokenId"
-                    , host = Host "localhost"
+                    { host = Host "localhost"
                     , port = Port 8084
                     , command =
-                        UnregisterPublicKey
-                            { platform = Platform "github"
-                            , username = Username "bob"
-                            , pubkeyhash =
-                                PublicKeyHash
-                                    "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                        UserCommand
+                            { userCommand =
+                                UnregisterPublicKey
+                                    { platform = Platform "github"
+                                    , username = Username "bob"
+                                    , pubkeyhash =
+                                        PublicKeyHash
+                                            "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                                    }
+                            , tokenId =
+                                TokenId
+                                    "dummyTokenId"
                             }
                     }
         anti args `shouldReturn` (opts, dummyTxId)
@@ -127,15 +140,20 @@ spec = beforeAll_ runDummyServer $ do
                 ]
         let opts =
                 Options
-                    { tokenId = TokenId "dummyTokenId"
-                    , host = Host "localhost"
+                    { host = Host "localhost"
                     , port = Port 8084
                     , command =
-                        RegisterRole
-                            { platform = Platform "github"
-                            , repository = Repository "cardano-foundation" "antithesis"
-                            , role = Role "maintainer"
-                            , username = Username "bob"
+                        UserCommand
+                            { userCommand =
+                                RegisterRole
+                                    { platform = Platform "github"
+                                    , repository = Repository "cardano-foundation" "antithesis"
+                                    , role = Role "maintainer"
+                                    , username = Username "bob"
+                                    }
+                            , tokenId =
+                                TokenId
+                                    "dummyTokenId"
                             }
                     }
 
@@ -155,15 +173,20 @@ spec = beforeAll_ runDummyServer $ do
                 ]
         let opts =
                 Options
-                    { tokenId = TokenId "dummyTokenId"
-                    , host = Host "localhost"
+                    { host = Host "localhost"
                     , port = Port 8084
                     , command =
-                        UnregisterRole
-                            { platform = Platform "github"
-                            , repository = Repository "cardano-foundation" "antithesis"
-                            , role = Role "maintainer"
-                            , username = Username "bob"
+                        UserCommand
+                            { userCommand =
+                                UnregisterRole
+                                    { platform = Platform "github"
+                                    , repository = Repository "cardano-foundation" "antithesis"
+                                    , role = Role "maintainer"
+                                    , username = Username "bob"
+                                    }
+                            , tokenId =
+                                TokenId
+                                    "dummyTokenId"
                             }
                     }
 
@@ -183,16 +206,21 @@ spec = beforeAll_ runDummyServer $ do
                 ]
         let opts =
                 Options
-                    { tokenId = TokenId "dummyTokenId"
-                    , host = Host "localhost"
+                    { host = Host "localhost"
                     , port = Port 8084
                     , command =
-                        RequestTest
-                            { platform = Platform "github"
-                            , repository = Repository "cardano-foundation" "antithesis"
-                            , username = Username "bob"
-                            , commit = SHA1 "9114528e2343e6fcf3c92de71364275227e6b16d"
-                            , directory = Directory "."
+                        UserCommand
+                            { userCommand =
+                                RequestTest
+                                    { platform = Platform "github"
+                                    , repository = Repository "cardano-foundation" "antithesis"
+                                    , username = Username "bob"
+                                    , commit = SHA1 "9114528e2343e6fcf3c92de71364275227e6b16d"
+                                    , directory = Directory "."
+                                    }
+                            , tokenId =
+                                TokenId
+                                    "dummyTokenId"
                             }
                     }
         anti args `shouldReturn` (opts, dummyTxId)

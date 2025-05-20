@@ -6,39 +6,64 @@ module Anti.Cli
     ( anti
     ) where
 
-import Anti.API (request)
+import Anti.API
+    ( createToken
+    , deleteToken
+    , getToken
+    , requestTest
+    , updateToken
+    )
 import Anti.Types
     ( Command (..)
     , Directory (..)
     , Operation (..)
+    , OracleCommand (..)
     , Platform (..)
     , PublicKeyHash (..)
     , Repository (..)
     , Request (..)
+    , RequestRefs (..)
     , Role (..)
     , SHA1 (..)
     , TokenId
+    , UserCommand (..)
     , Username (..)
     )
 import Data.Aeson (Value, encode, object, (.=))
+import Data.Binary.Builder (toLazyByteString)
 import Data.Text (Text)
+import Network.HTTP.Types (encodePathSegmentsRelative)
 import Servant.Client (ClientM)
 
 import qualified Data.ByteString.Lazy.Char8 as BL
+import qualified Data.Text as T
 
-anti :: TokenId -> Command -> ClientM Value
-anti tk command = do
+anti :: Command -> ClientM Value
+anti command = do
     case command of
-        RegisterPublicKey{platform, username, pubkeyhash} ->
-            manageUser tk platform username pubkeyhash Insert
-        UnregisterPublicKey{platform, username, pubkeyhash} ->
-            manageUser tk platform username pubkeyhash Delete
-        RegisterRole{platform, repository, username, role} ->
-            manageRole tk platform repository username role Insert
-        UnregisterRole{platform, repository, username, role} ->
-            manageRole tk platform repository username role Delete
-        RequestTest{platform, repository, username, commit, directory} ->
-            requestTest tk platform repository username commit directory
+        UserCommand userCommand tk -> case userCommand of
+            RegisterPublicKey{platform, username, pubkeyhash} ->
+                manageUser tk platform username pubkeyhash Insert
+            UnregisterPublicKey{platform, username, pubkeyhash} ->
+                manageUser tk platform username pubkeyhash Delete
+            RegisterRole{platform, repository, username, role} ->
+                manageRole tk platform repository username role Insert
+            UnregisterRole{platform, repository, username, role} ->
+                manageRole tk platform repository username role Delete
+            RequestTest{platform, repository, username, commit, directory} ->
+                requestTestCLI tk platform repository username commit directory
+        OracleCommand oracleCommand -> case oracleCommand of
+            CreateToken -> createToken
+            DeleteToken tk -> deleteToken tk
+            GetToken tk -> getToken tk
+            UpdateToken tk requests -> updateToken tk $ RequestRefs requests
+
+mkKey :: [String] -> String
+mkKey =
+    BL.unpack
+        . toLazyByteString
+        . encodePathSegmentsRelative
+        . fmap T.pack
 
 manageUser
     :: TokenId
@@ -53,9 +78,9 @@ manageUser
     (Username username)
     (PublicKeyHash pubkeyhash)
     operation =
-        request tokenId
+        requestTest tokenId
             $ Request
-                { key = [platform, username, pubkeyhash]
+                { key = mkKey [platform, username, pubkeyhash]
                 , value = ""
                 , operation
                 }
@@ -75,14 +100,14 @@ manageRole
     (Username username)
     (Role role)
     operation =
-        request tokenId
+        requestTest tokenId
             $ Request
-                { key = [platform, org, repo, username, role]
+                { key = mkKey [platform, org, repo, username, role]
                 , value = ""
                 , operation
                 }
 
-requestTest
+requestTestCLI
     :: TokenId
     -> Platform
     -> Repository
@@ -90,16 +115,16 @@ requestTest
     -> SHA1
     -> Directory
     -> ClientM Value
-requestTest
+requestTestCLI
     tokenId
     (Platform platform)
     (Repository org repo)
     (Username username)
     (SHA1 sha1)
     (Directory directory) =
-        request tokenId
+        requestTest tokenId
             $ Request
-                { key = [platform, org, repo, username, sha1, directory]
+                { key = mkKey [platform, org, repo, username, sha1, directory]
                 , value =
                     BL.unpack
                         $ encode

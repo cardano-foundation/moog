@@ -5,26 +5,51 @@ module Anti.Server
     ( appDummy
     , dummyTxId
     )
-    where
+where
 
 import Anti.API (api)
-import Anti.Types (Request (..), TokenId)
+import Anti.Types (Request (..), TokenId, RequestRefs)
 import Data.Aeson (Value, object, (.=))
 import Network.Wai (Application)
-import Servant (serve)
+import Servant (serve, (:<|>) (..))
 import Servant.Server (Handler)
 
 appDummy :: Application
-appDummy = serve api serverDummy
+appDummy =
+    serve
+        api
+        ( postRequestDummy
+            :<|> postTokenDummy
+            :<|> deleteTokenDummy
+            :<|> getTokenDummy
+            :<|> updateTokenDummy
+        )
+
+updateTokenDummy :: TokenId -> RequestRefs -> Handler Value
+updateTokenDummy _ _ = do
+    return dummyTxId
+
+deleteTokenDummy :: TokenId -> Handler Value
+deleteTokenDummy _ = return dummyTxId
+
+postTokenDummy :: Handler Value
+postTokenDummy = return dummyTokenId
+
+getTokenDummy :: TokenId -> Handler Value
+getTokenDummy _ = return dummyTokenId
+
+dummyTokenId :: Value
+dummyTokenId = object ["tokenId " .= ("dummyTokenId" :: String)]
 
 dummyTxId :: Value
 dummyTxId = object ["txId " .= ("dummyTxId" :: String)]
 
-serverDummy :: TokenId -> Request -> Handler Value
-serverDummy _tokenId = \case
+postRequestDummy :: TokenId -> Request -> Handler Value
+postRequestDummy _tokenId = \case
     Request
         { key = _
         , value = _
         , operation = _
         } -> do return dummyTxId
-    -- _ -> error "Invalid request format"
+
+-- _ -> error "Invalid request format"

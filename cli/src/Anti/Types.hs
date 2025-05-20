@@ -1,9 +1,12 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
 
 module Anti.Types
-    ( Command (..)
+    ( UserCommand (..)
+    , OracleCommand (..)
+    , Command (..)
     , Directory (..)
     , Host (..)
     , Options (..)
@@ -18,6 +21,8 @@ module Anti.Types
     , TxId (..)
     , Username (..)
     , Operation (..)
+    , OutputReference (..)
+    , RequestRefs (..)
     ) where
 
 import Data.Aeson
@@ -68,7 +73,7 @@ instance FromHttpApiData TokenId where
             _ -> Right (TokenId (T.unpack tokenId))
 
 data Request = Request
-    { key :: [String]
+    { key :: String
     , value :: String
     , operation :: Operation
     }
@@ -109,7 +114,53 @@ instance FromJSON Operation where
             "delete" -> pure Delete
             _ -> fail $ "Invalid operation: " ++ T.unpack v
 
-data Command
+data OutputReference = OutputReference
+    { outputReferenceTx :: String
+    , outputReferenceIndex :: Int
+    }
+    deriving (Eq, Show)
+
+instance ToJSON OutputReference where
+    toJSON (OutputReference{outputReferenceTx, outputReferenceIndex}) =
+        object
+            [ "txHash" .= outputReferenceTx
+            , "outputIndex" .= outputReferenceIndex
+            ]
+
+instance FromJSON OutputReference where
+    parseJSON = withObject "OutputReference" $ \v ->
+        OutputReference
+            <$> v .: "txHash"
+            <*> v .: "outputIndex"
+
+newtype RequestRefs = RequestRefs
+    { outputReferences :: [OutputReference]
+    }
+    deriving (Eq, Show)
+instance ToJSON RequestRefs where
+    toJSON (RequestRefs{outputReferences}) =
+        object
+            [ "requests" .= outputReferences
+            ]
+instance FromJSON RequestRefs where
+    parseJSON = withObject "Requests" $ \v ->
+        RequestRefs
+            <$> v .: "requests"
+
+data OracleCommand
+    = CreateToken
+    | DeleteToken
+        { tokenId :: TokenId
+        }
+    | GetToken
+        { tokenId :: TokenId
+        }
+    | UpdateToken
+        { tokenId :: TokenId
+        , requests :: [OutputReference]
+        }
+    deriving (Eq, Show)
+data UserCommand
     = RequestTest
         { platform :: Platform
         , repository :: Repository
@@ -147,9 +198,16 @@ newtype Port = Port Int
 newtype Host = Host String
     deriving (Eq, Show)
 
+data Command
+    = UserCommand
+        { userCommand :: UserCommand
+        , tokenId :: TokenId
+        }
+    | OracleCommand OracleCommand
+    deriving (Eq, Show)
+
 data Options = Options
-    { tokenId :: TokenId
-    , host :: Host
+    { host :: Host
     , port :: Port
     , command :: Command
     }

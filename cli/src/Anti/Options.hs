@@ -5,12 +5,12 @@
 module Anti.Options (parseArgs) where
 
 import Anti.Types
-    ( Command
-        (..
-        )
+    ( Command (..)
     , Directory (..)
     , Host (..)
     , Options (Options)
+    , OracleCommand (..)
+    , OutputReference (..)
     , Platform (..)
     , Port (..)
     , PublicKeyHash (..)
@@ -18,10 +18,12 @@ import Anti.Types
     , Role (..)
     , SHA1 (..)
     , TokenId (..)
+    , UserCommand (..)
     , Username (..)
     )
 import Options.Applicative
-    ( Parser
+    ( Alternative (..)
+    , Parser
     , auto
     , command
     , defaultPrefs
@@ -31,6 +33,7 @@ import Options.Applicative
     , header
     , help
     , helper
+    , hsubparser
     , info
     , long
     , maybeReader
@@ -39,7 +42,6 @@ import Options.Applicative
     , progDesc
     , short
     , strOption
-    , subparser
     , value
     , (<**>)
     )
@@ -90,7 +92,7 @@ directoryOption =
                 <> help "The directory to run in (defaults to \".\")"
             )
 
-requestTestOptions :: Parser Command
+requestTestOptions :: Parser UserCommand
 requestTestOptions =
     RequestTest
         <$> platformOption
@@ -119,14 +121,14 @@ pubkeyhashOption =
                 <> help "The public key hash for the user"
             )
 
-addPublicKeyOptions :: Parser Command
+addPublicKeyOptions :: Parser UserCommand
 addPublicKeyOptions =
     RegisterPublicKey
         <$> platformOption
         <*> usernameOption
         <*> pubkeyhashOption
 
-removePublicKeyOptions :: Parser Command
+removePublicKeyOptions :: Parser UserCommand
 removePublicKeyOptions =
     UnregisterPublicKey
         <$> platformOption
@@ -143,7 +145,7 @@ roleOption =
                 <> help "The role to assign to the user (e.g., maintainer, contributor)"
             )
 
-addRoleOptions :: Parser Command
+addRoleOptions :: Parser UserCommand
 addRoleOptions =
     RegisterRole
         <$> platformOption
@@ -151,7 +153,7 @@ addRoleOptions =
         <*> roleOption
         <*> usernameOption
 
-removeRoleOptions :: Parser Command
+removeRoleOptions :: Parser UserCommand
 removeRoleOptions =
     UnregisterRole
         <$> platformOption
@@ -169,9 +171,9 @@ tokenIdOption =
                 <> help "The token ID"
             )
 
-commandParser :: Parser Command
-commandParser =
-    subparser
+userCommandParser :: Parser UserCommand
+userCommandParser =
+    hsubparser
         ( command
             "request-test"
             ( info
@@ -180,16 +182,102 @@ commandParser =
             )
             <> command
                 "register-public-key"
-                (info addPublicKeyOptions (progDesc "Register a user public key"))
+                ( info
+                    addPublicKeyOptions
+                    (progDesc "Register a user public key")
+                )
             <> command
                 "unregister-public-key"
-                (info removePublicKeyOptions (progDesc "Unregister a user public key"))
+                ( info
+                    removePublicKeyOptions
+                    (progDesc "Unregister a user public key")
+                )
             <> command
                 "register-role"
-                (info addRoleOptions (progDesc "Add a user to a repository"))
+                ( info
+                    addRoleOptions
+                    (progDesc "Add a user to a repository")
+                )
             <> command
                 "unregister-role"
-                (info removeRoleOptions (progDesc "Remove a user from a repository"))
+                ( info
+                    removeRoleOptions
+                    (progDesc "Remove a user from a repository")
+                )
+        )
+
+outputReferenceParser :: Parser OutputReference
+outputReferenceParser =
+    OutputReference
+        <$> strOption
+            ( long "tx-hash"
+                <> metavar "TX_HASH"
+                <> help "The transaction hash for the output reference"
+            )
+        <*> option
+            auto
+            ( long "index"
+                <> metavar "INDEX"
+                <> help "Index of the output reference"
+            )
+
+oracleCommandParser :: Parser OracleCommand
+oracleCommandParser =
+    hsubparser
+        ( command
+            "create-token"
+            ( info
+                (pure CreateToken <**> helper)
+                (progDesc "Create a new token")
+            )
+            <> command
+                "delete-token"
+                ( info
+                    (deleteTokenOptions <**> helper)
+                    (progDesc "Delete a token")
+                )
+            <> command
+                "get-token"
+                ( info
+                    (GetToken <$> tokenIdOption <**> helper)
+                    (progDesc "Get a token")
+                )
+            <> command
+                "update-token"
+                ( info
+                    ( UpdateToken
+                        <$> tokenIdOption
+                        <*> many outputReferenceParser
+                        <**> helper
+                    )
+                    (progDesc "Update a token")
+                )
+        )
+
+deleteTokenOptions :: Parser OracleCommand
+deleteTokenOptions =
+    DeleteToken
+        <$> tokenIdOption
+
+commandParser :: Parser Command
+commandParser =
+    hsubparser
+        ( command
+            "oracle"
+            ( info
+                (OracleCommand <$> oracleCommandParser <**> helper)
+                (progDesc "Manage tokens")
+            )
+            <> command
+                "user"
+                ( info
+                    ( UserCommand
+                        <$> userCommandParser
+                        <*> tokenIdOption
+                        <**> helper
+                    )
+                    (progDesc "Manage users")
+                )
         )
 
 hostOption :: Parser Host
@@ -218,8 +306,7 @@ portOption =
 optionsParser :: Parser Options
 optionsParser =
     Options
-        <$> tokenIdOption
-        <*> hostOption
+        <$> hostOption
         <*> portOption
         <*> commandParser
 

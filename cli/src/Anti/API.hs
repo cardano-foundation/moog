@@ -1,12 +1,30 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Anti.API (api, API, request) where
+module Anti.API
+    ( api
+    , API
+    , requestTest
+    , createToken
+    , deleteToken
+    , getToken
+    , updateToken
+    ) where
 
-import Anti.Types (Request, TokenId)
+import Anti.Types (Request, RequestRefs, TokenId)
 import Data.Aeson (Value)
 import Data.Data (Proxy (..))
-import Servant.API (Capture, JSON, Post, ReqBody, type (:>))
+import Servant.API
+    ( Capture
+    , Delete
+    , Get
+    , JSON
+    , Post
+    , Put
+    , ReqBody
+    , (:<|>) (..)
+    , type (:>)
+    )
 import Servant.Client (ClientM, client)
 
 type API =
@@ -15,12 +33,30 @@ type API =
         :> "request"
         :> ReqBody '[JSON] Request
         :> Post '[JSON] Value
+        :<|> "token"
+            :> Post '[JSON] Value
+        :<|> "token"
+            :> Capture "tokenId" TokenId
+            :> Delete '[JSON] Value
+        :<|> "token"
+            :> Capture "tokenId" TokenId
+            :> Get '[JSON] Value
+        :<|> "token"
+            :> Capture "tokenId" TokenId
+            :> ReqBody '[JSON] RequestRefs
+            :> Put '[JSON] Value
 
 api :: Proxy API
 api = Proxy
 
-request
+requestTest
     :: TokenId
     -> Request
     -> ClientM Value
-request = client api
+createToken :: ClientM Value
+deleteToken :: TokenId -> ClientM Value
+updateToken :: TokenId -> RequestRefs -> ClientM Value
+getToken :: TokenId -> ClientM Value
+requestTest :<|> createToken :<|> deleteToken :<|> getToken
+    :<|> updateToken =
+        client api
