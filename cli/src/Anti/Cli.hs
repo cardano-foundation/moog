@@ -137,12 +137,14 @@ requestTestCLI
     (Directory directory) =
         requestChange tokenId
             $ Request
-                { key = mkKey [platform, org, repo, username, sha1, directory]
+                { key = mkKey [platform, org, repo, sha1]
                 , value =
                     BL.unpack
                         $ encode
                         $ object
-                            [ "state" .= ("pending" :: Text)
+                            [ "requester" .= username
+                            , "directory" .= directory
+                            , "state" .= ("pending" :: Text)
                             ]
                 , operation = Insert
                 }
