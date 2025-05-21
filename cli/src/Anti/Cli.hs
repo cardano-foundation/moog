@@ -1,3 +1,4 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -11,6 +12,7 @@ import Anti.API
     , deleteToken
     , getToken
     , requestChange
+    , retractRequest
     , updateToken
     )
 import Anti.Types
@@ -18,6 +20,7 @@ import Anti.Types
     , Directory (..)
     , Operation (..)
     , OracleCommand (..)
+    , OutputReference (..)
     , Platform (..)
     , PublicKeyHash (..)
     , Repository (..)
@@ -41,17 +44,27 @@ import qualified Data.Text as T
 anti :: Command -> ClientM Value
 anti command = do
     case command of
-        UserCommand userCommand tk -> case userCommand of
-            RegisterPublicKey{platform, username, pubkeyhash} ->
-                manageUser tk platform username pubkeyhash Insert
-            UnregisterPublicKey{platform, username, pubkeyhash} ->
-                manageUser tk platform username pubkeyhash Delete
-            RegisterRole{platform, repository, username, role} ->
-                manageRole tk platform repository username role Insert
-            UnregisterRole{platform, repository, username, role} ->
-                manageRole tk platform repository username role Delete
-            RequestTest{platform, repository, username, commit, directory} ->
-                requestTestCLI tk platform repository username commit directory
+        UserCommand userCommand -> case userCommand of
+            RegisterPublicKey{platform, username, pubkeyhash, tokenId} ->
+                manageUser tokenId platform username pubkeyhash Insert
+            UnregisterPublicKey{platform, username, pubkeyhash, tokenId} ->
+                manageUser tokenId platform username pubkeyhash Delete
+            RegisterRole{platform, repository, username, role, tokenId} ->
+                manageRole tokenId platform repository username role Insert
+            UnregisterRole{platform, repository, username, role, tokenId} ->
+                manageRole tokenId platform repository username role Delete
+            RequestTest
+                { platform
+                , repository
+                , username
+                , commit
+                , directory
+                , tokenId
+                } ->
+                    requestTestCLI tokenId platform repository username commit directory
+            RetractRequest
+                (OutputReference{outputReferenceTx, outputReferenceIndex}) ->
+                    retractRequest outputReferenceTx outputReferenceIndex
         OracleCommand oracleCommand -> case oracleCommand of
             CreateToken -> createToken
             DeleteToken tk -> deleteToken tk

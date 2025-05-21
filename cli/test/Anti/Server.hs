@@ -19,11 +19,16 @@ appDummy =
     serve
         api
         ( postRequestDummy
+            :<|> retractRequestDummy
             :<|> postTokenDummy
             :<|> deleteTokenDummy
             :<|> getTokenDummy
             :<|> updateTokenDummy
         )
+
+retractRequestDummy :: [Char] -> Int -> Handler Value
+retractRequestDummy _txHash _outputIndex = do
+    return dummyTxId
 
 updateTokenDummy :: TokenId -> RequestRefs -> Handler Value
 updateTokenDummy _ _ = do

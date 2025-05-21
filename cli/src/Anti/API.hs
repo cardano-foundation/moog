@@ -5,6 +5,7 @@ module Anti.API
     ( api
     , API
     , requestChange
+    , retractRequest
     , createToken
     , deleteToken
     , getToken
@@ -33,6 +34,10 @@ type API =
         :> "request"
         :> ReqBody '[JSON] Request
         :> Post '[JSON] Value
+        :<|> "request"
+            :> Capture "txHash" String
+            :> Capture "outputIndex" Int
+            :> Delete '[JSON] Value
         :<|> "token"
             :> Post '[JSON] Value
         :<|> "token"
@@ -57,7 +62,9 @@ createToken :: ClientM Value
 deleteToken :: TokenId -> ClientM Value
 updateToken :: TokenId -> RequestRefs -> ClientM Value
 getToken :: TokenId -> ClientM Value
+retractRequest :: [Char] -> Int -> ClientM Value
 requestChange
+    :<|> retractRequest
     :<|> createToken
     :<|> deleteToken
     :<|> getToken

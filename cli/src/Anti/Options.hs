@@ -100,6 +100,7 @@ requestTestOptions =
         <*> commitOption
         <*> directoryOption
         <*> usernameOption
+        <*> tokenIdOption
 
 usernameOption :: Parser Username
 usernameOption =
@@ -127,6 +128,7 @@ addPublicKeyOptions =
         <$> platformOption
         <*> usernameOption
         <*> pubkeyhashOption
+        <*> tokenIdOption
 
 removePublicKeyOptions :: Parser UserCommand
 removePublicKeyOptions =
@@ -134,6 +136,7 @@ removePublicKeyOptions =
         <$> platformOption
         <*> usernameOption
         <*> pubkeyhashOption
+        <*> tokenIdOption
 
 roleOption :: Parser Role
 roleOption =
@@ -152,6 +155,7 @@ addRoleOptions =
         <*> repositoryOption
         <*> roleOption
         <*> usernameOption
+        <*> tokenIdOption
 
 removeRoleOptions :: Parser UserCommand
 removeRoleOptions =
@@ -160,6 +164,7 @@ removeRoleOptions =
         <*> repositoryOption
         <*> roleOption
         <*> usernameOption
+        <*> tokenIdOption
 
 tokenIdOption :: Parser TokenId
 tokenIdOption =
@@ -170,6 +175,11 @@ tokenIdOption =
                 <> metavar "TOKEN_ID"
                 <> help "The token ID"
             )
+
+retractRequestOptions :: Parser UserCommand
+retractRequestOptions =
+    RetractRequest
+        <$> outputReferenceParser
 
 userCommandParser :: Parser UserCommand
 userCommandParser =
@@ -203,6 +213,12 @@ userCommandParser =
                 ( info
                     removeRoleOptions
                     (progDesc "Remove a user from a repository")
+                )
+            <> command
+                "retract-request"
+                ( info
+                    retractRequestOptions
+                    (progDesc "Retract a request")
                 )
         )
 
@@ -273,7 +289,6 @@ commandParser =
                 ( info
                     ( UserCommand
                         <$> userCommandParser
-                        <*> tokenIdOption
                         <**> helper
                     )
                     (progDesc "Manage users")

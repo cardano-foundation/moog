@@ -167,28 +167,36 @@ data UserCommand
         , commit :: SHA1
         , directory :: Directory
         , username :: Username
+        , tokenId :: TokenId
         }
     | RegisterPublicKey
         { platform :: Platform
         , username :: Username
         , pubkeyhash :: PublicKeyHash
+        , tokenId :: TokenId
         }
     | UnregisterPublicKey
         { platform :: Platform
         , username :: Username
         , pubkeyhash :: PublicKeyHash
+        , tokenId :: TokenId
         }
     | RegisterRole
         { platform :: Platform
         , repository :: Repository
         , role :: Role
         , username :: Username
+        , tokenId :: TokenId
         }
     | UnregisterRole
         { platform :: Platform
         , repository :: Repository
         , role :: Role
         , username :: Username
+        , tokenId :: TokenId
+        }
+    | RetractRequest
+        { outputReference :: OutputReference
         }
     deriving (Eq, Show)
 
@@ -199,10 +207,7 @@ newtype Host = Host String
     deriving (Eq, Show)
 
 data Command
-    = UserCommand
-        { userCommand :: UserCommand
-        , tokenId :: TokenId
-        }
+    = UserCommand UserCommand
     | OracleCommand OracleCommand
     deriving (Eq, Show)
 
