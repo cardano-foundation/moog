@@ -4,7 +4,7 @@
 module Anti.API
     ( api
     , API
-    , requestTest
+    , requestChange
     , createToken
     , deleteToken
     , getToken
@@ -49,7 +49,7 @@ type API =
 api :: Proxy API
 api = Proxy
 
-requestTest
+requestChange
     :: TokenId
     -> Request
     -> ClientM Value
@@ -57,6 +57,9 @@ createToken :: ClientM Value
 deleteToken :: TokenId -> ClientM Value
 updateToken :: TokenId -> RequestRefs -> ClientM Value
 getToken :: TokenId -> ClientM Value
-requestTest :<|> createToken :<|> deleteToken :<|> getToken
+requestChange
+    :<|> createToken
+    :<|> deleteToken
+    :<|> getToken
     :<|> updateToken =
         client api

@@ -10,7 +10,7 @@ import Anti.API
     ( createToken
     , deleteToken
     , getToken
-    , requestTest
+    , requestChange
     , updateToken
     )
 import Anti.Types
@@ -78,7 +78,7 @@ manageUser
     (Username username)
     (PublicKeyHash pubkeyhash)
     operation =
-        requestTest tokenId
+        requestChange tokenId
             $ Request
                 { key = mkKey [platform, username, pubkeyhash]
                 , value = ""
@@ -100,7 +100,7 @@ manageRole
     (Username username)
     (Role role)
     operation =
-        requestTest tokenId
+        requestChange tokenId
             $ Request
                 { key = mkKey [platform, org, repo, username, role]
                 , value = ""
@@ -122,7 +122,7 @@ requestTestCLI
     (Username username)
     (SHA1 sha1)
     (Directory directory) =
-        requestTest tokenId
+        requestChange tokenId
             $ Request
                 { key = mkKey [platform, org, repo, username, sha1, directory]
                 , value =
