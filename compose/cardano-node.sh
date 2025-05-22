@@ -91,6 +91,18 @@ config_config_json() {
     else
         jq ".PeerSharing = false" "${CONFIG_JSON}" | write_file "${CONFIG_JSON}"
     fi
+
+    if [ "${OUROBOROS_GENESIS,,}" = "true" ]; then
+        jq ".ConsensusMode = \"GenesisMode\"" "${CONFIG_JSON}" | write_file "${CONFIG_JSON}"
+    else
+        jq ".ConsensusMode = \"PraosMode\"" "${CONFIG_JSON}" | write_file "${CONFIG_JSON}"
+    fi
+
+    if [ "${UTXOHD,,}" = "true" ]; then
+        jq ".LedgerDB = {\"Backend\": \"V1LMDB\", \"LiveTablesPath\": \"${DATABASE_PATH}/lmdb\"  }" "${CONFIG_JSON}" | write_file "${CONFIG_JSON}"
+    else
+        jq ".LedgerDB = {\"Backend\": \"V2InMemory\" }" "${CONFIG_JSON}" | write_file "${CONFIG_JSON}"
+    fi
 }
 
 config_topology_json() {
