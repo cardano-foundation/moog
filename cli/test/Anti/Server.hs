@@ -44,7 +44,7 @@ getTokenDummy :: TokenId -> Handler Value
 getTokenDummy _ = return dummyTokenId
 
 dummyTokenId :: Value
-dummyTokenId = object ["tokenId " .= ("dummyTokenId" :: String)]
+dummyTokenId = object ["tokenId" .= ("dummyTokenId" :: String)]
 
 dummyTxId :: Value
 dummyTxId = object ["txId " .= ("dummyTxId" :: String)]

@@ -160,6 +160,8 @@ data OracleCommand
         , requests :: [OutputReference]
         }
     deriving (Eq, Show)
+
+
 data UserCommand
     = RequestTest
         { platform :: Platform

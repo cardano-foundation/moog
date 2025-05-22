@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Anti.CliSpec
     ( spec
@@ -14,6 +15,8 @@ import Anti.Types
     , Directory (..)
     , Host (..)
     , Options (..)
+    , OracleCommand (..)
+    , OutputReference (..)
     , Platform (..)
     , Port (..)
     , PublicKeyHash (..)
@@ -26,7 +29,8 @@ import Anti.Types
     )
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (async)
-import Data.Aeson (Value)
+import Data.Aeson (Value, (.=))
+import Data.Aeson.Types (object)
 import Network.Wai.Handler.Warp (run)
 import System.Environment (withArgs)
 import Test.Hspec
@@ -51,8 +55,6 @@ anti args = do
             , "localhost"
             , "--port"
             , "8084"
-            , "--token-id"
-            , "dummyTokenId"
             ]
                 ++ args
     -- Call the main function with the simulated arguments
@@ -65,13 +67,16 @@ spec :: Spec
 spec = beforeAll_ runDummyServer $ do
     it "can request user registration" $ do
         let args =
-                [ "register-public-key"
+                [ "user"
+                , "register-public-key"
                 , "--platform"
                 , "github"
                 , "--username"
                 , "bob"
                 , "--pubkeyhash"
                 , "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                , "--token-id"
+                , "dummyTokenId"
                 ]
         let opts =
                 Options
@@ -92,13 +97,16 @@ spec = beforeAll_ runDummyServer $ do
             `shouldReturn` (opts, dummyTxId)
     it "can request user unregistration" $ do
         let args =
-                [ "unregister-public-key"
+                [ "user"
+                , "unregister-public-key"
                 , "--platform"
                 , "github"
                 , "--username"
                 , "bob"
                 , "--pubkeyhash"
                 , "607a0d8a64616a407537edf0d9b59cf4cb509c556f6d2de4250ce15df2"
+                , "--token-id"
+                , "dummyTokenId"
                 ]
 
         let opts =
@@ -120,7 +128,8 @@ spec = beforeAll_ runDummyServer $ do
 
     it "can request adding user to a project" $ do
         let args =
-                [ "register-role"
+                [ "user"
+                , "register-role"
                 , "--platform"
                 , "github"
                 , "--repository"
@@ -129,6 +138,8 @@ spec = beforeAll_ runDummyServer $ do
                 , "maintainer"
                 , "--username"
                 , "bob"
+                , "--token-id"
+                , "dummyTokenId"
                 ]
         let opts =
                 Options
@@ -149,7 +160,8 @@ spec = beforeAll_ runDummyServer $ do
 
     it "can request removing user from a project" $ do
         let args =
-                [ "unregister-role"
+                [ "user"
+                , "unregister-role"
                 , "--platform"
                 , "github"
                 , "--repository"
@@ -158,6 +170,8 @@ spec = beforeAll_ runDummyServer $ do
                 , "maintainer"
                 , "--username"
                 , "bob"
+                , "--token-id"
+                , "dummyTokenId"
                 ]
         let opts =
                 Options
@@ -178,7 +192,8 @@ spec = beforeAll_ runDummyServer $ do
 
     it "can request antithesis run" $ do
         let args =
-                [ "request-test"
+                [ "user"
+                , "request-test"
                 , "--platform"
                 , "github"
                 , "--repository"
@@ -187,6 +202,8 @@ spec = beforeAll_ runDummyServer $ do
                 , "bob"
                 , "--commit"
                 , "9114528e2343e6fcf3c92de71364275227e6b16d"
+                , "--token-id"
+                , "dummyTokenId"
                 ]
         let opts =
                 Options
@@ -204,3 +221,79 @@ spec = beforeAll_ runDummyServer $ do
                                 }
                     }
         anti args `shouldReturn` (opts, dummyTxId)
+    it "can retract a request" $ do
+        let args =
+                [ "user"
+                , "retract-request"
+                , "--tx-hash"
+                , "dummyTxId"
+                , "--index"
+                , "0"
+                ]
+        let opts =
+                Options
+                    { host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        UserCommand
+                            RetractRequest
+                                { outputReference = OutputReference "dummyTxId" 0
+                                }
+                    }
+        anti args `shouldReturn` (opts, dummyTxId)
+    it "can create a token" $ do
+        let args =
+                [ "oracle"
+                , "create-token"
+                ]
+        let opts =
+                Options
+                    { host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        OracleCommand
+                            CreateToken
+                    }
+        anti args
+            `shouldReturn` ( opts
+                           , object
+                                [ "tokenId" .= ("dummyTokenId" :: String)
+                                ]
+                           )
+    it "can delete a token" $ do
+        let args =
+                [ "oracle"
+                , "delete-token"
+                , "--token-id"
+                , "dummyTokenId"
+                ]
+        let opts =
+                Options
+                    { host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        OracleCommand
+                            (DeleteToken $ TokenId "dummyTokenId")
+                    }
+        anti args `shouldReturn` (opts, dummyTxId)
+    it "can get a token" $ do
+        let args =
+                [ "oracle"
+                , "get-token"
+                , "--token-id"
+                , "dummyTokenId"
+                ]
+        let opts =
+                Options
+                    { host = Host "localhost"
+                    , port = Port 8084
+                    , command =
+                        OracleCommand
+                            (GetToken $ TokenId "dummyTokenId")
+                    }
+        anti args
+            `shouldReturn` ( opts
+                           , object
+                                [ "tokenId" .= ("dummyTokenId" :: String)
+                                ]
+                           )
