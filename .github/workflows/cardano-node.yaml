@@ -1,7 +1,7 @@
 name: "Test cardano-node"
 env:
   TESTNET: cardano_node_latest
-  REGISTRY: us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository/
+  REGISTRY: ghcr.io
   EMAILS: 'antithesis@cardanofoundation.org'
   DURATION: 5 # in hours
 on:
@@ -30,7 +30,14 @@ jobs:
       with:
         ref: ${{ github.event.inputs.ref_name || '' }}
 
-    - name: 🏗 Build images
+    - name: 🔑 Login Docker Registry
+      uses: docker/login-action@v3
+      with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 🏗  Build images
       working-directory: compose
       run: |
         make build testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}
@@ -50,8 +57,8 @@ jobs:
         username: ${{ secrets.ANTITHESIS_USERNAME }}
         password: ${{ secrets.ANTITHESIS_PASSWORD }}
         github_token: ${{ secrets.GH_PAT }}
-        images: ${{ env.TESTNET }}:latest;${{ env.TESTNET }}_sidecar:latest;${{ env.TESTNET }}_tracer:latest;${{ env.TESTNET }}_tracer-sidecar:latest
-        config_image: ${{ env.TESTNET }}_config:latest
+        images: ${{ env.REGISTRY }}/${{ env.TESTNET }}:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_sidecar:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_tracer:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_tracer-sidecar:latest
+        config_image: ${{ env.REGISTRY }}/${{ env.TESTNET }}_config:latest
         description: "Run ${{ env.TESTNET }}"
         email_recipients: ${{ env.EMAILS }}
         test_name: "${{ inputs.test }}"
