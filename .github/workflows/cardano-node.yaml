@@ -1,10 +1,4 @@
 name: "Test cardano-node"
-env:
-  TESTNET: cardano_node_latest
-  REGISTRY: us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository/
-  EMAILS: 'antithesis@cardanofoundation.org'
-  DURATION: 5 # in hours
-
 on:
   # can be dispatched manually
   workflow_dispatch:
@@ -12,7 +6,7 @@ on:
        test:
         description: 'Test name'
         required: false
-        default: '${{TESTNET}}'
+        default: 'cardano_node_latest'
         type: string
   schedule:
     # run every 6 hours
@@ -21,6 +15,11 @@ on:
 jobs:
   run-cardano-node:
     runs-on: ubuntu-latest
+    env:
+      TESTNET: cardano_node_latest
+      REGISTRY: us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository/
+      EMAILS: 'antithesis@cardanofoundation.org'
+      DURATION: 5 # in hours
 
     steps:
     - name: 🚧 Set up Docker Buildx
