@@ -1,0 +1,60 @@
+name: "Test cardano-node"
+env:
+  TESTNET: cardano_node_latest
+  REGISTRY: us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository/
+  EMAILS: 'antithesis@cardanofoundation.org'
+  DURATION: 5 # in hours
+
+on:
+  # can be dispatched manually
+  workflow_dispatch:
+     inputs:
+       test:
+        description: 'Test name'
+        required: false
+        default: '${{TESTNET}}'
+        type: string
+  schedule:
+    # run every 6 hours
+    - cron:  '5 1,7,13,19 * * *'
+
+jobs:
+  run-cardano-node:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🚧 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.inputs.ref_name || '' }}
+
+    - name: 🏗 Build images
+      working-directory: compose
+      run: |
+        make build testnet=${{TESTNET}} registry=${{REGISTRY}}
+
+    - name: 🚢 Push images
+      working-directory: compose
+      run: |
+        make push testnet=${{TESTNET}} registry=${{REGISTRY}}
+
+    # this is where we should send a request on-chain
+    # for now we use the GHA provided by AT
+    - name: 🏃 Trigger Antithesis
+      uses: antithesishq/antithesis-trigger-action@v0.8
+      with:
+        notebook_name: cardano
+        tenant: cardano
+        username: ${{ secrets.ANTITHESIS_USERNAME }}
+        password: ${{ secrets.ANTITHESIS_PASSWORD }}
+        github_token: ${{ secrets.GH_PAT }}
+        images: ${{TESTNET}}:latest;${{TESTNET}}_sidecar:latest;${{TESTNET}}_tracer:latest;${{TESTNET}}_tracer-sidecar:latest
+        config_image: ${{TESTNET}}_config:latest
+        description: "Run ${{TESTNET}}"
+        email_recipients: ${{EMAILS}}
+        test_name: "${{ inputs.test }}"
+        additional_parameters: |-
+          duration=${{DURATION}}
