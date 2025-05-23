@@ -1,4 +1,9 @@
 name: "Test cardano-node"
+env:
+  TESTNET: cardano_node_latest
+  REGISTRY: us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository/
+  EMAILS: 'antithesis@cardanofoundation.org'
+  DURATION: 5 # in hours
 on:
   # can be dispatched manually
   workflow_dispatch:
@@ -6,7 +11,7 @@ on:
        test:
         description: 'Test name'
         required: false
-        default: 'cardano_node_latest'
+        default: $TESTNET
         type: string
   schedule:
     # run every 6 hours
@@ -15,11 +20,6 @@ on:
 jobs:
   run-cardano-node:
     runs-on: ubuntu-latest
-    env:
-      TESTNET: cardano_node_latest
-      REGISTRY: us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository/
-      EMAILS: 'antithesis@cardanofoundation.org'
-      DURATION: 5 # in hours
 
     steps:
     - name: 🚧 Set up Docker Buildx
@@ -33,12 +33,12 @@ jobs:
     - name: 🏗 Build images
       working-directory: compose
       run: |
-        make build testnet=${{TESTNET}} registry=${{REGISTRY}}
+        make build testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}
 
     - name: 🚢 Push images
       working-directory: compose
       run: |
-        make push testnet=${{TESTNET}} registry=${{REGISTRY}}
+        make push testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}
 
     # this is where we should send a request on-chain
     # for now we use the GHA provided by AT
@@ -50,10 +50,10 @@ jobs:
         username: ${{ secrets.ANTITHESIS_USERNAME }}
         password: ${{ secrets.ANTITHESIS_PASSWORD }}
         github_token: ${{ secrets.GH_PAT }}
-        images: ${{TESTNET}}:latest;${{TESTNET}}_sidecar:latest;${{TESTNET}}_tracer:latest;${{TESTNET}}_tracer-sidecar:latest
-        config_image: ${{TESTNET}}_config:latest
-        description: "Run ${{TESTNET}}"
-        email_recipients: ${{EMAILS}}
+        images: ${{ env.TESTNET }}:latest;${{ env.TESTNET }}_sidecar:latest;${{ env.TESTNET }}_tracer:latest;${{ env.TESTNET }}_tracer-sidecar:latest
+        config_image: ${{ env.TESTNET }}_config:latest
+        description: "Run ${{ env.TESTNET }}"
+        email_recipients: ${{ env.EMAILS }}
         test_name: "${{ inputs.test }}"
         additional_parameters: |-
-          duration=${{DURATION}}
+          duration=${{ env.DURATION }}
