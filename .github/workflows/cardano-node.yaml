@@ -49,12 +49,12 @@ jobs:
     - name: 🏗  Build images
       working-directory: compose
       run: |
-        make build testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}
+        make build testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}/
 
     - name: 🚢 Push images
       working-directory: compose
       run: |
-        make push testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}
+        make push testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}/
 
     # this is where we should send a request on-chain
     # for now we use the GHA provided by AT
