@@ -13,6 +13,8 @@ on:
         required: false
         default: $TESTNET
         type: string
+  # FIXME: remove before mergin
+  push:
   schedule:
     # run every 6 hours
     - cron:  '5 1,7,13,19 * * *'
