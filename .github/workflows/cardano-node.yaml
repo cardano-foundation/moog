@@ -21,6 +21,13 @@ jobs:
   run-cardano-node:
     runs-on: ubuntu-latest
 
+    # required permissions to be able to push to registry
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+
     steps:
     - name: 🚧 Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
