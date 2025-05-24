@@ -11,7 +11,7 @@ on:
        test:
         description: 'Test name'
         required: false
-        default: ${{ env.TESTNET }}
+        default: cardano_node_latest
         type: string
   # FIXME: remove before mergin
   push:
