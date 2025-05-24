@@ -1,7 +1,7 @@
 name: "Test cardano-node"
 env:
   TESTNET: cardano_node_latest
-  REGISTRY: ghcr.io
+  REGISTRY: ghcr.io/cardano-foundation
   EMAILS: 'antithesis@cardanofoundation.org'
   DURATION: 5 # in hours
 on:
@@ -11,7 +11,7 @@ on:
        test:
         description: 'Test name'
         required: false
-        default: $TESTNET
+        default: ${{ env.TESTNET }}
         type: string
   # FIXME: remove before mergin
   push:
@@ -49,27 +49,29 @@ jobs:
     - name: 🏗  Build images
       working-directory: compose
       run: |
-        make build testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}/
+        docker build -t ${{ env.REGISTRY }}/antithesis-test:latest -f tracer-sidecard/Dockerfile tracer-sidecar
+        # make build testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}/
 
     - name: 🚢 Push images
       working-directory: compose
       run: |
-        make push testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}/
+        docker push ${{ env.REGISTRY }}/antithesis-test:latest
+        # make push testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}/
 
     # this is where we should send a request on-chain
     # for now we use the GHA provided by AT
-    - name: 🏃 Trigger Antithesis
-      uses: antithesishq/antithesis-trigger-action@v0.8
-      with:
-        notebook_name: cardano
-        tenant: cardano
-        username: ${{ secrets.ANTITHESIS_USERNAME }}
-        password: ${{ secrets.ANTITHESIS_PASSWORD }}
-        github_token: ${{ secrets.GH_PAT }}
-        images: ${{ env.REGISTRY }}/${{ env.TESTNET }}:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_sidecar:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_tracer:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_tracer-sidecar:latest
-        config_image: ${{ env.REGISTRY }}/${{ env.TESTNET }}_config:latest
-        description: "Run ${{ env.TESTNET }}"
-        email_recipients: ${{ env.EMAILS }}
-        test_name: "${{ inputs.test }}"
-        additional_parameters: |-
-          duration=${{ env.DURATION }}
+    # - name: 🏃 Trigger Antithesis
+    #   uses: antithesishq/antithesis-trigger-action@v0.8
+    #   with:
+    #     notebook_name: cardano
+    #     tenant: cardano
+    #     username: ${{ secrets.ANTITHESIS_USERNAME }}
+    #     password: ${{ secrets.ANTITHESIS_PASSWORD }}
+    #     github_token: ${{ secrets.GH_PAT }}
+    #     images: ${{ env.REGISTRY }}/${{ env.TESTNET }}:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_sidecar:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_tracer:latest;${{ env.REGISTRY }}/${{ env.TESTNET }}_tracer-sidecar:latest
+    #     config_image: ${{ env.REGISTRY }}/${{ env.TESTNET }}_config:latest
+    #     description: "Run ${{ env.TESTNET }}"
+    #     email_recipients: ${{ env.EMAILS }}
+    #     test_name: "${{ inputs.test }}"
+    #     additional_parameters: |-
+    #       duration=${{ env.DURATION }}
