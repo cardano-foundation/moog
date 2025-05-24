@@ -49,7 +49,7 @@ jobs:
     - name: 🏗  Build images
       working-directory: compose
       run: |
-        docker build -t ${{ env.REGISTRY }}/antithesis-test:latest -f tracer-sidecard/Dockerfile tracer-sidecar
+        docker build -t ${{ env.REGISTRY }}/antithesis-test:latest -f tracer-sidecar/Dockerfile tracer-sidecar
         # make build testnet=${{ env.TESTNET }} registry=${{ env.REGISTRY }}/
 
     - name: 🚢 Push images
