@@ -67,7 +67,11 @@ main() {
     while true; do
         status=1
 
-        for i in {1..100}; do
+        # Within 3k/f slots, hardcoded to 25920 for now,
+        # we should recover. This is 12960 retries.
+        # ... assuming the network doesn't go down before
+        # this script is started?
+        for i in {1..12960}; do
             validate_block_hash
             if [ "${status}" -eq 0 ]; then
                 break
