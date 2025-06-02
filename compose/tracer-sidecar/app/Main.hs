@@ -1,54 +1,31 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings     #-}
 
 
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Main where
 
-import Cardano.Antithesis.LogMessage
-import Cardano.Antithesis.Sidecar
+import           Cardano.Antithesis.LogMessage
+import           Cardano.Antithesis.Sidecar
 
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Char8         as B8
+import qualified Data.ByteString.Lazy          as BL
 
-import Control.Concurrent
-    ( forkIO
-    , modifyMVar_
-    , newMVar
-    , threadDelay
-    )
-import Control.Monad
-    ( filterM
-    , forM
-    , forM_
-    , forever
-    , unless
-    )
-import Data.Aeson
-    ( eitherDecode
-    )
-import System.Directory
-    ( doesDirectoryExist
-    , doesFileExist
-    , listDirectory
-    )
-import System.Environment
-    ( getArgs
-    )
-import System.FilePath
-    ( takeExtension
-    , (</>)
-    )
-import System.IO
-    ( BufferMode (LineBuffering, NoBuffering)
-    , IOMode (ReadMode)
-    , hIsEOF
-    , hSetBuffering
-    , stdout
-    , withFile
-    )
+import           Control.Concurrent            (forkIO, modifyMVar_, newMVar,
+                                                threadDelay)
+import           Control.Monad                 (filterM, forM, forM_, forever,
+                                                unless)
+import           Data.Aeson                    (eitherDecode)
+import           System.Directory              (doesDirectoryExist,
+                                                doesFileExist, listDirectory)
+import           System.Environment            (getArgs, getEnv)
+import           System.FilePath               (takeExtension, (</>))
+import           System.IO                     (BufferMode (LineBuffering, NoBuffering),
+                                                IOMode (ReadMode), hIsEOF,
+                                                hSetBuffering, stdout, withFile)
 
 -- main ------------------------------------------------------------------------
 
@@ -56,23 +33,32 @@ import System.IO
 --  Processes existing .jsonl files and tails them for new entries.
 main :: IO ()
 main = do
-  hSetBuffering stdout LineBuffering
-  putStrLn "starting tracer-sidecar..."
-  args <- getArgs
-  dir <- case args of
-           [d] -> return d
-           _   -> error "Usage: <executable name> <directory>"
+    hSetBuffering stdout LineBuffering
+    putStrLn "starting tracer-sidecar..."
+    args <- getArgs
+    dir <- case args of
+             [d] -> return d
+             _   -> error "Usage: <executable name> <directory>"
 
-  mvar <- newMVar =<< initialStateIO
+    mvar <- newMVar =<< initialStateIO
 
-  threadDelay 2000000 -- allow log files to be created
-  files <- jsonFiles dir
+    (nPools :: Int) <- read <$> getEnv "POOLS"
 
-  putStrLn $ "Observing .jsonl files: " <> show files
+    files <- waitFor (\files -> length files == nPools) $ do
+        threadDelay 2000000 -- allow log files to be created
+        putStrLn $ "Looking for " <> show nPools <> " log files"
+        jsonFiles dir
 
-  forM_ files $ \file ->
-    forkIO $ tailJsonLines file (modifyMVar_ mvar . flip processMessageIO)
-  forever $ threadDelay maxBound
+    putStrLn $ "Observing .jsonl files: " <> show files
+
+    forM_ files $ \file ->
+      forkIO $ tailJsonLines file (modifyMVar_ mvar . flip processMessageIO)
+    forever $ threadDelay maxBound
+  where
+    waitFor :: Monad m => (a -> Bool) -> m a -> m a
+    waitFor cond act = do
+        a <- act
+        if cond a then return a else waitFor cond act
 
 -- utils -----------------------------------------------------------------------
 
