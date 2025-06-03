@@ -3,7 +3,6 @@
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
 module Main where
@@ -49,7 +48,7 @@ main = do
         putStrLn $ "Looking for " <> show nPools <> " log files"
         jsonFiles dir
 
-    putStrLn $ "Observing .jsonl files: " <> show files
+    putStrLn $ "Observing .json files: " <> show files
 
     forM_ files $ \file ->
       forkIO $ tailJsonLines file (modifyMVar_ mvar . flip processMessageIO)
