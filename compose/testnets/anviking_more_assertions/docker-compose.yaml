@@ -5,9 +5,9 @@ x-base: &base
   restart: on-failure
   build:
     context: "../../"
-    dockerfile: "Dockerfile.source"
+    dockerfile: "Dockerfile.compiled"
     args:
-      CARDANO_NODE_REF: "karknu/10_1_4_anthithesis_sigterm"
+      CARDANO_NODE_VERSION: "10.4.1"
 
 x-env: &env
   POOL_ID: "0" # Placeholder required for override
