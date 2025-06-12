@@ -41,6 +41,6 @@ RUN groupadd --gid 10000 cardano && \
 COPY tracer-config.yaml .
 COPY run-tracer.sh .
 
-USER cardano
+# USER cardano
 
 ENTRYPOINT ["/run-tracer.sh"]
