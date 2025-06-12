@@ -3,10 +3,9 @@ ARG CARDANO_NODE_VERSION="${CARDANO_NODE_VERSION:-10.4.1}"
 ARG UV_VERSION="${UV_VERSION:-0.6.11}"
 # Blink Labs images are built from source on Debian Bookworm
 FROM ghcr.io/blinklabs-io/cardano-cli:${CARDANO_CLI_VERSION} AS cardano-cli
-FROM ghcr.io/blinklabs-io/cardano-node:${CARDANO_NODE_VERSION} AS cardano-node
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
 
-FROM docker.io/debian:stable-slim AS build
+FROM ghcr.io/blinklabs-io/cardano-node:${CARDANO_NODE_VERSION} AS build
 
 # Set time zone
 ENV TZ="UTC"
@@ -23,10 +22,6 @@ RUN apt update && \
 
 # Copy cardano-cli from image
 COPY --from=cardano-cli --chown=root:root /usr/local/bin/cardano-cli /usr/local/bin/cardano-cli
-# Copy cardano-node from image
-COPY --from=cardano-node --chown=root:root /usr/local/bin/cardano-node /usr/local/bin/cardano-node
-# Copy libsecp256k1 (also debian:bookwork-slim AKA stable-slim)
-COPY --from=cardano-node --chown=root:root /usr/local/lib/ /usr/local/lib/
 # Copy uv from image
 COPY --from=uv --chown=root:root /uv /usr/local/bin/uv
 
@@ -52,7 +47,7 @@ RUN find /tmp/testnet -type f -name 'topology.json' -exec rm -f '{}' ';'
 
 #---------------------------------------------------------------------
 
-FROM docker.io/debian:stable-slim AS main
+FROM ghcr.io/blinklabs-io/cardano-node:${CARDANO_NODE_VERSION} AS cardano-node
 
 # Set environment variables
 ENV CARDANO_NODE_SOCKET_PATH="/opt/cardano-node/data/db/node.socket"
@@ -66,24 +61,14 @@ RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && \
 RUN apt update && \
     apt install -y --no-install-recommends \
         dnsutils \
-        iproute2 \
         iputils-ping \
-        jq \
         less \
         lsof \
-        netbase \
         netcat-openbsd \
         openssl \
-        procps \
         tcpdump \
         telnet \
         vim
-
-# Copy binaries/libraries from build stage
-COPY --from=build --chown=root:root /usr/local/bin/cardano-cli /usr/local/bin/cardano-cli
-COPY --from=build --chown=root:root /usr/local/bin/cardano-node /usr/local/bin/cardano-node
-# Stick this into existing LD_LIBRARY_PATH
-COPY --from=build --chown=root:root /usr/local/lib/ /usr/lib/
 
 # Create cardano group and user
 RUN groupadd --gid 10000 cardano && \
@@ -112,4 +97,4 @@ RUN chmod 0755 /cardano-node.sh
 USER cardano
 #STOPSIGNAL SIGINT
 
-CMD ["/cardano-node.sh"]
+ENTRYPOINT ["/cardano-node.sh"]
