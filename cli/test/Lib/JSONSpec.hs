@@ -3,10 +3,14 @@ module Lib.JSONSpec
     )
 where
 
+import Control.Monad ((>=>))
+import Data.Aeson.Types (parseMaybe)
 import Lib.JSON
     ( CanonicalJSONError (CanonicalJSONError)
+    , fromAesonString
     , runCanonicalJSON
     , runIdentityCanonicalJSON
+    , toAesonString
     )
 import Test.Hspec (Spec, describe, it, shouldBe)
 import Text.JSON.Canonical
@@ -31,3 +35,12 @@ spec = do
             result
                 `shouldBe` Left
                     (CanonicalJSONError "int" $ Just "object")
+    describe "fromAesonString and toAesonString" $ do
+        it "converts JSNull" $ do
+            let jsValue = JSNull
+            let str = toAesonString jsValue
+            parseMaybe fromAesonString str `shouldBe` Just jsValue
+        it "encode ()" $ do
+            let value = ()
+            toJSON value `shouldBe` Just JSNull
+            (toJSON >=> fromJSON) value `shouldBe` Just ()

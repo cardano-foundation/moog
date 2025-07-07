@@ -15,7 +15,7 @@ test:
 
 build:
     #!/usr/bin/env bash
-    cabal build all
+    cabal build all 
 
 CI:
   #!/usr/bin/env bash

@@ -10,9 +10,12 @@
 {-# HLINT ignore "Use newtype instead of data" #-}
 
 module Submitting
-    ( submitting
+    ( signAndSubmit
     , readWallet
     , walletFromMnemonic
+    , writeWallet
+    , Submitting (..)
+    , IfToWait (..)
     )
 where
 
@@ -22,6 +25,8 @@ import Cardano.Address.Derivation
     , deriveAccountPrivateKey
     , deriveAddressPrivateKey
     , genMasterKeyFromMnemonic
+    , pubToBytes
+    , xpubToPub
     )
 import Cardano.Address.Style.Shelley
     ( Credential (PaymentFromExtendedKey)
@@ -32,6 +37,8 @@ import Cardano.Address.Style.Shelley
     , paymentAddress
     )
 import Cardano.Crypto.DSIGN.Class qualified as Crypto
+import Cardano.Crypto.Hash (HashAlgorithm (..))
+import Cardano.Crypto.Hash.Blake2b
 import Cardano.Crypto.Util qualified as Crypto
 import Cardano.Crypto.Wallet (XPrv)
 import Cardano.Crypto.Wallet qualified as Crypto.HD
@@ -60,15 +67,19 @@ import Cardano.Ledger.Keys
     ( VKey (..)
     , asWitness
     )
-import Cardano.Mnemonic
-import Control.Exception (Exception, throwIO)
+import Cardano.Mnemonic (MkSomeMnemonic (mkSomeMnemonic))
+import Control.Concurrent (threadDelay)
+import Control.Exception (Exception, SomeException, throwIO)
 import Control.Lens ((%~))
+import Control.Monad (void)
+import Control.Monad.Catch (MonadCatch (..))
 import Control.Monad.IO.Class (MonadIO (..))
 import Core.Types
     ( Address (..)
+    , Owner (..)
     , SignTxError (..)
     , SignedTx (..)
-    , TxHash (..)
+    , TxHash
     , UnsignedTx (..)
     , Wallet (..)
     , WithTxHash (WithTxHash)
@@ -78,37 +89,64 @@ import Data.Aeson
     ( FromJSON
     , ToJSON
     , eitherDecodeFileStrict'
+    , encode
     )
 import Data.Bifunctor (first)
 import Data.ByteString (ByteString)
-import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
-import Data.ByteString.Lazy qualified as BL
+import Data.ByteString.Char8 qualified as BS
+import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.Function ((&))
 import Data.Maybe (fromMaybe)
+import Data.Proxy
+    ( Proxy (..)
+    )
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
+import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
 import GHC.Generics (Generic)
-import MPFS.API (submitTransaction)
+import MPFS.API (getTransaction, submitTransaction)
 import Servant.Client (ClientM)
 import Text.JSON.Canonical (JSValue)
 
-submitting
-    :: Wallet
+data IfToWait = Wait Int | NoWait
+    deriving (Show, Eq)
+
+data Submitting = Submitting
+    { ifToWait :: IfToWait
+    , runClient :: forall a. ClientM a -> IO a
+    }
+
+waitTx :: Submitting -> TxHash -> IO ()
+waitTx (Submitting (Wait maxCycles) runClient) txHash = void $ go maxCycles
+  where
+    go :: Int -> IO JSValue
+    go 0 = error "Transaction not found after waiting"
+    go n =
+        runClient (getTransaction txHash)
+            `catch` \(_ :: SomeException) -> do
+                liftIO $ threadDelay 1000000
+                go (n - 1)
+waitTx (Submitting NoWait _) _ = return ()
+
+signAndSubmit
+    :: Submitting
+    -> Wallet
     -> (Address -> ClientM (WithUnsignedTx JSValue))
-    -> ClientM WithTxHash
-submitting Wallet{address, sign} action = do
+    -> ClientM (WithTxHash JSValue)
+signAndSubmit sbmt Wallet{address, sign} action = do
     WithUnsignedTx unsignedTx value <- action address
-    case sign $ UnsignedTx unsignedTx of
+    case sign unsignedTx of
         Right (SignedTx signedTx) -> do
-            TxHash txHash <- submitTransaction $ SignedTx signedTx
+            txHash <- submitTransaction $ SignedTx signedTx
+            liftIO $ waitTx sbmt txHash
             return $ WithTxHash txHash value
         Left e -> liftIO $ throwIO e
 
 data WalletDB = WalletDB
-    { mnemonic :: [Text]
+    { mnemonics :: Text
     }
     deriving (Eq, Generic)
 
@@ -116,8 +154,8 @@ instance FromJSON WalletDB
 instance ToJSON WalletDB
 
 data WalletError
-    = InvalidMnemonic
-    | InvalidWalletFile
+    = InvalidMnemonic String
+    | InvalidWalletFile String
     deriving (Show, Eq)
 
 instance Exception WalletError
@@ -126,35 +164,50 @@ readWallet
     :: FilePath
     -> IO Wallet
 readWallet walletFile = do
-    WalletDB{mnemonic} <-
-        either (const $ throwIO InvalidWalletFile) pure
+    WalletDB{mnemonics} <-
+        either (throwIO . InvalidWalletFile) pure
             =<< eitherDecodeFileStrict' walletFile
-    either throwIO pure $ walletFromMnemonic mnemonic
+    either throwIO pure $ walletFromMnemonic $ T.words mnemonics
+
+writeWallet :: FilePath -> [Text] -> IO ()
+writeWallet walletFile mnemonicWords = do
+    let walletDB = WalletDB{mnemonics = T.unwords mnemonicWords}
+    BL.writeFile walletFile $ encode walletDB
 
 walletFromMnemonic :: [Text] -> Either WalletError Wallet
 walletFromMnemonic mnemonicWords = do
     mnemonic <-
-        either (const $ Left InvalidMnemonic) Right
+        either (Left . InvalidMnemonic . show) Right
             $ mkSomeMnemonic @'[9, 12, 15, 18, 24] mnemonicWords
 
     let
-        rootXPrv :: Shelley 'RootK XPrv
-        rootXPrv = genMasterKeyFromMnemonic mnemonic mempty
+        rootXPrv96 :: Shelley 'RootK XPrv
+        rootXPrv96 = genMasterKeyFromMnemonic mnemonic mempty
 
-        accXPrv :: Shelley 'AccountK XPrv
-        accXPrv = deriveAccountPrivateKey rootXPrv minBound
+        accXPrv96 :: Shelley 'AccountK XPrv
+        accXPrv96 = deriveAccountPrivateKey rootXPrv96 minBound
 
-        addrXPrv :: Shelley 'PaymentK XPrv
-        addrXPrv = deriveAddressPrivateKey accXPrv UTxOExternal minBound
-        addrXPub = Crypto.HD.toXPub <$> addrXPrv
+        addrXPrv96 :: Shelley 'PaymentK XPrv
+        addrXPrv96 = deriveAddressPrivateKey accXPrv96 UTxOExternal minBound
+        addrXPub64 = Crypto.HD.toXPub <$> addrXPrv96
 
+        pubBytes32 = pubToBytes $ xpubToPub $ getKey addrXPub64
         tag = either (error . show) id $ mkNetworkDiscriminant 0
         addr =
             Address
                 $ bech32
                 $ paymentAddress tag
-                $ PaymentFromExtendedKey addrXPub
-    pure $ Wallet addr (signTx $ getKey addrXPrv)
+                $ PaymentFromExtendedKey addrXPub64
+    pure
+        $ Wallet
+            { address = addr
+            , sign = signTx $ getKey addrXPrv96
+            , owner =
+                Owner
+                    $ BS.unpack
+                    $ Base16.encode
+                    $ digest (Proxy @Blake2b_224) pubBytes32
+            }
 
 signTx :: XPrv -> UnsignedTx -> Either SignTxError SignedTx
 signTx xprv (UnsignedTx unsignedHex) = do

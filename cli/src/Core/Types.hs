@@ -3,37 +3,38 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 module Core.Types
-    ( Directory (..)
+    ( Address (..)
+    , CageDatum (..)
+    , Change (..)
+    , Directory (..)
     , Host (..)
+    , Key (..)
     , Operation (..)
+    , Owner (..)
     , Platform (..)
     , Port (..)
     , PublicKeyHash (..)
     , Repository (..)
-    , Role (..)
-    , SHA1 (..)
-    , TokenId (..)
-    , Username (..)
-    , Address (..)
-    , WithUnsignedTx (..)
-    , WithTxHash (..)
-    , Wallet (..)
     , RequestRefId (..)
+    , Role (..)
+    , Root (..)
+    , SHA1 (..)
     , SignedTx (..)
     , SignTxError (..)
-    , UnsignedTx (..)
+    , TokenId (..)
     , TxHash (..)
-    , Owner (..)
-    , Key (..)
-    , CageDatum (..)
-    , Root (..)
-    , Change (..)
+    , UnsignedTx (..)
+    , Username (..)
+    , Wallet (..)
+    , WithTxHash (..)
+    , WithUnsignedTx (..)
     ) where
 
 import Control.Exception (Exception)
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Base16 (encode)
 import Data.ByteString.Char8 qualified as B
+import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.Text (Text)
 import Data.Text qualified as T
 import Lib.JSON
@@ -49,9 +50,10 @@ import Servant.API (FromHttpApiData (..), ToHttpApiData (..))
 import Text.JSON.Canonical
     ( FromJSON (..)
     , JSValue (..)
-    , ReportSchemaErrors
+    , ReportSchemaErrors (..)
     , ToJSON (..)
     , expectedButGotValue
+    , renderCanonicalJSON
     )
 
 -- TxHash-OutputIndex
@@ -84,6 +86,12 @@ instance Aeson.FromJSON RequestRefId where
 
 newtype TokenId = TokenId String
     deriving (Eq, Show)
+
+instance Monad m => ToJSON m TokenId where
+    toJSON (TokenId tokenId) = toJSON tokenId
+
+instance ReportSchemaErrors m => FromJSON m TokenId where
+    fromJSON v = TokenId <$> fromJSON v
 
 instance FromData TokenId where
     fromBuiltinData = parse . builtinDataToData
@@ -126,11 +134,19 @@ instance FromJSON Maybe a => FromData (Key a) where
         parse = \case
             B b -> Key <$> parseJSValue b
             _ -> Nothing
-instance ToJSON m a => ToJSON m (Key a) where
-    toJSON (Key key) = toJSON key
 
-instance (FromJSON m a, Functor m) => FromJSON m (Key a) where
-    fromJSON v = Key <$> fromJSON v
+instance (ToJSON m a, Monad m) => ToJSON m (Key a) where
+    toJSON (Key key) = do
+        j <- BL.unpack . renderCanonicalJSON <$> toJSON key
+        toJSON j
+
+instance
+    (FromJSON m a, Monad m, ReportSchemaErrors m)
+    => FromJSON m (Key a)
+    where
+    fromJSON v = do
+        keyString :: String <- fromJSON v
+        Key <$> parseJSValue (B.pack keyString)
 
 data Operation a
     = Insert a
@@ -151,26 +167,39 @@ instance FromJSON Maybe a => FromData (Operation a) where
             _ -> Nothing
 
 instance (ToJSON m a, Monad m) => ToJSON m (Operation a) where
-    toJSON (Insert a) =
+    toJSON (Insert a) = do
+        v <- BL.unpack . renderCanonicalJSON <$> toJSON a
         object
-            ["operation" .= ("insert" :: String), "value" .= a]
-    toJSON (Delete a) =
+            ["type" .= ("insert" :: String), "value" .= v]
+    toJSON (Delete a) = do
+        v <- BL.unpack . renderCanonicalJSON <$> toJSON a
         object
-            ["operation" .= ("delete" :: String), "value" .= a]
-    toJSON (Update old new) =
+            ["type" .= ("delete" :: String), "value" .= v]
+    toJSON (Update old new) = do
+        oldValue <- BL.unpack . renderCanonicalJSON <$> toJSON old
+        newValue <- BL.unpack . renderCanonicalJSON <$> toJSON new
         object
-            [ "operation" .= ("update" :: String)
-            , "oldValue" .= old
-            , "newValue" .= new
+            [ "type" .= ("update" :: String)
+            , "oldValue" .= oldValue
+            , "newValue" .= newValue
             ]
 
 instance (ReportSchemaErrors m, FromJSON m a) => FromJSON m (Operation a) where
     fromJSON = withObject "Operation" $ \v -> do
-        op <- v .: "operation"
+        op <- v .: "type"
         case op of
-            JSString "insert" -> Insert <$> v .: "value"
-            JSString "delete" -> Delete <$> v .: "value"
-            JSString "update" -> Update <$> v .: "oldValue" <*> v .: "newValue"
+            JSString "insert" -> do
+                valueString <- v .: "value"
+                Insert <$> parseJSValue (B.pack valueString)
+            JSString "delete" -> do
+                valueString <- v .: "value"
+                Delete <$> parseJSValue (B.pack valueString)
+            JSString "update" -> do
+                oldValueString <- v .: "oldValue"
+                oldValue <- parseJSValue (B.pack oldValueString)
+                newValueString <- v .: "newValue"
+                newValue <- parseJSValue (B.pack newValueString)
+                pure $ Update oldValue newValue
             _ -> expectedButGotValue "Operation" op
 
 newtype Root = Root String
@@ -199,9 +228,9 @@ instance
     (FromJSON m k, FromJSON m v, ReportSchemaErrors m)
     => FromJSON m (Change k v)
     where
-    fromJSON = withObject "Change" $ \v -> do
+    fromJSON w = flip (withObject "Change") w $ \v -> do
         key <- v .: "key"
-        operation <- v .: "operation"
+        operation <- fromJSON w
         pure $ Change key operation
 
 instance
@@ -274,6 +303,12 @@ newtype Host = Host String
 newtype Address = Address Text
     deriving (Eq, Show)
 
+instance Monad m => ToJSON m Address where
+    toJSON (Address addr) = toJSON addr
+
+instance ReportSchemaErrors m => FromJSON m Address where
+    fromJSON v = Address <$> fromJSON v
+
 instance FromHttpApiData Address where
     parseUrlPiece addr =
         if T.null addr
@@ -301,7 +336,15 @@ instance Aeson.ToJSON SignedTx where
 newtype UnsignedTx = UnsignedTx
     { unsignedTransaction :: Text
     }
-    deriving (Show)
+    deriving (Show, Eq)
+
+instance Aeson.FromJSON UnsignedTx where
+    parseJSON = Aeson.withText "UnsignedTx" $ \v ->
+        pure (UnsignedTx v)
+
+instance Aeson.ToJSON UnsignedTx where
+    toJSON (UnsignedTx unsignedTransaction) =
+        Aeson.toJSON unsignedTransaction
 
 instance Monad m => ToJSON m UnsignedTx where
     toJSON (UnsignedTx unsignedTransaction) =
@@ -315,7 +358,7 @@ instance ReportSchemaErrors m => FromJSON m UnsignedTx where
             <$> v .: "unsignedTransaction"
 
 data WithUnsignedTx a = WithUnsignedTx
-    { unsignedTransaction :: Text
+    { unsignedTransaction :: UnsignedTx
     , value :: Maybe a
     }
     deriving (Show, Functor, Eq)
@@ -341,10 +384,18 @@ instance (Aeson.ToJSON a) => Aeson.ToJSON (WithUnsignedTx a) where
             ]
 
 newtype TxHash = TxHash
-    { txHash :: Text
+    { textOf :: Text
     }
     deriving (Eq, Show)
 
+instance FromHttpApiData TxHash where
+    parseUrlPiece textOf =
+        if T.null textOf
+            then Left "TxHash cannot be empty"
+            else Right (TxHash{textOf})
+
+instance ToHttpApiData TxHash where
+    toUrlPiece (TxHash txHash) = txHash
 instance Aeson.FromJSON TxHash where
     parseJSON = Aeson.withObject "TxHash" $ \v ->
         TxHash
@@ -361,14 +412,14 @@ instance Monad m => ToJSON m TxHash where
         object
             [ "txHash" .= txHash
             ]
-data WithTxHash = WithTxHash
-    { txHash :: Text
-    , value :: Maybe JSValue
+data WithTxHash a = WithTxHash
+    { txHash :: TxHash
+    , value :: Maybe a
     }
     deriving (Show)
 
-instance Monad m => ToJSON m WithTxHash where
-    toJSON (WithTxHash txHash value) =
+instance (Monad m, ToJSON m a) => ToJSON m (WithTxHash a) where
+    toJSON (WithTxHash (TxHash txHash) value) =
         object
             [ "txHash" .= txHash
             , "value" .= value
@@ -383,5 +434,6 @@ instance Exception SignTxError
 
 data Wallet = Wallet
     { address :: Address
+    , owner :: Owner
     , sign :: UnsignedTx -> Either SignTxError SignedTx
     }

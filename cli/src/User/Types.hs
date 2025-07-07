@@ -10,12 +10,13 @@ module User.Types
     , Reason (..)
     , Phase (..)
     , URL (..)
-    , RegisterPublicKey (..)
+    , RegisterUserKey (..)
     , RegisterRoleKey (..)
-    , Direction (..)
     )
 where
 
+import Control.Applicative (Alternative)
+import Control.Monad (guard)
 import Core.Types
     ( Directory (..)
     , Platform (..)
@@ -125,27 +126,33 @@ data Reason
     | UnacceptableRequester
     deriving (Eq, Show)
 
-toJSONReason :: Monad m => Reason -> m JSValue
-toJSONReason UnacceptableDuration = stringJSON "unacceptable duration"
-toJSONReason UnacceptablePlatform = stringJSON "unacceptable platform"
-toJSONReason UnacceptableRepository = stringJSON "unacceptable repository"
-toJSONReason UnacceptableCommit = stringJSON "unacceptable commit"
-toJSONReason UnacceptableRound = stringJSON "unacceptable round"
-toJSONReason UnacceptableRequester = stringJSON "unacceptable requester"
+instance Monad m => ToJSON m Reason where
+    toJSON UnacceptableDuration =
+        stringJSON "unacceptable duration"
+    toJSON UnacceptablePlatform =
+        stringJSON "unacceptable platform"
+    toJSON UnacceptableRepository =
+        stringJSON "unacceptable repository"
+    toJSON UnacceptableCommit =
+        stringJSON "unacceptable commit"
+    toJSON UnacceptableRound =
+        stringJSON "unacceptable round"
+    toJSON UnacceptableRequester =
+        stringJSON "unacceptable requester"
 
-fromJSONReason :: (ReportSchemaErrors m) => JSValue -> m Reason
-fromJSONReason (JSString jsString) = do
-    let reason = fromJSString jsString
-    case reason of
-        "unacceptable duration" -> pure UnacceptableDuration
-        "unacceptable platform" -> pure UnacceptablePlatform
-        "unacceptable repository" -> pure UnacceptableRepository
-        "unacceptable commit" -> pure UnacceptableCommit
-        "unacceptable round" -> pure UnacceptableRound
-        "unacceptable requester" -> pure UnacceptableRequester
-        _ -> expectedButGotValue "a valid reason" (JSString jsString)
-fromJSONReason other =
-    expectedButGotValue "a string representing a reason" other
+instance ReportSchemaErrors m => FromJSON m Reason where
+    fromJSON (JSString jsString) = do
+        let reason = fromJSString jsString
+        case reason of
+            "unacceptable duration" -> pure UnacceptableDuration
+            "unacceptable platform" -> pure UnacceptablePlatform
+            "unacceptable repository" -> pure UnacceptableRepository
+            "unacceptable commit" -> pure UnacceptableCommit
+            "unacceptable round" -> pure UnacceptableRound
+            "unacceptable requester" -> pure UnacceptableRequester
+            _ -> expectedButGotValue "a valid reason" (JSString jsString)
+    fromJSON other =
+        expectedButGotValue "a string representing a reason" other
 
 data TestRunState a where
     Pending :: Duration -> TestRunState PendingT
@@ -166,7 +173,7 @@ instance Monad m => ToJSON m (TestRunState a) where
         object
             [ ("phase", stringJSON "rejected")
             , ("pending", toJSON pending)
-            , ("reasons", traverse toJSONReason reasons >>= toJSON)
+            , ("reasons", traverse toJSON reasons >>= toJSON)
             ]
     toJSON (Accepted pending) =
         object
@@ -206,7 +213,7 @@ instance ReportSchemaErrors m => FromJSON m (TestRunState DoneT) where
             "rejected" -> do
                 pending <- getField "pending" mapping >>= fromJSON
                 reasons <- getListField "reasons" mapping
-                reasonList <- traverse fromJSONReason reasons
+                reasonList <- traverse fromJSON reasons
                 pure $ Rejected pending reasonList
             "finished" -> do
                 running <- getField "running" mapping >>= fromJSON
@@ -239,55 +246,44 @@ instance ReportSchemaErrors m => FromJSON m (TestRunState RunningT) where
             "an object representing an accepted phase"
             other
 
-data Direction = Insert | Delete
-    deriving (Eq, Show)
-
-data RegisterPublicKey = RegisterPublicKey
+data RegisterUserKey = RegisterUserKey
     { platform :: Platform
     , username :: Username
     , pubkeyhash :: PublicKeyHash
-    , direction :: Direction
     }
     deriving (Eq, Show)
 
-instance Monad m => ToJSON m RegisterPublicKey where
+instance Monad m => ToJSON m RegisterUserKey where
     toJSON
-        ( RegisterPublicKey
+        ( RegisterUserKey
                 (Platform platform)
                 (Username user)
                 (PublicKeyHash pubkeyhash)
-                direction
             ) =
             toJSON
                 $ Map.fromList
-                    [
-                        ( "type"
-                        , JSString $ toJSString $ case direction of
-                            Insert -> "register-user"
-                            Delete -> "unregister-user"
-                        )
+                    [ ("type", JSString $ toJSString "register-user")
                     , ("platform" :: String, JSString $ toJSString platform)
                     , ("user", JSString $ toJSString user)
                     , ("publickeyhash", JSString $ toJSString pubkeyhash)
                     ]
 
-instance (Monad m, ReportSchemaErrors m) => FromJSON m RegisterPublicKey where
+instance
+    (Alternative m, Monad m, ReportSchemaErrors m)
+    => FromJSON m RegisterUserKey
+    where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
         requestType <- mapping .: "type"
-        direction <- case requestType of
-            JSString "register-user" -> pure Insert
-            JSString "unregister-user" -> pure Delete
-            _ -> expectedButGotValue "a register user request" obj
+        guard $ requestType == JSString "register-user"
         platform <- getStringField "platform" mapping
         user <- getStringField "user" mapping
         pubkeyhash <- getStringField "publickeyhash" mapping
         pure
-            $ RegisterPublicKey
+            $ RegisterUserKey
                 { platform = Platform platform
                 , username = Username user
                 , pubkeyhash = PublicKeyHash pubkeyhash
-                , direction
                 }
     fromJSON r =
         expectedButGotValue
@@ -298,18 +294,14 @@ data RegisterRoleKey = RegisterRoleKey
     { platform :: Platform
     , repository :: Repository
     , username :: Username
-    , direction :: Direction
     }
     deriving (Eq, Show)
 
-instance ReportSchemaErrors m => FromJSON m RegisterRoleKey where
+instance (ReportSchemaErrors m, Alternative m) => FromJSON m RegisterRoleKey where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
         requestType <- mapping .: "type"
-        direction <- case requestType of
-            JSString "register-role" -> pure Insert
-            JSString "unregister-role" -> pure Delete
-            _ -> expectedButGotValue "a register role request" obj
+        guard $ requestType == JSString "register-role"
         platform <- mapping .: "platform"
         repository <- do
             repoMapping <- mapping .: "repository"
@@ -322,7 +314,6 @@ instance ReportSchemaErrors m => FromJSON m RegisterRoleKey where
                 { platform = Platform platform
                 , repository = repository
                 , username = Username user
-                , direction
                 }
     fromJSON r =
         expectedButGotValue
@@ -335,15 +326,9 @@ instance Monad m => ToJSON m RegisterRoleKey where
                 (Platform platform)
                 (Repository owner repo)
                 (Username user)
-                direction
             ) =
             object
-                [
-                    ( "type"
-                    , stringJSON $ case direction of
-                        Insert -> "register-role"
-                        Delete -> "unregister-role"
-                    )
+                [ ("type", stringJSON "register-role")
                 , ("platform", stringJSON platform)
                 ,
                     ( "repository"

@@ -7,8 +7,9 @@ module User.Requester.Cli
 
 import Core.Types
     ( TokenId
+    , TxHash
     , Wallet (..)
-    , WithTxHash
+    , WithTxHash (..)
     )
 import MPFS.API
     ( RequestDeleteBody (..)
@@ -17,74 +18,124 @@ import MPFS.API
     , requestInsert
     )
 import Servant.Client (ClientM)
-import Submitting (submitting)
-import Text.JSON.Canonical (JSValue (..), ToJSON (..))
+import Submitting (Submitting, signAndSubmit)
+import Text.JSON.Canonical (ToJSON (..))
 import User.Agent.Cli
     ( AgentCommand (..)
-    , AgentCommandCore (..)
     , agentCmd
     )
 import User.Types
-    ( Direction (..)
-    , Duration
-    , RegisterPublicKey (..)
+    ( Duration
+    , Phase (PendingT)
     , RegisterRoleKey (..)
+    , RegisterUserKey (..)
     , TestRun (..)
+    , TestRunState
     )
 
-data RequesterCommand
-    = RegisterUser RegisterPublicKey
-    | RegisterRole RegisterRoleKey
-    | RequestTest TestRun Duration
-    deriving (Eq, Show)
+data RequesterCommand a where
+    RegisterUser :: RegisterUserKey -> RequesterCommand TxHash
+    UnregisterUser
+        :: RegisterUserKey -> RequesterCommand TxHash
+    RegisterRole
+        :: RegisterRoleKey -> RequesterCommand TxHash
+    UnregisterRole
+        :: RegisterRoleKey -> RequesterCommand TxHash
+    RequestTest
+        :: TestRun
+        -> Duration
+        -> RequesterCommand (WithTxHash (TestRunState PendingT))
+
+deriving instance Show (RequesterCommand a)
+deriving instance Eq (RequesterCommand a)
 
 requesterCmd
-    :: Wallet -> TokenId -> RequesterCommand -> ClientM JSValue
-requesterCmd wallet tokenId command = do
+    :: Submitting
+    -> Wallet
+    -> TokenId
+    -> RequesterCommand a
+    -> ClientM a
+requesterCmd sbmt wallet tokenId command = do
     case command of
         RegisterUser request ->
-            manageUser wallet tokenId request >>= toJSON
+            registerUser sbmt wallet tokenId request
+        UnregisterUser request ->
+            unregisterUser sbmt wallet tokenId request
         RegisterRole request ->
-            manageRole wallet tokenId request >>= toJSON
+            registerRole sbmt wallet tokenId request
+        UnregisterRole request ->
+            unregisterRole sbmt wallet tokenId request
         RequestTest testRun duration ->
-            agentCmd wallet tokenId (AgentCommand $ Create testRun duration)
+            agentCmd sbmt wallet tokenId $ Create testRun duration
 
-manageUser
-    :: Wallet
+registerUser
+    :: Submitting
+    -> Wallet
     -> TokenId
-    -> RegisterPublicKey
-    -> ClientM WithTxHash
-manageUser
+    -> RegisterUserKey
+    -> ClientM TxHash
+registerUser
+    sbmt
     wallet
     tokenId
-    request@RegisterPublicKey{direction} =
-        submitting wallet $ \address -> do
+    request = fmap txHash
+        $ signAndSubmit sbmt wallet
+        $ \address -> do
             key <- toJSON request
-            value <- toJSON ("" :: String)
-            case direction of
-                Insert ->
-                    requestInsert address tokenId
-                        $ RequestInsertBody{key = key, value = value}
-                Delete ->
-                    requestDelete address tokenId
-                        $ RequestDeleteBody{key = key, value = value}
+            value <- toJSON ()
+            requestInsert address tokenId
+                $ RequestInsertBody{key = key, value = value}
 
-manageRole
-    :: Wallet
+unregisterUser
+    :: Submitting
+    -> Wallet
+    -> TokenId
+    -> RegisterUserKey
+    -> ClientM TxHash
+unregisterUser
+    sbmt
+    wallet
+    tokenId
+    request = fmap txHash
+        $ signAndSubmit sbmt wallet
+        $ \address -> do
+            key <- toJSON request
+            value <- toJSON ()
+            requestDelete address tokenId
+                $ RequestDeleteBody{key = key, value = value}
+
+registerRole
+    :: Submitting
+    -> Wallet
     -> TokenId
     -> RegisterRoleKey
-    -> ClientM WithTxHash
-manageRole
+    -> ClientM TxHash
+registerRole
+    sbmt
     wallet
     tokenId
-    request@RegisterRoleKey{direction} =
-        submitting wallet $ \address -> do
+    request = fmap txHash
+        $ signAndSubmit sbmt wallet
+        $ \address -> do
             key <- toJSON request
-            value <- toJSON ("" :: String)
-            case direction of
-                Insert ->
-                    requestInsert address tokenId
-                        $ RequestInsertBody{key = key, value = value}
-                Delete ->
-                    requestDelete address tokenId
-                        $ RequestDeleteBody{key = key, value = value}
+            value <- toJSON ()
+            requestInsert address tokenId
+                $ RequestInsertBody{key = key, value = value}
+
+unregisterRole
+    :: Submitting
+    -> Wallet
+    -> TokenId
+    -> RegisterRoleKey
+    -> ClientM TxHash
+unregisterRole
+    sbmt
+    wallet
+    tokenId
+    request = fmap txHash
+        $ signAndSubmit sbmt wallet
+        $ \address -> do
+            key <- toJSON request
+            value <- toJSON ()
+            requestDelete address tokenId
+                $ RequestDeleteBody{key = key, value = value}

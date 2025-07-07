@@ -13,6 +13,9 @@ module MPFS.API
     , RequestInsertBody (..)
     , RequestDeleteBody (..)
     , RequestUpdateBody (..)
+    , getTransaction
+    , bootToken
+    , endToken
     ) where
 
 import Core.Types
@@ -32,7 +35,12 @@ import Data.Aeson
     , (.:)
     , (.=)
     )
+import Data.Aeson.KeyMap qualified as Aeson
+import Data.Aeson.Types (parseMaybe)
 import Data.Data (Proxy (..))
+import Data.Maybe (fromMaybe)
+import Data.String (IsString)
+import Data.Traversable (for)
 import Lib.JSON
     ( fromAesonString
     , fromAesonThrow
@@ -43,14 +51,16 @@ import Servant.API
     , Get
     , JSON
     , Post
+    , QueryParam'
     , QueryParams
     , ReqBody
+    , Required
     , (:<|>) (..)
     , type (:>)
     )
 import Servant.Client (ClientM, client)
 import Text.JSON.Canonical
-    ( JSValue
+    ( JSValue (..)
     )
 
 data RequestInsertBody = RequestInsertBody
@@ -110,6 +120,19 @@ instance FromJSON RequestUpdateBody where
             <*> (o .: "oldValue" >>= fromAesonString)
             <*> (o .: "newValue" >>= fromAesonString)
 
+type BootToken =
+    "transaction"
+        :> Capture "address" Address
+        :> "boot-token"
+        :> Get '[JSON] (WithUnsignedTx Value)
+
+type EndToken =
+    "transaction"
+        :> Capture "address" Address
+        :> "end-token"
+        :> Capture "tokenId" TokenId
+        :> Get '[JSON] (WithUnsignedTx Value)
+
 type RequestInsert =
     "transaction"
         :> Capture "address" Address
@@ -144,6 +167,7 @@ type RetractChange =
 type UpdateToken =
     "transaction"
         :> Capture "address" Address
+        :> "update-token"
         :> Capture "tokenId" TokenId
         :> QueryParams "request" RequestRefId
         :> Get '[JSON] (WithUnsignedTx Value)
@@ -169,8 +193,15 @@ type WaitNBlocks =
         :> Capture "n" Int
         :> Get '[JSON] Value
 
+type GetTransaction =
+    "transaction"
+        :> QueryParam' '[Required] "txHash" TxHash
+        :> Get '[JSON] Value
+
 type TokenAPI =
-    RequestInsert
+    BootToken
+        :<|> EndToken
+        :<|> RequestInsert
         :<|> RequestDelete
         :<|> RequestUpdate
         :<|> RetractChange
@@ -179,10 +210,19 @@ type TokenAPI =
         :<|> GetTokenFacts
         :<|> SubmitTransaction
         :<|> WaitNBlocks
+        :<|> GetTransaction
 
 tokenApi :: Proxy TokenAPI
 tokenApi = Proxy
 
+bootToken
+    :: Address -> ClientM (WithUnsignedTx JSValue)
+bootToken address =
+    fmap fromAesonThrow <$> bootToken' address
+endToken
+    :: Address -> TokenId -> ClientM (WithUnsignedTx JSValue)
+endToken address tokenId =
+    fmap fromAesonThrow <$> endToken' address tokenId
 requestInsert
     :: Address
     -> TokenId
@@ -218,11 +258,31 @@ updateToken address tokenId requests =
 getToken :: TokenId -> ClientM JSValue
 getToken tokenId = fromAesonThrow <$> getToken' tokenId
 getTokenFacts :: TokenId -> ClientM JSValue
-getTokenFacts tokenId = fromAesonThrow <$> getTokenFacts' tokenId
+getTokenFacts tokenId = do
+    aesonFacts <- getTokenFacts' tokenId
+    pure
+        $ fromMaybe JSNull
+        $ case aesonFacts of
+            Object obj -> do
+                es <- for (Aeson.toList obj) $ \(key, value) -> do
+                    key' <- parseMaybe fromAesonString $ toJSON key
+                    value' <- parseMaybe fromAesonString value
+                    pure (key', value')
+                pure $ JSObject $ es >>= explode
+            _ -> error "getTokenFacts: expected JSObject"
+
+explode :: IsString a => (b, b) -> [(a, b)]
+explode (key, value) =
+    [ ("key", key)
+    , ("value", value)
+    ]
+
 submitTransaction :: SignedTx -> ClientM TxHash
 submitTransaction = submitTransaction'
 waitNBlocks :: Int -> ClientM JSValue
 waitNBlocks n = fromAesonThrow <$> waitNBlocks' n
+getTransaction :: TxHash -> ClientM JSValue
+getTransaction txHash = fromAesonThrow <$> getTransaction' txHash
 
 requestInsert'
     :: Address
@@ -247,7 +307,14 @@ getToken' :: TokenId -> ClientM Value
 getTokenFacts' :: TokenId -> ClientM Value
 submitTransaction' :: SignedTx -> ClientM TxHash
 waitNBlocks' :: Int -> ClientM Value
-requestInsert'
+getTransaction' :: TxHash -> ClientM Value
+bootToken'
+    :: Address -> ClientM (WithUnsignedTx Value)
+endToken'
+    :: Address -> TokenId -> ClientM (WithUnsignedTx Value)
+bootToken'
+    :<|> endToken'
+    :<|> requestInsert'
     :<|> requestDelete'
     :<|> requestUpdate'
     :<|> retractChange'
@@ -255,5 +322,6 @@ requestInsert'
     :<|> getToken'
     :<|> getTokenFacts'
     :<|> submitTransaction'
-    :<|> waitNBlocks' =
+    :<|> waitNBlocks'
+    :<|> getTransaction' =
         client tokenApi

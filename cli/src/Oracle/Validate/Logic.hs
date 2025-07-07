@@ -11,6 +11,7 @@ import Lib.JSON
     ( stringJSON
     )
 import Oracle.Types (Request (..), RequestZoo (..))
+import Servant.Client (ClientM)
 import Text.JSON.Canonical.Class (ToJSON (..))
 
 data ValidationResult
@@ -28,9 +29,8 @@ instance Monad m => ToJSON m ValidationResult where
         NotEvaluated -> stringJSON "not evaluated"
 
 validateRequest
-    :: Applicative m
-    => RequestZoo
-    -> m (RequestRefId, ValidationResult)
+    :: RequestZoo
+    -> ClientM (RequestRefId, ValidationResult)
 validateRequest (RegisterUserRequest (Request refId _owner _change)) =
     pure (refId, NotEvaluated)
 validateRequest (UnregisterUserRequest (Request refId _owner _change)) =
@@ -38,4 +38,12 @@ validateRequest (UnregisterUserRequest (Request refId _owner _change)) =
 validateRequest (RegisterRoleRequest (Request refId _owner _change)) =
     pure (refId, NotEvaluated)
 validateRequest (UnregisterRoleRequest (Request refId _owner _change)) =
+    pure (refId, NotEvaluated)
+validateRequest (CreateTestRequest (Request refId _owner _change)) =
+    pure (refId, NotEvaluated)
+validateRequest (RejectRequest (Request refId _owner _change)) =
+    pure (refId, NotEvaluated)
+validateRequest (AcceptRequest (Request refId _owner _change)) =
+    pure (refId, NotEvaluated)
+validateRequest (FinishedRequest (Request refId _owner _change)) =
     pure (refId, NotEvaluated)

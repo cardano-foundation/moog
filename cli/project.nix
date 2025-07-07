@@ -1,4 +1,5 @@
-{ CHaP, version, indexState, pkgs }:
+{ CHaP, version, indexState, pkgs, cardano-node, cardano-cli
+, cardano-submit-api, ... }:
 
 let
   libOverlay = { lib, pkgs, ... }: {
@@ -26,6 +27,9 @@ let
     buildInputs = [
       pkgs.gitAndTools.git
       pkgs.just
+      cardano-node
+      cardano-cli
+      cardano-submit-api
     ];
     shellHook = ''
       echo "Entering shell for anti CLI development"
@@ -46,4 +50,9 @@ in {
   inherit project;
   inherit version;
   packages.anti = project.hsPkgs.anti.components.exes.anti;
+  packages.wallet = project.hsPkgs.anti.components.exes.wallet;
+  packages.cardano-node = cardano-node;
+  packages.cardano-cli = cardano-cli;
+  packages.cardano-submit-api = cardano-submit-api;
+
 }

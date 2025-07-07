@@ -7,6 +7,8 @@ module Options
     ) where
 
 import Cli (Command (..))
+import Core.Options (outputReferenceParser)
+import Lib.Box (Box (..), fmapBox)
 import Options.Applicative
     ( Parser
     , command
@@ -22,34 +24,60 @@ import Options.Applicative
     , (<**>)
     )
 import Oracle.Options (oracleCommandParser)
-import User.Options (userCommandParser)
+import User.Agent.Options (agentCommandParser)
+import User.Requester.Options (requesterCommandParser)
+import Wallet.Options (walletCommandParser)
 
-newtype Options = Options
-    { optionsCommand :: Command
+newtype Options a = Options
+    { optionsCommand :: Command a
     }
     deriving (Eq, Show)
 
-commandParser :: Parser Command
+commandParser :: Parser (Box Command)
 commandParser =
     hsubparser
         ( command
             "oracle"
             ( info
-                (OracleCommand <$> oracleCommandParser <**> helper)
-                (progDesc "Oracle services")
+                (fmapBox OracleCommand <$> oracleCommandParser)
+                (progDesc "Manage token updates")
             )
             <> command
-                "user"
+                "requester"
                 ( info
-                    (UserCommand <$> userCommandParser <**> helper)
-                    (progDesc "Manage user requests")
+                    (fmapBox RequesterCommand <$> requesterCommandParser)
+                    (progDesc "Manage requester changes")
+                )
+            <> command
+                "retract"
+                ( info
+                    retractRequestOptions
+                    (progDesc "Retract a change")
+                )
+            <> command
+                "facts"
+                ( info
+                    (pure . Box $ GetFacts)
+                    (progDesc "Get token facts")
+                )
+            <> command
+                "agent"
+                ( info
+                    (fmapBox AgentCommand <$> agentCommandParser)
+                    (progDesc "Manage agent changes")
+                )
+            <> command
+                "wallet"
+                ( info
+                    (fmapBox Wallet <$> walletCommandParser)
+                    (progDesc "Manage wallet operations")
                 )
         )
 
-optionsParser :: Parser Options
-optionsParser = Options <$> commandParser
+optionsParser :: Parser (Box Options)
+optionsParser = fmapBox Options <$> commandParser
 
-parseArgs :: [String] -> IO Options
+parseArgs :: [String] -> IO (Box Options)
 parseArgs args = handleParseResult $ execParserPure defaultPrefs opts args
   where
     opts =
@@ -59,3 +87,8 @@ parseArgs args = handleParseResult $ execParserPure defaultPrefs opts args
                 <> progDesc "Antithesis CLI"
                 <> header "anti - A tool for managing Antithesis test runs"
             )
+
+retractRequestOptions :: Parser (Box Command)
+retractRequestOptions =
+    Box . RetractRequest
+        <$> outputReferenceParser

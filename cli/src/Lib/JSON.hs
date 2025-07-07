@@ -30,8 +30,9 @@ module Lib.JSON
     )
 where
 
+import Control.Applicative (Alternative)
 import Control.Monad (MonadPlus (..), (<=<))
-import Control.Monad.Trans.Maybe (MaybeT)
+import Control.Monad.Trans.Except (ExceptT)
 import Data.Aeson (Value, decode, encode)
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Types qualified as AesonInternal
@@ -217,19 +218,26 @@ instance {-# OVERLAPPING #-} ReportSchemaErrors Maybe where
     expected _expectedValue _gotValue = Nothing
 
 parseJSValue
-    :: FromJSON Maybe a
+    :: (FromJSON m a, ReportSchemaErrors m)
     => StrictByteString
-    -> Maybe a
+    -> m a
 parseJSValue b = do
     js <- case parseCanonicalJSON (BL.fromStrict b) of
-        Left _err -> Nothing
-        Right js -> Just js
+        Left err -> expected "JSValue" (Just err)
+        Right js -> pure js
     fromJSON js
 
 newtype Parsing m a = Parsing
-    { runParsing :: MaybeT m a
+    { runParsing :: ExceptT String m a
     }
-    deriving (Functor, Applicative, Monad)
+    deriving (Functor, Applicative, Monad, Alternative)
 
 instance Monad m => ReportSchemaErrors (Parsing m) where
     expected _expct _actual = Parsing mzero
+
+instance Applicative m => ToJSON m () where
+    toJSON () = pure JSNull
+
+instance (ReportSchemaErrors m) => FromJSON m () where
+    fromJSON JSNull = pure ()
+    fromJSON v = expectedButGotValue "()" v

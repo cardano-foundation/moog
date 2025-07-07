@@ -13,9 +13,11 @@ compose/.testnet.yaml
 
 # haskell
 dist-newstyle
+
+# dotfiles
 .direnv
 .vscode
-cli/.vscode/settings.json
-cli/result
-cli/test.json
-cli/tx.json
+cli/.vscode
+
+# locals
+cli/tmp

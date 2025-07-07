@@ -19,7 +19,7 @@ validateCommandParser :: Parser ValidateCommand
 validateCommandParser =
     hsubparser
         ( command
-            "validate requests"
+            "validate"
             ( info
                 (pure ValidateRequests <**> helper)
                 (progDesc "Validate all requests")

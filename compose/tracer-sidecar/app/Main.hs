@@ -74,7 +74,7 @@ main = do
 
     writeSdkJsonl $ sometimesTracesDeclaration "finds all node log files"
 
-    files <- waitFor (jsonFiles dir) $ \files -> do
+    files <- waitFor (nodeLogFiles dir) $ \files -> do
         threadDelay 2000000 -- allow log files to be created
         putStrLn $ unlines $
             [ "Looking for " <> show nPools <> " log files, found "
@@ -104,19 +104,11 @@ main = do
 
 -- utils -----------------------------------------------------------------------
 
--- | Recursively find .json files in a directory
-jsonFiles :: FilePath -> IO [FilePath]
-jsonFiles dir = do
+nodeLogFiles :: FilePath -> IO [FilePath]
+nodeLogFiles dir = do
   entries <- listDirectory dir
-  let paths = map (dir </>) entries
-
-  files <- filterM doesFileExist paths
-  dirs  <- filterM doesDirectoryExist paths
-
-  let jsonHere = filter ((== ".json") . takeExtension) files
-  jsonInSubDirs <- concat <$> forM dirs jsonFiles
-
-  pure (jsonHere ++ jsonInSubDirs)
+  let paths = map (\node -> dir </> node </> "node.json") entries
+  filterM doesFileExist paths
 
 tailJsonLines :: FilePath -> (LogMessage -> IO ()) -> IO ()
 tailJsonLines path action = tailLines path $ \bs ->

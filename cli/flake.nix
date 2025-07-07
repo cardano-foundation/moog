@@ -1,6 +1,10 @@
 {
   description = "Antithesis CLI";
-
+  nixConfig = {
+    extra-substituters = [ "https://cache.iog.io" ];
+    extra-trusted-public-keys =
+      [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
+  };
   inputs = {
     haskellNix.url = "github:input-output-hk/haskell.nix";
     nixpkgs.url = "github:NixOS/nixpkgs";
@@ -15,9 +19,13 @@
       url = "github:intersectmbo/cardano-haskell-packages?ref=repo";
       flake = false;
     };
+    cardano-node-runtime = {
+      url = "github:IntersectMBO/cardano-node?ref=10.1.4";
+    };
   };
 
-  outputs = inputs@{ self, nixpkgs, flake-utils, haskellNix, CHaP, iohkNix, ... }:
+  outputs = inputs@{ self, nixpkgs, flake-utils, haskellNix, CHaP, iohkNix
+    , cardano-node-runtime, ... }:
     let
       lib = nixpkgs.lib;
       version = self.dirtyShortRev or self.shortRev;
@@ -34,6 +42,10 @@
 
       perSystem = system:
         let
+          node-pkgs = cardano-node-runtime.project.${system}.pkgs;
+          cardano-node = node-pkgs.cardano-node;
+          cardano-cli = node-pkgs.cardano-cli;
+          cardano-submit-api = node-pkgs.cardano-submit-api;
           pkgs = import nixpkgs {
             overlays = [
               iohkNix.overlays.crypto # modified crypto libs
@@ -49,8 +61,10 @@
           inherit CHaP;
           inherit version;
           inherit pkgs;
+          inherit cardano-node;
+          inherit cardano-cli;
+          inherit cardano-submit-api;
         };
 
-    in flake-utils.lib.eachSystem
-    [ "x86_64-linux" "aarch64-darwin" ] perSystem;
+    in flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] perSystem;
 }

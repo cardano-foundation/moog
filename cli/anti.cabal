@@ -90,6 +90,7 @@ library
     Cli
     Core.Options
     Core.Types
+    Lib.Box
     Lib.JSON
     MPFS.API
     Options
@@ -108,11 +109,13 @@ library
     Oracle.Validate.Options
     Submitting
     User.Agent.Cli
-    User.Cli
-    User.Options
+    User.Agent.Options
     User.Requester.Cli
     User.Requester.Options
     User.Types
+    Wallet.Cli
+    Wallet.Options
+    Words
 
   -- Modules included in this library but not exported.
   -- other-modules:
@@ -134,13 +137,16 @@ library
     , cardano-ledger-binary  ^>=1.6.0.0
     , cardano-ledger-core    ^>=1.17.0.0
     , containers             ^>=0.6.8
+    , exceptions
     , http-client
     , http-client-tls
     , lens
     , optparse-applicative
     , plutus-tx
+    , random
     , servant
     , servant-client
+    , string-qq
     , text
     , transformers
     , wreq
@@ -156,7 +162,7 @@ executable anti
   import:           warnings
 
   -- .hs or .lhs file containing the Main module.
-  main-is:          Main.hs
+  main-is:          app/Main.hs
 
   -- Modules included in this executable, other than Main.
   -- other-modules:
@@ -172,7 +178,33 @@ executable anti
     , canonical-json
 
   -- Directories containing source files.
-  hs-source-dirs:   app
+
+  -- Base language which the package is written in.
+  default-language: Haskell2010
+
+executable wallet
+  -- Import common warning flags.
+  import:           warnings
+
+  -- .hs or .lhs file containing the Main module.
+  main-is:          app/Wallet.hs
+
+  -- Modules included in this executable, other than Main.
+  -- other-modules:
+
+  -- LANGUAGE extensions used by modules in this package.
+  -- other-extensions:
+
+  -- Other library packages from which modules are imported.
+  build-depends:
+    , aeson
+    , anti
+    , base
+    , bytestring
+    , optparse-applicative
+    , text
+
+  -- Directories containing source files.
 
   -- Base language which the package is written in.
   default-language: Haskell2010
@@ -186,10 +218,10 @@ test-suite anti-test
 
   -- Modules included in this executable, other than Main.
   other-modules:
-    Anti.APISpec
-    Anti.CliSpec
-    Anti.Server
+    CliSpec
     Lib.JSONSpec
+    MPFS.APISpec
+    MPFS.Server
     Oracle.Github.OracleValidationSpec
     User.TypesSpec
 
@@ -210,7 +242,6 @@ test-suite anti-test
     , aeson
     , aeson-qq                   ^>=0.8.4
     , anti
-    , async
     , base
     , base16-bytestring
     , bytestring
@@ -221,6 +252,7 @@ test-suite anti-test
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-strict-containers
+    , exceptions
     , hspec
     , http-client
     , http-client-tls
@@ -230,6 +262,5 @@ test-suite anti-test
     , servant-server
     , text
     , wai
-    , warp
 
   build-tool-depends: hspec-discover:hspec-discover

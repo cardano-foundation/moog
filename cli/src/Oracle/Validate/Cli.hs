@@ -7,7 +7,7 @@ module Oracle.Validate.Cli
     ) where
 
 import Control.Monad (forM)
-import Control.Monad.Trans.Maybe (MaybeT (..))
+import Control.Monad.Trans.Except (runExceptT)
 import Core.Types
     ( RequestRefId (..)
     , TokenId
@@ -46,13 +46,13 @@ validateCmd tk command = do
             canonicalJSON <- getToken tk
             requests <- do
                 v <-
-                    runMaybeT
+                    runExceptT
                         $ runParsing
                         $ fromJSON canonicalJSON
                         <&> tokenRequests
                 case v of
-                    Nothing -> error "Failed to parse token"
-                    Just jsValue -> pure jsValue
+                    Left e -> error $ "Failed to parse token: " ++ e
+                    Right jsValue -> pure jsValue
             forM requests $ \request -> do
                 validateRequest request >>= uncurry mkResult
     toJSON rus

@@ -4,18 +4,17 @@ module User.Requester.Options
     ( requesterCommandParser
     , addPublicKeyOptions
     , addRoleOptions
-    , retractRequestOptions
     ) where
 
 import Core.Options
     ( commitOption
     , directoryOption
-    , outputReferenceParser
     , platformOption
     , pubkeyhashOption
     , repositoryOption
     , usernameOption
     )
+import Core.Types (TxHash, WithTxHash)
 import Options.Applicative
     ( Parser
     , command
@@ -23,97 +22,90 @@ import Options.Applicative
     , info
     , progDesc
     )
-import User.Cli (UserCommand (..))
+import Oracle.Token.Options (Box (..))
 import User.Requester.Cli (RequesterCommand (..))
 import User.Types
-    ( Direction (..)
-    , Duration (..)
-    , RegisterPublicKey (..)
+    ( Duration (..)
+    , Phase (PendingT)
     , RegisterRoleKey (..)
+    , RegisterUserKey (..)
     , TestRun (..)
+    , TestRunState
     )
 
-addPublicKeyOptions :: Parser RequesterCommand
+addPublicKeyOptions :: Parser (RequesterCommand TxHash)
 addPublicKeyOptions =
     RegisterUser
-        <$> ( RegisterPublicKey
+        <$> ( RegisterUserKey
                 <$> platformOption
                 <*> usernameOption
                 <*> pubkeyhashOption
-                <*> pure Insert
             )
 
-removePublicKeyOptions :: Parser RequesterCommand
+removePublicKeyOptions :: Parser (RequesterCommand TxHash)
 removePublicKeyOptions =
-    RegisterUser
-        <$> ( RegisterPublicKey
+    UnregisterUser
+        <$> ( RegisterUserKey
                 <$> platformOption
                 <*> usernameOption
                 <*> pubkeyhashOption
-                <*> pure Delete
             )
 
-addRoleOptions :: Parser RequesterCommand
+addRoleOptions :: Parser (RequesterCommand TxHash)
 addRoleOptions =
     RegisterRole
         <$> ( RegisterRoleKey
                 <$> platformOption
                 <*> repositoryOption
                 <*> usernameOption
-                <*> pure Insert
             )
 
-removeRoleOptions :: Parser RequesterCommand
+removeRoleOptions :: Parser (RequesterCommand TxHash)
 removeRoleOptions =
-    RegisterRole
+    UnregisterRole
         <$> ( RegisterRoleKey
                 <$> platformOption
                 <*> repositoryOption
                 <*> usernameOption
-                <*> pure Delete
             )
 
-retractRequestOptions :: Parser UserCommand
-retractRequestOptions =
-    RetractRequest
-        <$> outputReferenceParser
-
-requesterCommandParser :: Parser RequesterCommand
+requesterCommandParser :: Parser (Box RequesterCommand)
 requesterCommandParser =
     hsubparser
         ( command
-            "test"
+            "create-test"
             ( info
-                requestTestOptions
-                (progDesc "Request a test on a specific platform")
+                (Box <$> requestTestOptions)
+                (progDesc "Request an antithesis test run")
             )
             <> command
-                "register-public-key"
+                "register-user"
                 ( info
-                    addPublicKeyOptions
+                    (Box <$> addPublicKeyOptions)
                     (progDesc "Register a user public key")
                 )
             <> command
-                "unregister-public-key"
+                "unregister-user"
                 ( info
-                    removePublicKeyOptions
+                    (Box <$> removePublicKeyOptions)
                     (progDesc "Unregister a user public key")
                 )
             <> command
                 "register-role"
                 ( info
-                    addRoleOptions
+                    (Box <$> addRoleOptions)
                     (progDesc "Add a user to a repository")
                 )
             <> command
                 "unregister-role"
                 ( info
-                    removeRoleOptions
+                    (Box <$> removeRoleOptions)
                     (progDesc "Remove a user from a repository")
                 )
         )
 
-requestTestOptions :: Parser RequesterCommand
+requestTestOptions
+    :: Parser (RequesterCommand (WithTxHash (TestRunState PendingT)))
 requestTestOptions =
     RequestTest
         <$> ( TestRun
