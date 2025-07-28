@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 FROM --platform=linux/amd64 docker.io/debian:stable-slim AS build
 
 ARG BLST_VERSION="${BLST_VERSION:-0.3.11}"
