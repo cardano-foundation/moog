@@ -59,6 +59,8 @@ services:
       dockerfile: "Dockerfile.dingo"
       args:
         DINGO_VERSION: '0.13.0'
+      additional_contexts:
+        local: .
     volumes:
       - d1:/data/db
     ports:

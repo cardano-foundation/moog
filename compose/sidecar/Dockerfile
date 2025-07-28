@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.4
 ARG CARDANO_CLI_VERSION="10.8.0.0"
 # Blink Labs images are built from source on Debian Bookworm
 FROM ghcr.io/blinklabs-io/cardano-cli:${CARDANO_CLI_VERSION} AS cardano-cli
