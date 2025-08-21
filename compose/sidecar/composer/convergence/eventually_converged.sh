@@ -76,27 +76,29 @@ validate_block_hash() {
 # Establish run order
 main() {
     verify_environment_variables
+
+    timeout_seconds=$((1*60*60))
+
+    start_ts="$(date -u +%s)"
+    deadline_ts="$(( start_ts + timeout_seconds))"
+
+    echo "will retry convergence check until $deadline_ts"
+
     while true; do
         status=1
-
-        for i in {1..100}; do
-            validate_block_hash
-            if [ "${status}" -eq 0 ]; then
-                break
-            else
-                sleep 2
-            fi
-        done
+        validate_block_hash
 
         if [ "${status}" -eq 0 ]; then
             echo "${message}"
             exit 0
-        else
-            echo "[{\"status\":\"diverged\"}]"
-            exit 1
         fi
 
-        sleep 300
+        now_ts="$(date -u +%s)"
+        if (( now_ts >= deadline_ts )); then
+            echo "${message}"
+            exit 1
+        fi
+        sleep 2
     done
 }
 
