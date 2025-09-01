@@ -114,17 +114,15 @@ anti: TESTNET ## Run Antithesis job
 	--arg description   '${description}' \
 	--arg duration      '${duration}' \
 	--arg config_image  '${antithesis_registry}/config:latest' \
-	--arg images        'ghcr.io/intersectmbo/cardano-node:latest;${antithesis_antithesis_registry}/sidecar:latest;${antithesis_registry}/tracer:latest;${antithesis_registry}/tracer-sidecar:latest;${antithesis_registry}/configurator:latest' \
+	--arg images        'ghcr.io/intersectmbo/cardano-node:latest;${antithesis_registry}/sidecar:latest;${antithesis_registry}/tracer:latest;${antithesis_registry}/tracer-sidecar:latest;${antithesis_registry}/configurator:latest' \
 	--arg recipients    '${recipients}' \
-	'{params: {"antithesis.description": $$description,"custom.duration": $$duration,"antithesis.config_image": $$config_image,"antithesis.images": $$images,"antithesis.report.recipients": $$recipients}}')"
+	'{params: {"antithesis.description": $$description,"custom.duration": $$duration,"antithesis.config_image": $$config_image \
+		,"antithesis.images": $$images,"antithesis.report.recipients": $$recipients}}')"
 
 anti-debug: ## Request debugger session
 	curl --fail -u "${username}:${password}" \
        -X POST https://cardano.antithesis.com/api/v1/launch/debugging \
-       -d '{"params": { \
-           "antithesis.debugging.session_id":"${session_id}",   \
-           "antithesis.debugging.input_hash":"${input_hash}" ,  \
-           "antithesis.debugging.vtime":"${vtime}", \
+       bugging.vtime":"${vtime}", \
            "antithesis.report.recipients":"hal@cardanofoundation.org" \
        }}'
 
