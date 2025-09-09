@@ -20,6 +20,24 @@ test:
   #!/usr/bin/env bash
   cabal test --enable-tests --enable-benchmarks
 
+local-testnet:
+  #!/usr/bin/env bash
+  cd ../compose/testnets/cardano_node_with_adversary
+  INTERNAL_NETWORK=false docker compose up
+
+antithesis-build:
+  #!/usr/bin/env bash
+  cd ../compose
+  make build-shared testnet=cardano_node_with_adversary
+  make build-config testnet=cardano_node_with_adversary
+
+antithesis-push-test:
+  #!/usr/bin/env bash
+  cd ../compose
+  make push-shared
+  make push-config
+  make anti testnet=cardano_node_with_adversary password=$ANTITHESIS_PASSWORD duration=1 && date
+
 CI:
   #!/usr/bin/env bash
   just format
