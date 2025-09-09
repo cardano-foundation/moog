@@ -5,6 +5,7 @@ module Adversary
     ( adversary
     , Message (..)
     , toString
+    , selectPointFromFile
     , readChainPoint
     , originPoint
     ) where
@@ -58,9 +59,10 @@ histogram :: Ord a => [a] -> [(a, Int)]
 histogram = Map.toList . Map.fromListWith (+) . map (,1)
 
 adversary :: [String] -> IO Message
-adversary args@( magicArg : port : limitArg : startPointArg : nConnectionsArg : hosts) = do
+adversary args@( magicArg : port : limitArg : chainPointsFilePath : nConnectionsArg : hosts) = do
     putStrLn $ toString $ Startup args
     let magic = NetworkMagic{unNetworkMagic = read magicArg}
+    startPointArg <- selectPointFromFile <$> readFile chainPointsFilePath
     let (startPoint :: Point) =
             fromMaybe (error "invalid chain point") $ readChainPoint startPointArg
     let (nConnections :: Int) = read nConnectionsArg
@@ -78,6 +80,9 @@ adversary args@( magicArg : port : limitArg : startPointArg : nConnectionsArg : 
 adversary _ =
     error
         "Expected network-magic, port, sync-length, startPoint, number-of-connections and list-of-hosts arguments"
+
+selectPointFromFile :: String -> String
+selectPointFromFile = head . lines
 
 toString :: Message -> String
 toString = TL.unpack . TL.decodeUtf8 . Aeson.encode

@@ -3,7 +3,7 @@
 set -o pipefail
 
 SHELL="/bin/bash"
-PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:$HOME/.local/bin"
+PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:$PATH"
 
 # Environment variables
 POOLS="${POOLS:-}"
@@ -19,14 +19,4 @@ LIMIT="${LIMIT:-100}"
 echo "Checking flaky chain sync among the following nodes"
 printf '%s\n' "${NODES[@]}"
 
-# TODO: select randomly
-TESTED_POOL="${NODES[0]}"
-
-# We may want to move this logic to the haskell code
-if [[ -f "$CHAINPOINT_FILEPATH" ]]; then
-  POINT=$(cat $CHAINPOINT_FILEPATH | sort | uniq | shuf | head -1)
-else
-  POINT="origin"
-fi
-
-adversary "$NETWORKMAGIC" "$PORT" "$LIMIT" "$POINT" 100 "${NODES[@]}"
+adversary "$NETWORKMAGIC" "$PORT" "$LIMIT" "$CHAINPOINT_FILEPATH" 100 "${NODES[@]}"
