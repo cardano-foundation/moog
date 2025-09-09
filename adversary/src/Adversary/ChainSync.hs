@@ -147,7 +147,8 @@ repeatedClientChainSync
     -> IO [Either SomeException Point]
 repeatedClientChainSync nConns magic peerNames peerPort startingPoint limit =
     mapConcurrently
-        (\(_i, peerName) -> clientChainSync magic peerName peerPort startingPoint limit)
+        ( \(_i, peerName) -> clientChainSync magic peerName peerPort startingPoint limit
+        )
         (zip [1 .. nConns] (cycle peerNames))
 
 clientChainSync

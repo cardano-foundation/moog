@@ -32,6 +32,7 @@ import Ouroboros.Network.Block qualified as Network
 import Ouroboros.Network.Magic (NetworkMagic (..))
 import Ouroboros.Network.Point (WithOrigin (..))
 import Ouroboros.Network.Point qualified as Point
+import System.Random (StdGen, newStdGen, randomR)
 import Text.Read (readMaybe)
 
 originPoint :: Point
@@ -58,22 +59,32 @@ instance FromJSON Point where
 histogram :: Ord a => [a] -> [(a, Int)]
 histogram = Map.toList . Map.fromListWith (+) . map (,1)
 
+readOrFail :: Read a => String -> String -> a
+readOrFail msg s =
+    fromMaybe
+        (error (msg <> " failed to read from " <> s))
+        (readMaybe s)
+
 adversary :: [String] -> IO Message
-adversary args@( magicArg : port : limitArg : chainPointsFilePath : nConnectionsArg : hosts) = do
+adversary args@( magicArg : port : limitArg : chainPointsFilePath : nConnectionsArg
+                    : hosts
+                ) = do
     putStrLn $ toString $ Startup args
-    let magic = NetworkMagic{unNetworkMagic = read magicArg}
-    startPointArg <- selectPointFromFile <$> readFile chainPointsFilePath
+    let magic = NetworkMagic{unNetworkMagic = readOrFail "magic" magicArg}
+    randomGen <- newStdGen
+    startPointArg <-
+        selectPointFromFile randomGen <$> readFile chainPointsFilePath
     let (startPoint :: Point) =
             fromMaybe (error "invalid chain point") $ readChainPoint startPointArg
-    let (nConnections :: Int) = read nConnectionsArg
+    let (nConnections :: Int) = readOrFail "nConnections" nConnectionsArg
     res <-
         repeatedClientChainSync
             nConnections
             magic
             hosts
-            (read port)
+            (readOrFail "port" port)
             startPoint
-            (read limitArg)
+            (readOrFail "limit" limitArg)
     pure
         $ Completed startPoint . histogram . map (either (Left . show) Right)
         $ res
@@ -81,8 +92,13 @@ adversary _ =
     error
         "Expected network-magic, port, sync-length, startPoint, number-of-connections and list-of-hosts arguments"
 
-selectPointFromFile :: String -> String
-selectPointFromFile = head . lines
+selectPointFromFile :: StdGen -> String -> String
+selectPointFromFile g = randomElement g . lines
+  where
+    randomElement :: StdGen -> [a] -> a
+    randomElement g' l =
+        let (randomIndex, _) = randomR (0, length l - 1) g' -- untested
+        in  l !! randomIndex
 
 toString :: Message -> String
 toString = TL.unpack . TL.decodeUtf8 . Aeson.encode

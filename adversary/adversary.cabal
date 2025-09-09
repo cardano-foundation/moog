@@ -55,6 +55,7 @@ library
     , ouroboros-network-framework
     , ouroboros-network-mock
     , ouroboros-network-protocols
+    , random
     , serialise
     , strict-stm
     , text
@@ -87,5 +88,6 @@ test-suite adversary-test
     , base
     , hspec
     , QuickCheck
+    , random
 
   build-tool-depends: hspec-discover:hspec-discover
