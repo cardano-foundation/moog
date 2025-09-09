@@ -5,6 +5,7 @@
 
 module Adversary.ChainSync
     ( clientChainSync
+    , repeatedClientChainSync
     , Limit (..)
     , Point
     , HeaderHash
@@ -12,6 +13,7 @@ module Adversary.ChainSync
 
 import Cardano.Chain.Slotting (EpochSlots (EpochSlots))
 import Codec.Serialise qualified as CBOR
+import Control.Concurrent.Async (mapConcurrently)
 import Control.Concurrent.Class.MonadSTM.Strict
     ( MonadSTM (STM, atomically)
     , StrictTVar
@@ -134,6 +136,19 @@ type HeaderHash = Network.HeaderHash Block
 
 newtype Limit = Limit {limit :: Word32}
     deriving newtype (Show, Read, Eq, Ord)
+
+repeatedClientChainSync
+    :: Int
+    -> NetworkMagic
+    -> String
+    -> PortNumber
+    -> Point
+    -> Limit
+    -> IO [Either SomeException Point]
+repeatedClientChainSync n magic peerName peerPort startingPoint limit =
+    mapConcurrently
+        (\_i -> clientChainSync magic peerName peerPort startingPoint limit)
+        [1 .. n]
 
 clientChainSync
     :: NetworkMagic

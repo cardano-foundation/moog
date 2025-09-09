@@ -29,4 +29,4 @@ else
   POINT="origin"
 fi
 
-adversary "$NETWORKMAGIC" "$TESTED_POOL" "$PORT" "$LIMIT" "$POINT"
+adversary "$NETWORKMAGIC" "$TESTED_POOL" "$PORT" "$LIMIT" "$POINT" 100

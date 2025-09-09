@@ -1,12 +1,24 @@
+{-# LANGUAGE TupleSections #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
 
-module Adversary (adversary, Message (..), toString, readChainPoint, originPoint) where
+module Adversary
+    ( adversary
+    , Message (..)
+    , toString
+    , readChainPoint
+    , originPoint
+    ) where
 
-import Adversary.ChainSync (HeaderHash, Point, clientChainSync)
+import Adversary.ChainSync
+    ( HeaderHash
+    , Point
+    , repeatedClientChainSync
+    )
 import Data.Aeson (FromJSON, ToJSON, withText)
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as SBS
+import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
@@ -26,8 +38,10 @@ originPoint = Network.Point Origin
 
 data Message
     = Startup {arguments :: [String]}
-    | Completed {startPoint :: Point, endPoint :: Point}
-    | Failed {reason :: String}
+    | --    | Completed {startPoint :: Point, endPoint :: Point}
+      --    | Failed {reason :: String}
+      Completed
+        {startPoint :: Point, results :: [(Either String Point, Int)]}
     deriving (Eq, Show, Generic, FromJSON, ToJSON)
 
 instance ToJSON Point where
@@ -40,20 +54,32 @@ instance FromJSON Point where
             pure
             (readChainPoint $ T.unpack t)
 
+histogram :: Ord a => [a] -> [(a, Int)]
+histogram = Map.toList . Map.fromListWith (+) . map (,1)
+
 adversary :: [String] -> IO Message
-adversary args@(magicArg : host : port : limitArg : startPointArg : _) = do
+adversary args@( magicArg : host : port : limitArg : startPointArg : nConnectionsArg
+                    : _
+                ) = do
     putStrLn $ toString $ Startup args
     let magic = NetworkMagic{unNetworkMagic = read magicArg}
     let (startPoint :: Point) =
             fromMaybe (error "invalid chain point") $ readChainPoint startPointArg
+    let (nConnections :: Int) = read nConnectionsArg
     res <-
-        clientChainSync magic host (read port) startPoint (read limitArg)
-    case res of
-        Right endPoint -> pure $ Completed{startPoint, endPoint}
-        Left err -> pure $ Failed $ show err
+        repeatedClientChainSync
+            nConnections
+            magic
+            host
+            (read port)
+            startPoint
+            (read limitArg)
+    pure
+        $ Completed startPoint . histogram . map (either (Left . show) Right)
+        $ res
 adversary _ =
     error
-        "Expected network-magic, host, port, sync-length and startPoint arguments"
+        "Expected network-magic, host, port, sync-length, startPoint and number-of-connections arguments"
 
 toString :: Message -> String
 toString = TL.unpack . TL.decodeUtf8 . Aeson.encode
