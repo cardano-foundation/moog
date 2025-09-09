@@ -140,15 +140,15 @@ newtype Limit = Limit {limit :: Word32}
 repeatedClientChainSync
     :: Int
     -> NetworkMagic
-    -> String
+    -> [String]
     -> PortNumber
     -> Point
     -> Limit
     -> IO [Either SomeException Point]
-repeatedClientChainSync n magic peerName peerPort startingPoint limit =
+repeatedClientChainSync nConns magic peerNames peerPort startingPoint limit =
     mapConcurrently
-        (\_i -> clientChainSync magic peerName peerPort startingPoint limit)
-        [1 .. n]
+        (\(_i, peerName) -> clientChainSync magic peerName peerPort startingPoint limit)
+        (zip [1 .. nConns] (cycle peerNames))
 
 clientChainSync
     :: NetworkMagic
@@ -158,15 +158,15 @@ clientChainSync
     -> Limit
     -> IO (Either SomeException Point)
 clientChainSync magic peerName peerPort startingPoint limit = withIOManager $ \iocp -> do
-    AddrInfo{addrAddress} <- resolve
     chainvar <- newTVarIO (Chain.Genesis :: Chain Header)
 
     res <-
         -- To gracefully handle the node getting killed it seems we need
         -- the outer 'try', even if connectToNode already returns 'Either
         -- SomeException'.
-        try
-            $ connectToNode
+        try $ do
+            AddrInfo{addrAddress} <- resolve
+            connectToNode
                 (socketSnocket iocp)
                 makeSocketBearer
                 ConnectToArgs

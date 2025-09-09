@@ -3,7 +3,7 @@
 set -o pipefail
 
 SHELL="/bin/bash"
-PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin"
+PATH="/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin:$HOME/.local/bin"
 
 # Environment variables
 POOLS="${POOLS:-}"
@@ -29,4 +29,4 @@ else
   POINT="origin"
 fi
 
-adversary "$NETWORKMAGIC" "$TESTED_POOL" "$PORT" "$LIMIT" "$POINT" 100
+adversary "$NETWORKMAGIC" "$PORT" "$LIMIT" "$POINT" 100 "${NODES[@]}"
