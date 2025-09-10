@@ -66,28 +66,29 @@ readOrFail msg s =
         (readMaybe s)
 
 adversary :: [String] -> IO Message
-adversary args@( magicArg : port : limitArg : chainPointsFilePath : nConnectionsArg
-                    : hosts
-                ) = do
-    putStrLn $ toString $ Startup args
-    let magic = NetworkMagic{unNetworkMagic = readOrFail "magic" magicArg}
-    randomGen <- newStdGen
-    startPointArg <-
-        selectPointFromFile randomGen <$> readFile chainPointsFilePath
-    let (startPoint :: Point) =
-            fromMaybe (error "invalid chain point") $ readChainPoint startPointArg
-    let (nConnections :: Int) = readOrFail "nConnections" nConnectionsArg
-    res <-
-        repeatedClientChainSync
-            nConnections
-            magic
-            hosts
-            (readOrFail "port" port)
-            startPoint
-            (readOrFail "limit" limitArg)
-    pure
-        $ Completed startPoint . histogram . map (either (Left . show) Right)
-        $ res
+adversary
+    args@( magicArg : port : limitArg : chainPointsFilePath : nConnectionsArg
+                : hosts
+            ) = do
+        putStrLn $ toString $ Startup args
+        let magic = NetworkMagic{unNetworkMagic = readOrFail "magic" magicArg}
+        randomGen <- newStdGen
+        startPointArg <-
+            selectPointFromFile randomGen <$> readFile chainPointsFilePath
+        let (startPoint :: Point) =
+                fromMaybe (error "invalid chain point") $ readChainPoint startPointArg
+        let (nConnections :: Int) = readOrFail "nConnections" nConnectionsArg
+        res <-
+            repeatedClientChainSync
+                nConnections
+                magic
+                hosts
+                (readOrFail "port" port)
+                startPoint
+                (readOrFail "limit" limitArg)
+        pure
+            $ Completed startPoint . histogram . map (either (Left . show) Right)
+            $ res
 adversary _ =
     error
         "Expected network-magic, port, sync-length, startPoint, number-of-connections and list-of-hosts arguments"
@@ -109,8 +110,10 @@ readChainPoint str = case split (== '@') str of
     [blockHashStr, slotNoStr] -> do
         (hash :: HeaderHash) <-
             Consensus.OneEraHash . SBS.toShort
-                <$> ( either (const Nothing) Just
-                        $ B16.decode
+                <$> either
+                    (const Nothing)
+                    Just
+                    ( B16.decode
                         $ T.encodeUtf8
                         $ T.pack blockHashStr
                     )

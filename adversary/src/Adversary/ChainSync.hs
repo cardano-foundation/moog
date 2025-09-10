@@ -23,7 +23,9 @@ import Control.Concurrent.Class.MonadSTM.Strict
     , writeTVar
     )
 import Control.Exception (SomeException, try)
-import Control.Tracer (Contravariant (contramap), stdoutTracer)
+import Control.Tracer
+    ( nullTracer
+    )
 import Data.ByteString.Lazy qualified as LBS
 import Data.Data (Proxy (Proxy))
 import Data.List.NonEmpty qualified as NE
@@ -214,14 +216,15 @@ clientChainSync magic peerName peerPort startingPoint limit = withIOManager $ \i
             IO
             ()
             Void
-    app chainvar = demoProtocol2
-        $ InitiatorProtocolOnly
-        $ mkMiniProtocolCbFromPeer
-        $ \_ctx ->
-            ( contramap show stdoutTracer
-            , codecChainSync
-            , ChainSync.chainSyncClientPeer (client chainvar)
-            )
+    app chainvar =
+        demoProtocol2
+            $ InitiatorProtocolOnly
+            $ mkMiniProtocolCbFromPeer
+            $ const
+                ( nullTracer -- limit stdout for antithesis
+                , codecChainSync
+                , ChainSync.chainSyncClientPeer (client chainvar)
+                )
 
     client
         :: StrictTVar IO (Chain Header) -> ChainSyncClient Header Point Tip IO ()

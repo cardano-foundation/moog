@@ -5,10 +5,10 @@ import Adversary.ChainSync (Limit (..))
 import Data.Aeson (decode, encode)
 import Data.Aeson qualified as Aeson
 import Data.Maybe (fromMaybe)
+import System.Random (mkStdGen)
 import Test.Hspec (Spec, it, shouldBe, shouldContain, shouldNotBe)
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck (Arbitrary (arbitrary), Gen, Property, forAll)
-import System.Random (mkStdGen)
 
 spec :: Spec
 spec = do
@@ -42,18 +42,18 @@ spec = do
         lines sampleFile `shouldContain` [selectPointFromFile seed sampleFile]
 
     it "different seeds can yield different selections" $ do
-        let seed  = mkStdGen 0
+        let seed = mkStdGen 0
         let seed' = mkStdGen 5
-        let p  = selectPointFromFile seed sampleFile
+        let p = selectPointFromFile seed sampleFile
         let p' = selectPointFromFile seed' sampleFile
 
         p `shouldNotBe` p' -- for some seeds
 
         -- goldens:
-        (p, p') `shouldBe`
-            ( "8b5479c8fde9927dff66ba22242b76f821b8c6020fbf673e1afd94118c12fa59@172"
-            , "65ddb4e6d384fdf97afee9bee47785192cf0aa040764cb4f794d2a57255eb626@100"
-            )
+        (p, p')
+            `shouldBe` ( "8b5479c8fde9927dff66ba22242b76f821b8c6020fbf673e1afd94118c12fa59@172"
+                       , "65ddb4e6d384fdf97afee9bee47785192cf0aa040764cb4f794d2a57255eb626@100"
+                       )
 
 sampleFile :: String
 sampleFile =
