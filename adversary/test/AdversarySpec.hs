@@ -4,11 +4,18 @@ import Adversary
 import Adversary.ChainSync (Limit (..))
 import Data.Aeson (decode, encode)
 import Data.Aeson qualified as Aeson
+import Data.Foldable (forM_)
 import Data.Maybe (fromMaybe)
 import System.Random (mkStdGen)
 import Test.Hspec (Spec, it, shouldBe, shouldContain, shouldNotBe)
 import Test.Hspec.QuickCheck (prop)
-import Test.QuickCheck (Arbitrary (arbitrary), Gen, Property, forAll)
+import Test.QuickCheck
+    ( Arbitrary (arbitrary)
+    , Gen
+    , Positive (Positive)
+    , Property
+    , forAll
+    )
 
 spec :: Spec
 spec = do
@@ -37,15 +44,21 @@ spec = do
         let p = fromMaybe (error "failed reading point") $ readChainPoint str
         Aeson.decode (Aeson.encode p) `shouldBe` Just p
 
-    it "Selects a point from a file of points" $ do
-        let seed = mkStdGen 0
-        lines sampleFile `shouldContain` [selectPointFromFile seed sampleFile]
+    prop "Selects random points from a file of points" $ \(Positive len) (Positive entropy) -> do
+        let seed = mkStdGen entropy
+        forM_ (take len $ selectPointsFromFile seed sampleFile) $ \point ->
+            lines sampleFile `shouldContain` [point]
+
+    prop "selectPointsFromFile is infinite list" $ \(Positive len) (Positive entropy) -> do
+        let seed = mkStdGen entropy
+        let selection = take len $ selectPointsFromFile seed sampleFile
+        length selection `shouldBe` len
 
     it "different seeds can yield different selections" $ do
         let seed = mkStdGen 0
         let seed' = mkStdGen 5
-        let p = selectPointFromFile seed sampleFile
-        let p' = selectPointFromFile seed' sampleFile
+        let p = head $ selectPointsFromFile seed sampleFile
+        let p' = head $ selectPointsFromFile seed' sampleFile
 
         p `shouldNotBe` p' -- for some seeds
 

@@ -5,7 +5,7 @@ module Adversary
     ( adversary
     , Message (..)
     , toString
-    , selectPointFromFile
+    , selectPointsFromFile
     , readChainPoint
     , originPoint
     ) where
@@ -19,6 +19,7 @@ import Data.Aeson (FromJSON, ToJSON, withText)
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as SBS
+import Data.List (unfoldr)
 import Data.Map qualified as Map
 import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
@@ -74,9 +75,10 @@ adversary
         let magic = NetworkMagic{unNetworkMagic = readOrFail "magic" magicArg}
         randomGen <- newStdGen
         startPointArg <-
-            selectPointFromFile randomGen <$> readFile chainPointsFilePath
+            selectPointsFromFile randomGen <$> readFile chainPointsFilePath
         let (startPoint :: Point) =
-                fromMaybe (error "invalid chain point") $ readChainPoint startPointArg
+                fromMaybe (error "invalid chain point")
+                    $ readChainPoint (head startPointArg)
         let (nConnections :: Int) = readOrFail "nConnections" nConnectionsArg
         res <-
             repeatedClientChainSync
@@ -93,13 +95,13 @@ adversary _ =
     error
         "Expected network-magic, port, sync-length, startPoint, number-of-connections and list-of-hosts arguments"
 
-selectPointFromFile :: StdGen -> String -> String
-selectPointFromFile g = randomElement g . lines
+selectPointsFromFile :: StdGen -> String -> [String]
+selectPointsFromFile g points = unfoldr (Just . randomElement (lines points)) g
   where
-    randomElement :: StdGen -> [a] -> a
-    randomElement g' l =
-        let (randomIndex, _) = randomR (0, length l - 1) g' -- untested
-        in  l !! randomIndex
+    randomElement :: [a] -> StdGen -> (a, StdGen)
+    randomElement l g' =
+        let (randomIndex, g'') = randomR (0, length l - 1) g' -- untested
+        in  (l !! randomIndex, g'')
 
 toString :: Message -> String
 toString = TL.unpack . TL.decodeUtf8 . Aeson.encode
