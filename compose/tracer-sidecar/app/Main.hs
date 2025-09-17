@@ -64,6 +64,10 @@ main = do
 
     (nPools :: Int) <- read <$> getEnv "POOLS"
 
+    -- Ensure chainPointsFilePath is created such that it can be read
+    -- immediately (even if empty)
+    _ <- writeFile <$> chainPointsFilePath <*> pure mempty
+
     writeSdkJsonl $ sometimesTracesDeclaration "finds all node log files"
 
     files <- waitFor (nodeLogFiles dir) $ \files -> do

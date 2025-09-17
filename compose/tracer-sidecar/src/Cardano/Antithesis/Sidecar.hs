@@ -12,6 +12,7 @@ module Cardano.Antithesis.Sidecar
     , Output (..)
     , processMessages
     , initialState
+    , chainPointsFilePath
     )
 where
 
@@ -247,8 +248,8 @@ hoistToIO (s, vals) = do
   where
     writeChainPoint :: String -> IO ()
     writeChainPoint v = do
-        file <-
-            fromMaybe "/tmp/chainPoints.log" <$> lookupEnv "CHAINPOINT_FILEPATH"
+        file <- chainPointsFilePath
+            -- TODO: Add health check to ensure the file exists
         withFile file AppendMode $ \h ->
             BL.hPutStr h (TL.encodeUtf8 (TL.pack v) <> "\n")
 
@@ -257,3 +258,7 @@ initialStateIO spec = hoistToIO $ initialState spec
 
 processMessageIO :: Spec -> State -> LogMessage -> IO State
 processMessageIO spec s msg = hoistToIO $ processMessage spec s msg
+
+chainPointsFilePath :: IO FilePath
+chainPointsFilePath = fromMaybe "/tmp/chainPoints.log" <$> lookupEnv "CHAINPOINT_FILEPATH"
+

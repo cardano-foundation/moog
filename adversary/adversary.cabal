@@ -43,7 +43,6 @@ library
     , base16-bytestring
     , bytestring
     , cardano-ledger-byron
-    , containers
     , contra-tracer
     , network
     , network-mux

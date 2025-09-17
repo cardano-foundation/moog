@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Adversary.ChainSync
@@ -23,11 +24,10 @@ import Control.Concurrent.Class.MonadSTM.Strict
     , writeTVar
     )
 import Control.Exception (SomeException, try)
-import Control.Tracer
-    ( nullTracer
-    )
+import Control.Tracer (nullTracer)
 import Data.ByteString.Lazy qualified as LBS
 import Data.Data (Proxy (Proxy))
+import Data.List.NonEmpty (NonEmpty)
 import Data.List.NonEmpty qualified as NE
 import Data.Maybe (fromMaybe)
 import Data.Void (Void)
@@ -144,14 +144,17 @@ repeatedClientChainSync
     -> NetworkMagic
     -> [String]
     -> PortNumber
-    -> Point
+    -> NonEmpty Point
+    -- ^ must be infinite list
     -> Limit
-    -> IO [Either SomeException Point]
-repeatedClientChainSync nConns magic peerNames peerPort startingPoint limit =
+    -> IO [(Point, Either SomeException Point)]
+repeatedClientChainSync nConns magic peerNames peerPort startingPoints limit =
     mapConcurrently
-        ( \(_i, peerName) -> clientChainSync magic peerName peerPort startingPoint limit
+        ( \(_i, peerName, startingPoint) ->
+            (startingPoint,)
+                <$> clientChainSync magic peerName peerPort startingPoint limit
         )
-        (zip [1 .. nConns] (cycle peerNames))
+        (zip3 [1 .. nConns] (cycle peerNames) (NE.toList startingPoints))
 
 clientChainSync
     :: NetworkMagic
@@ -196,6 +199,9 @@ clientChainSync magic peerName peerPort startingPoint limit = withIOManager $ \i
                 addrAddress
     case res of
         Left e -> return $ Left e
+        -- NOTE: 'limit == 0' will make this always return Genesis, which
+        -- is confusing. We can't have a 'Chain Point' containing just startingPoint,
+        -- however because of the constraints of 'Chain'.
         Right _ -> pure . Chain.headPoint <$> readTVarIO chainvar
   where
     resolve = do

@@ -2,7 +2,8 @@
   description = "adversary";
   nixConfig = {
     extra-substituters = [ "https://cache.iog.io" ];
-    extra-trusted-public-keys = [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
+    extra-trusted-public-keys =
+      [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
   };
   inputs = {
     haskellNix.url = "github:input-output-hk/haskell.nix";
@@ -23,23 +24,13 @@
     };
   };
 
-  outputs =
-    inputs@{
-      self,
-      nixpkgs,
-      flake-utils,
-      haskellNix,
-      CHaP,
-      iohkNix,
-      cardano-node-runtime,
-      ...
-    }:
+  outputs = inputs@{ self, nixpkgs, flake-utils, haskellNix, CHaP, iohkNix
+    , cardano-node-runtime, ... }:
     let
       lib = nixpkgs.lib;
       version = self.dirtyShortRev or self.shortRev;
 
-      perSystem =
-        system:
+      perSystem = system:
         let
           node-project = cardano-node-runtime.project.${system};
           cardano-node = node-project.pkgs.cardano-node;
@@ -63,14 +54,10 @@
 
           fullPackages = lib.mergeAttrsList [ project.packages ];
 
-        in
-        {
-          packages = fullPackages // {
-            default = project.packages.adversary;
-          };
+        in {
+          packages = fullPackages // { default = project.packages.adversary; };
           inherit (project) devShells;
         };
 
-    in
-    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] perSystem;
+    in flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] perSystem;
 }
