@@ -28,9 +28,13 @@ version=$(nix eval .#version --raw)
 docker run cardano-foundation/anti-oracle:$version
 ```
 
+## Running oracle commands manually
+
+Alternatively, oracle commands can be run manually, using the `anti` CLI. See the [README.md](../README.md) for how to install it.
+
 ## Creating the anti token (only once)
 
-Oracle operations needs a wallet. Given the role aside setting the `ANTI_WALLET_FILE` environment variable to point to the wallet file, you also wanto to set th `ANTI_WALLET_PASSPHRASE` environment variable to encrypt it.
+Oracle operations need a wallet. Since the oracle role is critical, in addition to setting the `ANTI_WALLET_FILE` environment variable to point to the wallet file, you should also set the `ANTI_WALLET_PASSPHRASE` environment variable to encrypt the wallet.
 
 You can create a wallet with the `anti wallet create` command.
 

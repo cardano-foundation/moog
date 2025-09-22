@@ -9,7 +9,14 @@ module Oracle.Validate.Requests.TestRun.Create
 
 import Control.Monad (when)
 import Control.Monad.Trans.Class (lift)
-import Core.Types.Basic (Directory (..), Duration (..), Try (..))
+import Core.Types.Basic
+    ( Commit (..)
+    , Directory (..)
+    , Duration (..)
+    , Repository (..)
+    , Try (..)
+    , Username (..)
+    )
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..), Operation (..))
@@ -44,6 +51,7 @@ import Text.JSON.Canonical
 import User.Agent.Types (WhiteListKey (..))
 import User.Types
     ( Phase (PendingT)
+    , RegisterRoleKey (..)
     , RegisterUserKey (..)
     , TestRun (..)
     , TestRunState (..)
@@ -104,10 +112,10 @@ validateCreateTestRun
                 testRunState
 
 data TestRunRejection
-    = UnacceptableDuration
-    | UnacceptableCommit
-    | UnacceptableTryIndex
-    | UnacceptableRole
+    = UnacceptableDuration Int Int
+    | UnacceptableCommit Repository Commit
+    | UnacceptableTryIndex Try
+    | UnacceptableRole RegisterRoleKey
     | NoRegisteredKeyVerifiesTheSignature
     | UserHasNoRegisteredSSHKeys
     | GithubResponseError GithubResponseError
@@ -117,18 +125,41 @@ data TestRunRejection
     deriving (Eq, Show)
 
 instance Monad m => ToJSON m TestRunRejection where
-    toJSON UnacceptableDuration =
-        stringJSON "unacceptable duration"
-    toJSON UnacceptableCommit =
-        stringJSON "unacceptable commit"
-    toJSON UnacceptableTryIndex =
-        stringJSON "unacceptable try index"
-    toJSON UnacceptableRole =
-        stringJSON "unacceptable role"
+    toJSON (UnacceptableDuration minDuration maxDuration) =
+        stringJSON
+            $ "unacceptable duration. Expecting duration to be between "
+                <> show minDuration
+                <> " and "
+                <> show maxDuration
+    toJSON (UnacceptableCommit (Repository org repo) (Commit commit)) =
+        stringJSON
+            $ "unacceptable commit. The specified commit "
+                <> show commit
+                <> " cannot be found in the repository "
+                <> show org
+                <> "/"
+                <> show repo
+    toJSON (UnacceptableTryIndex (Try maxIx)) =
+        stringJSON
+            $ "unacceptable try index. Expecting at most "
+                <> show maxIx
+                <> " run attempts for a given commit"
+    toJSON
+        ( UnacceptableRole
+                (RegisterRoleKey _ (Repository org repo) (Username user))
+            ) =
+            stringJSON
+                $ "unacceptable role. User "
+                    <> show user
+                    <> " has not been registered within the repository "
+                    <> show org
+                    <> "/"
+                    <> show repo
     toJSON NoRegisteredKeyVerifiesTheSignature =
-        stringJSON "no registered key verifies the signature"
+        stringJSON
+            "there is no registered Ed25519 SSH key that can verify the signature"
     toJSON UserHasNoRegisteredSSHKeys =
-        stringJSON "user has no Ed25519 registered SSH keys"
+        stringJSON "user has no Ed25519 SSH key registered"
     toJSON (GithubResponseError err) =
         object ["githubResponseError" .= err]
     toJSON (GithubResponseStatusCodeError err) =
@@ -141,7 +172,8 @@ instance Monad m => ToJSON m TestRunRejection where
 checkDuration
     :: TestRunValidationConfig -> Duration -> Maybe TestRunRejection
 checkDuration TestRunValidationConfig{maxDuration, minDuration} (Duration n)
-    | n < minDuration || n > maxDuration = Just UnacceptableDuration
+    | n < minDuration || n > maxDuration =
+        Just $ UnacceptableDuration minDuration maxDuration
     | otherwise = Nothing
 
 checkRole
@@ -153,7 +185,7 @@ checkRole
         let roleFact = roleOfATestRun testRun
         if Fact roleFact () `elem` fs
             then return Nothing
-            else return $ Just UnacceptableRole
+            else return $ Just (UnacceptableRole roleFact)
 
 checkWhiteList
     :: Monad m
@@ -193,7 +225,7 @@ checkTryIndex
 
         if tryIndex testRun == succ latest
             then return Nothing
-            else return $ Just UnacceptableTryIndex
+            else return $ Just (UnacceptableTryIndex latest)
 
 checkCommit
     :: Monad m
@@ -209,7 +241,7 @@ checkCommit
             Right exists ->
                 if exists
                     then Nothing
-                    else Just UnacceptableCommit
+                    else Just (UnacceptableCommit testRun.repository (commitId testRun))
 
 checkSignature
     :: Monad m

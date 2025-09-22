@@ -91,7 +91,8 @@ import Test.QuickCheck.EGen
     )
 import User.Agent.Types (WhiteListKey (..))
 import User.Types
-    ( TestRun (..)
+    ( RegisterRoleKey (..)
+    , TestRun (..)
     , TestRunRejection (..)
     , TestRunState (..)
     , URL (..)
@@ -249,9 +250,13 @@ spec = do
                             (mkValidation mockMPFS noValidation)
                             testRun
                             testRunState
-                onConditionHaveReason mresult UnacceptableDuration
-                    $ duration < minDuration testConfig
-                        || duration > maxDuration testConfig
+                let expectedMinDuration = minDuration testConfig
+                let expectedMaxDuration = maxDuration testConfig
+                onConditionHaveReason
+                    mresult
+                    (UnacceptableDuration expectedMinDuration expectedMaxDuration)
+                    $ duration < expectedMinDuration
+                        || duration > expectedMaxDuration
 
         it "reports unacceptable role" $ egenProperty $ do
             testConfig <- testConfigEGen
@@ -267,10 +272,10 @@ spec = do
                         , changeProject testRunRequest
                         , pure testRunRequest
                         ]
-            role <- jsFactRole testRunFact
+            roleFact <- jsFactRole testRunFact
             let validation =
                     mkValidation
-                        (withFacts [role] mockMPFS)
+                        (withFacts [roleFact] mockMPFS)
                         noValidation
                 testRunState = Pending (Duration duration) signature
             pure $ do
@@ -281,7 +286,12 @@ spec = do
                             validation
                             testRunRequest
                             testRunState
-                onConditionHaveReason mresult UnacceptableRole
+                let role =
+                        RegisterRoleKey
+                            testRunRequest.platform
+                            testRunRequest.repository
+                            testRunRequest.requester
+                onConditionHaveReason mresult (UnacceptableRole role)
                     $ testRunRequest.platform /= testRunFact.platform
                         || testRunRequest.repository.organization
                             /= testRunFact.repository.organization
@@ -350,7 +360,8 @@ spec = do
                                 validation
                                 testRun
                                 testRunState
-                    onConditionHaveReason mresult UnacceptableTryIndex
+                    let maxTry = testRunDB.tryIndex
+                    onConditionHaveReason mresult (UnacceptableTryIndex maxTry)
                         $ testRun.tryIndex /= testRunDB.tryIndex + 1
 
         it "reports unacceptable directory" $ egenProperty $ do

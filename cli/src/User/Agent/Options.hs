@@ -197,7 +197,8 @@ registryOption =
 antithesisAuthOption :: Parser AntithesisAuth
 antithesisAuthOption =
     cardanoWithPwd
-        <$> secretsParser
+        <$> antithesisUserOption
+        <*> secretsParser
             "Enter the password to access Antithesis"
             "The password to access Antithesis"
             "ANTI_ANTITHESIS_PASSWORD"
@@ -205,8 +206,17 @@ antithesisAuthOption =
             "ask-antithesis-password"
             "antithesisPassword"
   where
-    cardanoWithPwd pwd =
-        AntithesisAuth{username = "cardano", password = pwd}
+    cardanoWithPwd username pwd =
+        AntithesisAuth{username = username, password = pwd}
+
+antithesisUserOption :: Parser String
+antithesisUserOption =
+    setting
+        [ env "ANTI_ANTITHESIS_USER"
+        , metavar "ANTITHESIS_USER"
+        , help "The username of the Antithesis account"
+        , reader str
+        ]
 
 downloadAssetsOptions
     :: Parser

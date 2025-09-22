@@ -12,10 +12,12 @@ services:
       - ANTI_TOKEN_ID=21c523c3b4565f1fc1ad7e54e82ca976f60997d8e7e9946826813fabf341069b
       - ANTI_SECRETS_FILE=/run/secrets/secrets
       - ANTI_WAIT=240
+      - ANTI_ANTITHESIS_USER=cardano
       - DOCKER_CONFIG=/run/secrets/docker
     restart:
       always
     privileged: true
+    command: "--poll-interval 60 --days 1 --trust-all-requesters"
     volumes:
       - tmp:/tmp
          # Mount CA certificates, curl seems not to find them when the pkgs.cacert is included in the image

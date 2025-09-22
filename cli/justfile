@@ -1,10 +1,14 @@
 # shellcheck shell=bash
 
+# shellcheck disable=SC2121
 set unstable := true
 
 format:
     #!/usr/bin/env bash
-    fourmolu -i src app test test-E2E test-lib CI/rewrite-libs
+    # shellcheck disable=SC2034
+    for i in {1..3}; do
+        fourmolu -i src app test test-E2E test-integration test-lib CI/rewrite-libs
+    done
     cabal-fmt -i anti.cabal CI/rewrite-libs/rewrite-libs.cabal
     nixfmt *.nix
     nixfmt nix/*.nix
@@ -32,6 +36,18 @@ build:
     #!/usr/bin/env bash
     cabal build all --enable-tests
 
+integration match="":
+    #!/usr/bin/env bash
+    # shellcheck disable=SC2050
+    if [[ '{{ match }}' == "" ]]; then
+      cabal test anti-integration-test \
+          --test-show-details=direct
+    else
+      cabal test anti-integration-test \
+          --test-show-details=direct \
+          --test-option=--match \
+          --test-option="{{ match }}"
+    fi
 E2E match="":
     #!/usr/bin/env bash
     mkdir -p tmp/bin
@@ -117,6 +133,7 @@ CI:
     set -euo pipefail
     just build
     just unit
+    just integration
     just E2E
     cabal-fmt -c anti.cabal CI/rewrite-libs/rewrite-libs.cabal
     fourmolu -m check src app test CI/rewrite-libs
@@ -139,6 +156,7 @@ build-anti-agent:
 
 start-anti-agent bg="false":
     #!/usr/bin/env bash
+    # shellcheck disable=SC2050
     if [[ '{{ bg }}' == "true" ]]; then
         docker compose -f CD/anti-agent/docker-compose.yaml up -d
     else

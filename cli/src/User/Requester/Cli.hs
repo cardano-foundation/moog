@@ -7,7 +7,7 @@ module User.Requester.Cli
     , NewTestRunCreated (..)
     ) where
 
-import Control.Monad (forM, forM_, void)
+import Control.Monad (void)
 import Control.Monad.Trans.Class (lift)
 import Core.Context
     ( WithContext
@@ -19,7 +19,6 @@ import Core.Context
 import Core.Types.Basic
     ( Directory (..)
     , Duration
-    , FileName (..)
     , Repository (..)
     , Success (..)
     , TokenId
@@ -30,9 +29,9 @@ import Core.Types.Operation (Operation (..))
 import Core.Types.Tx (TxHash, WithTxHash (..))
 import Core.Types.Wallet (Wallet)
 import Crypto.PubKey.Ed25519 (Signature)
-import Data.Bifunctor (Bifunctor (..))
 import Data.ByteString.Lazy qualified as BL
 import Data.Functor (($>))
+import Lib.GitHub (GetGithubFileFailure)
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Lib.SSH.Private
     ( KeyPair (..)
@@ -66,9 +65,7 @@ import Oracle.Validate.Types
     ( AValidationResult
     , ForRole (..)
     , liftMaybe
-    , mapFailure
     , runValidate
-    , sequenceValidate
     , throwLeft
     )
 import Submitting (Submission (..))
@@ -82,21 +79,6 @@ import User.Types
     , TestRunState (..)
     )
 import Validation (Validation (..), hoistValidation)
-import Validation.DownloadFile (DownloadedFileFailure)
-
-newtype GenerateAssetsFailure
-    = GenerateAssetsFailure [(FileName, DownloadedFileFailure)]
-
-instance Monad m => ToJSON m GenerateAssetsFailure where
-    toJSON (GenerateAssetsFailure failures) =
-        object
-            [
-                ( "generateAssetsFailure"
-                , mapM
-                    (\(FileName fn, err) -> object ["file" .= fn, "error" .= err])
-                    failures
-                )
-            ]
 
 data RequesterCommand a where
     RegisterUser
@@ -134,7 +116,7 @@ data RequesterCommand a where
         :: Directory
         -> RequesterCommand
             ( AValidationResult
-                GenerateAssetsFailure
+                GetGithubFileFailure
                 Success
             )
 
@@ -167,25 +149,20 @@ requesterCmd command = do
 generateAssets
     :: Monad m
     => Directory
-    -> WithContext m (AValidationResult GenerateAssetsFailure Success)
+    -> WithContext m (AValidationResult GetGithubFileFailure Success)
 generateAssets (Directory targetDirectory) = do
-    Validation{githubGetFile, writeTextFile} <- askValidation Nothing
-    lift $ runValidate $ do
-        downloads <- forM ["docker-compose.yaml", "README.md", "testnet.yaml"] $ \filename -> do
-            fmap (bimap (FileName filename,) (filename,))
-                $ lift
-                $ githubGetFile
-                    (Repository "cardano-foundation" "antithesis")
-                    Nothing
-                    (FileName $ "compose/testnets/cardano_node_master/" <> filename)
-        contents <-
-            mapFailure GenerateAssetsFailure
-                $ sequenceValidate
-                $ fmap (throwLeft id) downloads
-        forM_ contents $ \(filename, content) -> do
-            let filePath = targetDirectory <> "/" <> filename
-            lift $ writeTextFile filePath content
-        pure Success
+    Validation{githubDownloadDirectory} <- askValidation Nothing
+    lift
+        $ runValidate
+        $ do
+            r <-
+                lift
+                    $ githubDownloadDirectory
+                        (Repository "cardano-foundation" "antithesis")
+                        Nothing
+                        (Directory "compose/testnets/cardano_node_master")
+                        (Directory targetDirectory)
+            throwLeft id r $> Success
 
 signKey
     :: (ToJSON m key, Monad m) => KeyPair -> key -> m (JSValue, Signature)

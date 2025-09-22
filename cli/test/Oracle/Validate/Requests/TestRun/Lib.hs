@@ -192,6 +192,7 @@ mkValidation
                             $ GetGithubFileOtherFailure name "file not present"
                     Just filecontent ->
                         pure $ analyzeDownloadedFile filename (Right filecontent)
+            , githubDownloadDirectory = \_ _ _ _ -> pure $ Right ()
             , directoryExists = \dir ->
                 pure
                     $ dir

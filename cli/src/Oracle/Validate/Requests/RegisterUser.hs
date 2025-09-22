@@ -35,7 +35,7 @@ import Validation
     , insertValidation
     )
 import Validation.RegisterUser
-    ( PublicKeyFailure
+    ( PublicKeyFailure (..)
     )
 
 data RegisterUserFailure
@@ -83,6 +83,8 @@ data UnregisterUserFailure
     = UnregisterUserPlatformNotSupported String
     | UnregisterUserKeyFailure KeyFailure
     | UnregisterUserKeyChangeAlreadyPending RegisterUserKey
+    | UnregisterUserKeyIsPresent
+    | UnregisterUserKeyGithubError String
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m UnregisterUserFailure where
@@ -93,6 +95,13 @@ instance Monad m => ToJSON m UnregisterUserFailure where
             object ["unregisterUserKeyFailure" .= keyFailure]
         UnregisterUserKeyChangeAlreadyPending key ->
             object ["unregisterUserKeyChangeAlreadyPending" .= key]
+        UnregisterUserKeyIsPresent ->
+            object
+                [ "unregisterUserKeyIsPresent"
+                    .= ("The user still has the public key present in Github." :: String)
+                ]
+        UnregisterUserKeyGithubError err ->
+            object ["unregisterUserKeyGithubError" .= err]
 
 validateUnregisterUser
     :: Monad m
@@ -101,9 +110,9 @@ validateUnregisterUser
     -> Change RegisterUserKey (OpD ())
     -> Validate UnregisterUserFailure m Validated
 validateUnregisterUser
-    validation
+    validation@Validation{githubUserPublicKeys}
     forRole
-    change@(Change (Key key@(RegisterUserKey{platform})) _v) = do
+    change@(Change (Key key@(RegisterUserKey{platform, username, pubkeyhash})) _v) = do
         when (forUser forRole)
             $ keyAlreadyPendingFailure
                 validation
@@ -114,5 +123,12 @@ validateUnregisterUser
             $ mapFailure UnregisterUserKeyFailure
             $ deleteValidation validation change
         case platform of
-            Platform "github" -> pure Validated
+            Platform "github" -> do
+                validationRes <- lift $ githubUserPublicKeys username pubkeyhash
+                case validationRes of
+                    Just NoEd25519KeyFound -> pure Validated
+                    Just NoEd25519KeyMatch -> pure Validated
+                    Just NoPublicKeyFound -> pure Validated
+                    Just (GithubError err) -> notValidated $ UnregisterUserKeyGithubError err
+                    Nothing -> notValidated UnregisterUserKeyIsPresent
             Platform other -> notValidated $ UnregisterUserPlatformNotSupported other

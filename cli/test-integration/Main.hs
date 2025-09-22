@@ -1,13 +1,23 @@
 import Data.ByteString.Char8 qualified as BC
-import E2ESpec (e2eSpec)
 import GitHub (Auth (..))
+import Lib.GitHubSpec (githubSpec)
+import Lib.Github.OracleValidationSpec
+    ( existenceSpec
+    , roleSpecs
+    , userSpec
+    )
+import MPFS.APISpec (mpfsAPISpec)
 import System.Environment (lookupEnv)
 import Test.Hspec (beforeAll, hspec)
 
 main :: IO ()
 main = hspec $ do
     beforeAll getPAT $ do
-        e2eSpec
+        githubSpec
+        existenceSpec
+        roleSpecs
+        mpfsAPISpec
+    userSpec
 
 tryGetPAT :: IO (Maybe Auth)
 tryGetPAT = fmap (OAuth . BC.pack) <$> lookupEnv "ANTI_GITHUB_PAT"

@@ -99,14 +99,20 @@ data Validation m = Validation
         -> Maybe Commit
         -> FileName
         -> m (Either DownloadedFileFailure Text)
+    , githubDownloadDirectory
+        :: Repository
+        -> Maybe Commit
+        -> Directory
+        -> Directory
+        -> m (Either GitHub.GetGithubFileFailure ())
     , withSystemTempDirectory
         :: forall a
          . String
         -> (FilePath -> m a)
         -> m a
-    , writeTextFile :: FilePath -> Text -> m () -- Added writeFile to Validation
+    , writeTextFile :: FilePath -> Text -> m ()
     , withCurrentDirectory :: forall a. FilePath -> m a -> m a
-    , directoryExists :: Directory -> m (Maybe Permissions) -- Added directoryExists to Validation
+    , directoryExists :: Directory -> m (Maybe Permissions)
     , decodePrivateSSHFile :: SSHClient 'WithSelector -> m (Maybe KeyPair)
     }
 
@@ -125,6 +131,7 @@ hoistValidation
         , githubRepositoryExists
         , githubRepositoryRole
         , githubGetFile
+        , githubDownloadDirectory
         , withSystemTempDirectory
         , withCurrentDirectory
         , writeTextFile
@@ -147,6 +154,10 @@ hoistValidation
                 \username repository -> f $ githubRepositoryRole username repository
             , githubGetFile =
                 \repository commit filename -> f $ githubGetFile repository commit filename
+            , githubDownloadDirectory =
+                \repository commit sourceDir targetDir ->
+                    f
+                        $ githubDownloadDirectory repository commit sourceDir targetDir
             , withSystemTempDirectory =
                 \template action -> controlT
                     $ \run -> withSystemTempDirectory template (run . action)
@@ -196,6 +207,14 @@ mkValidation auth mpfs tk = do
             liftIO $ inspectRepoRoleForUser auth username repository
         , githubGetFile = \repository commit filename ->
             liftIO $ inspectDownloadedFile auth repository commit filename
+        , githubDownloadDirectory = \repository commit sourceDir targetDir ->
+            liftIO
+                $ GitHub.githubDownloadDirectory
+                    auth
+                    repository
+                    commit
+                    sourceDir
+                    targetDir
         , withSystemTempDirectory = \template action ->
             control
                 (\run -> Temp.withSystemTempDirectory template (run . action))

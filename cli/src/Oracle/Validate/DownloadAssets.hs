@@ -7,14 +7,17 @@ module Oracle.Validate.DownloadAssets
     )
 where
 
-import Control.Monad (filterM, forM_)
+import Control.Monad (filterM)
 import Control.Monad.Trans.Class (lift)
-import Core.Types.Basic (Directory (..), FileName (..))
+import Core.Types.Basic (Directory (..))
 import Core.Types.Fact
     ( Fact (..)
     , keyHash
     )
-import Lib.GitHub (GithubResponseStatusCodeError)
+import Lib.GitHub
+    ( GetGithubFileFailure
+    , GithubResponseStatusCodeError
+    )
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Oracle.Validate.Types
     ( Validate
@@ -42,34 +45,30 @@ import Validation
     ( Validation (..)
     , hoistValidation
     )
-import Validation.DownloadFile
-    ( DownloadedFileFailure (..)
-    , renderDownloadedFileFailure
-    )
 
 data AssetValidationFailure
     = AssetValidationSourceFailure SourceDirFailure
-    | AssetValidationParseError DownloadedFileFailure
     | DownloadAssetsTargetDirNotFound
     | DownloadAssetsTargetDirNotWritable
+    | DownloadAssetsGithubError GetGithubFileFailure
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m AssetValidationFailure where
     toJSON (AssetValidationSourceFailure failure) =
         object
             ["error" .= ("Source directory validation failed: " <> show failure)]
-    toJSON (AssetValidationParseError failure) =
-        object
-            [ "error"
-                .= ( "Downloaded file validation failed: "
-                        <> renderDownloadedFileFailure failure
-                   )
-            ]
     toJSON DownloadAssetsTargetDirNotFound =
         object ["error" .= ("There is no target local directory" :: String)]
     toJSON DownloadAssetsTargetDirNotWritable =
         object
             ["error" .= ("The target local directory is not writable" :: String)]
+    toJSON (DownloadAssetsGithubError failure) =
+        object
+            [ "error"
+                .= ( "GitHub error when downloading directory: "
+                        <> show failure
+                   )
+            ]
 
 data DownloadAssetsFailure
     = DownloadAssetsTestRunIdNotFound TestRunId
@@ -113,30 +112,26 @@ checkSourceDirectory
                     then Nothing
                     else Just SourceDirFailureDirAbsent
 
-downloadFileAndWriteLocally
+downloadAssetsDirectory
     :: Monad m
     => Validation m
     -> TestRun
     -> Directory
-    -> FileName
-    -> m (Maybe AssetValidationFailure)
-downloadFileAndWriteLocally
-    Validation{githubGetFile, withCurrentDirectory, writeTextFile}
-    testRun
-    (Directory targetDir)
-    (FileName filename) = do
-        let (Directory sourceDir) = directory testRun
-        contentE <-
-            githubGetFile
-                (repository testRun)
-                (Just $ commitId testRun)
-                (FileName $ sourceDir <> "/" <> filename)
-        case contentE of
-            Left err -> pure $ Just $ AssetValidationParseError err
-            Right txt -> do
-                withCurrentDirectory targetDir
-                    $ writeTextFile filename txt
-                pure Nothing
+    -> m (Maybe GetGithubFileFailure)
+downloadAssetsDirectory validation testRun dir = do
+    let sourceDir = directory testRun
+        commit = commitId testRun
+        repository' = repository testRun
+    r <-
+        githubDownloadDirectory
+            validation
+            repository'
+            (Just commit)
+            sourceDir
+            dir
+    pure $ case r of
+        Left err -> Just err
+        Right () -> Nothing
 
 validateDownloadAssets
     :: Monad m
@@ -190,15 +185,5 @@ validateAssets dir validation testRun = do
         liftMaybe DownloadAssetsTargetDirNotFound targetDirValidation
     Validated <-
         throwFalse (writable permissions) DownloadAssetsTargetDirNotWritable
-
-    forM_ ["README.md", "docker-compose.yaml", "testnet.yaml"] $ \filename -> do
-        fileValidation <-
-            lift
-                $ downloadFileAndWriteLocally
-                    validation
-                    testRun
-                    dir
-                    (FileName filename)
-        throwJusts fileValidation
-
-    pure Validated
+    downloadTry <- lift $ downloadAssetsDirectory validation testRun dir
+    mapFailure DownloadAssetsGithubError $ throwJusts downloadTry

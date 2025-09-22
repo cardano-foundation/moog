@@ -36,7 +36,7 @@ import Validation
     , insertValidation
     )
 import Validation.RegisterRole
-    ( RepositoryRoleFailure
+    ( RepositoryRoleFailure (..)
     )
 
 data RegisterRoleFailure
@@ -87,6 +87,9 @@ validateRegisterRole
 data UnregisterRoleFailure
     = UnregisterRoleKeyFailure KeyFailure
     | UnregisterRoleKeyChangeAlreadyPending RegisterRoleKey
+    | UnregisterRolePlatformNotSupported String
+    | UnregisterRoleRoleIsStillValidInGithub
+    | UnregisterRoleGithubGetError String
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m UnregisterRoleFailure where
@@ -95,6 +98,12 @@ instance Monad m => ToJSON m UnregisterRoleFailure where
             object ["unregisterRoleKeyFailure" .= keyFailure]
         UnregisterRoleKeyChangeAlreadyPending key ->
             object ["unregisterRoleKeyChangeAlreadyPending" .= key]
+        UnregisterRolePlatformNotSupported platform ->
+            object ["unregisterRolePlatformNotSupported" .= platform]
+        UnregisterRoleRoleIsStillValidInGithub ->
+            object ["unregisterRoleRoleIsStillValidInGithub" .= ()]
+        UnregisterRoleGithubGetError err ->
+            object ["unregisterRoleGithubGetError" .= err]
 
 validateUnregisterRole
     :: Monad m
@@ -103,7 +112,7 @@ validateUnregisterRole
     -> Change RegisterRoleKey (OpD ())
     -> Validate UnregisterRoleFailure m Validated
 validateUnregisterRole
-    validation
+    validation@Validation{githubRepositoryRole}
     forRole
     change@(Change (Key k) _) = do
         when (forUser forRole)
@@ -114,4 +123,15 @@ validateUnregisterRole
                 requestZooGetRegisterRoleKey
         mapFailure UnregisterRoleKeyFailure
             $ deleteValidation validation change
-        pure Validated
+        let RegisterRoleKey (Platform platform) repository username = k
+        when (platform /= "github")
+            $ notValidated
+            $ UnregisterRolePlatformNotSupported platform
+        validationRes <- lift $ githubRepositoryRole username repository
+        case validationRes of
+            Just NoRoleEntryInCodeowners -> pure Validated
+            Just NoUsersAssignedToRoleInCodeowners -> pure Validated
+            Just NoUserInCodeowners -> pure Validated
+            Just (GithubGetError err) ->
+                notValidated $ UnregisterRoleGithubGetError (show err)
+            Nothing -> notValidated UnregisterRoleRoleIsStillValidInGithub

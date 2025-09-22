@@ -70,8 +70,7 @@ ENV TZ="UTC"
 RUN ln -snf /usr/share/zoneinfo/${TZ} /etc/localtime && \
     echo ${TZ} > /etc/timezone
 
-ADD docker-compose.yaml /docker-compose.yaml
-ADD testnet.yaml /testnet.yaml
+COPY . /
 
 RUN sed -i 's/${INTERNAL_NETWORK}/false/g' /docker-compose.yaml
     |]
