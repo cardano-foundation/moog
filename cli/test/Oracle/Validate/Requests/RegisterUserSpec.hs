@@ -400,3 +400,39 @@ spec = do
                     $ runValidate test
                     `shouldReturn` ValidationFailure
                         (UnregisterUserPlatformNotSupported platform)
+
+        it
+            "fail to validate an unregistration if there is a given user has different public key"
+            $ egenProperty
+            $ do
+                (user, pk) <- gen genUserDBElement
+                (_, pk1) <- gen genUserDBElement
+                forRole <- genForRole
+                let platform = "github"
+                    pubkey = extractPublicKeyHash pk
+                    pubkey1 = extractPublicKeyHash pk1
+                    registration =
+                        RegisterUserKey
+                            { platform = Platform platform
+                            , username = user
+                            , pubkeyhash = pubkey
+                            }
+                fact <- toJSFact registration ()
+                let validation =
+                        mkValidation
+                            (withFacts [fact] mockMPFS)
+                            noValidation
+                    test =
+                        validateUnregisterUser validation forRole
+                            $ unregisterUserChange (Platform platform) user pubkey1
+                    registrationOther =
+                        RegisterUserKey
+                            { platform = Platform platform
+                            , username = user
+                            , pubkeyhash = pubkey1
+                            }
+                pure
+                    $ when (pubkey /= pubkey1)
+                    $ runValidate test
+                    `shouldReturn` ValidationFailure
+                        (UnregisterUserKeyFailure (KeyDoesNotExist $ show registrationOther))
