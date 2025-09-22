@@ -137,7 +137,7 @@ if [[ "$(echo "$resultVal3" | jq -S 'sort_by(.reference)')" != "$(echo "$expecte
     emitMismatch 3 "validation" "$resultVal3" "$expectedVal3"
 fi
 
-log "Including the registration user as the fact in the updaed token."
+log "Including the registration user as the fact in the updated token."
 anti oracle token update -o "$outputRegRef1" >/dev/null
 
 printFacts
@@ -203,41 +203,16 @@ fi
 
 resultUnRole1=$(anti requester unregister-role \
     --platform github \
-    --repository cardano-foundation/hal-fixture-sin \
-    --username cfhal \
-    )
-outputUnRoleRef1=$(getOutputRef "$resultUnRole1")
-
-log "Created role unregistration request with output reference: $outputUnRoleRef1"
-resultVal5=$(anti token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
-
-expectedVal5=$(
-    cat <<EOF
-[
-  {
-    "reference": "$outputUnRoleRef1",
-    "validation": "validated"
-  }
-]
-EOF
-)
-
-if [[ "$(echo "$resultVal5" | jq -S 'sort_by(.reference)')" != "$(echo "$expectedVal5" | jq -S 'sort_by(.reference)')" ]]; then
-    emitMismatch 7 "validation" "$resultVal5" "$expectedVal5"
-fi
-
-resultUnRole2=$(anti requester unregister-role \
-    --platform github \
     --repository cardano-foundation/hal-fixture-sinn \
     --username cfhal \
     )
 
-outputUnRoleRes2=$(echo $resultUnRole2 | jq)
-log "resultUnRole2: $resultUnRole2"
+outputUnRoleRes1=$(echo $resultUnRole1 | jq)
+log "resultUnRole1: $resultUnRole1"
 
 log "Created role unregistration request with incorrect repository"
 
-expectedUnRoleRes2=$(
+expectedUnRoleRes1=$(
     cat <<EOF
 
 {
@@ -253,25 +228,20 @@ EOF
 )
 
 
-if [[ "$(echo "$outputUnRoleRes2" | jq)" != "$(echo "$expectedUnRoleRes2" | jq)" ]]; then
-    emitMismatch 8 "incorrect request" "$outputUnRoleRes2" "$expectedUnRoleRes2"
+if [[ "$(echo "$outputUnRoleRes1" | jq)" != "$(echo "$expectedUnRoleRes1" | jq)" ]]; then
+    emitMismatch 7 "incorrect request" "$outputUnRoleRes1" "$expectedUnRoleRes1"
 fi
 
 resultVal6=$(anti token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
 
 expectedVal6=$(
     cat <<EOF
-[
-  {
-    "reference": "$outputUnRoleRef1",
-    "validation": "validated"
-  }
-]
+[]
 EOF
 )
 
 if [[ "$(echo "$resultVal6" | jq -S 'sort_by(.reference)')" != "$(echo "$expectedVal6" | jq -S 'sort_by(.reference)')" ]]; then
-    emitMismatch 9 "validation" "$resultVal6" "$expectedVal6"
+    emitMismatch 8 "validation" "$resultVal6" "$expectedVal6"
 fi
 
 resultUnReg1=$(anti requester unregister-user \
@@ -281,41 +251,22 @@ resultUnReg1=$(anti requester unregister-user \
 
 outputUnRegRef1=$(getOutputRef "$resultUnReg1")
 
-log "Created unregistration request with valid public key with output reference: $outputUnRegRef1"
-resultVal7=$(anti token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
+outputUnRegRes1=$(echo $resultUnReg1 | jq)
 
-expectedVal7=$(
+log "Created user unregistration request with the users's public key still present in the repo"
+
+expectedUnRegRes1=$(
     cat <<EOF
-[
-  {
-    "reference": "$outputUnRoleRef1",
-    "validation": "validated"
-  },
-  {
-    "reference": "$outputUnRegRef1",
-    "validation": "validated"
-  }
-]
+
+{
+"validationFailed": {
+    "unregisterUserKeyIsPresent": "The user still has the public key present in Github."
+    }
+}
+
 EOF
 )
 
-if [[ "$(echo "$resultVal7" | jq -S 'sort_by(.reference)')" != "$(echo "$expectedVal7" | jq -S 'sort_by(.reference)')" ]]; then
-    emitMismatch 10 "validation" "$resultVal7" "$expectedVal7"
-fi
-
-log "Including the role and user unregistration requests that passed validation in the token ..."
-anti oracle token update -o "$outputUnRoleRef1" -o "$outputUnRegRef1"  >/dev/null
-
-printFacts
-
-expectedGet3=$(
-    cat <<EOF
-[]
-EOF
-)
-
-resultGet3=$(anti token | jq '.requests')
-
-if [[ "$(echo "$resultGet3" | jq -S 'sort_by(.request.outputRefId)')" != "$(echo "$expectedGet3" | jq -S 'sort_by(.request.outputRefId)')" ]]; then
-    emitMismatch 11 "get token requests" "$resultGet3" "$expectedGet3"
+if [[ "$(echo "$outputUnRegRes1" | jq)" != "$(echo "$expectedUnRegRes1" | jq)" ]]; then
+    emitMismatch 9 "incorrect request" "$outputUnRegRes1" "$expectedUnRegRes1"
 fi
