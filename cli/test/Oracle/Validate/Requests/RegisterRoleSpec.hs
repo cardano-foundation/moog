@@ -273,7 +273,9 @@ spec = do
                     test =
                         validateUnregisterRole validation forRole
                             $ unregisterRoleChange (Platform platform) user repo
-                pure $ runValidate test `shouldReturn` ValidationFailure UnregisterRoleRoleIsStillValidInGithub
+                pure
+                    $ runValidate test
+                    `shouldReturn` ValidationFailure UnregisterRoleRoleIsStillValidInGithub
 
         it
             "fail to validate a unregister role if a request for that key is already pending"
