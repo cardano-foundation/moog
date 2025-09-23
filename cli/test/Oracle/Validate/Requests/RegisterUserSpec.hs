@@ -132,6 +132,36 @@ spec = do
                         $ registerUserChange (Platform "github") user
                         $ extractPublicKeyHash pk
             pure $ runValidate test `shouldReturn` ValidationSuccess Validated
+        it "fail to validate a registration if the user is already registered"
+            $ egenProperty
+            $ do
+                e@(user, pk) <- genValidDBElement
+                forRole <- genForRole
+                let platform = "github"
+                    pubkey@(PublicKeyHash stringPk) = extractPublicKeyHash pk
+                    registration =
+                        RegisterUserKey
+                            { platform = Platform platform
+                            , username = user
+                            , pubkeyhash = pubkey
+                            }
+                fact <- toJSFact registration ()
+                (_, pk1) <- genValidDBElement
+                let pubkey1 = extractPublicKeyHash pk1
+                let
+                    validation =
+                        mkValidation (withFacts [fact] mockMPFS)
+                            $ noValidation{mockUserKeys = [e, (user, pk1)]}
+                    test =
+                        validateRegisterUser validation forRole
+                            $ registerUserChange
+                                (Platform platform)
+                                user
+                                pubkey1
+                pure
+                    $ runValidate test
+                    `shouldReturn` ValidationFailure
+                        (RegisterUserKeyAlreadyExists stringPk)
         it
             "fail to validate a registration if the request is already pending"
             $ egenProperty
