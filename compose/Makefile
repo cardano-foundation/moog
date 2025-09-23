@@ -118,7 +118,10 @@ anti: TESTNET ## Run Antithesis job
 anti-debug: ## Request debugger session
 	curl --fail -u "${username}:${password}" \
        -X POST https://cardano.antithesis.com/api/v1/launch/debugging \
-       bugging.vtime":"${vtime}", \
+       -d '{"params": { \
+           "antithesis.debugging.session_id":"${session_id}",   \
+           "antithesis.debugging.input_hash":"${input_hash}" ,  \
+           "antithesis.debugging.vtime":"${vtime}", \
            "antithesis.report.recipients":"hal@cardanofoundation.org" \
        }}'
 
