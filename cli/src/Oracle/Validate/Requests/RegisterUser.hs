@@ -9,9 +9,12 @@ import Control.Monad (void, when)
 import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic
     ( Platform (..)
+    , PublicKeyHash (..)
     )
 import Core.Types.Change (Change (..), Key (..))
+import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..))
+import Data.List (find)
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Oracle.Types (requestZooGetRegisterUserKey)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
@@ -43,6 +46,7 @@ data RegisterUserFailure
     | RegisterUserPlatformNotSupported String
     | RegisterUserKeyFailure KeyFailure
     | RegisterUserKeyChangeAlreadyPending RegisterUserKey
+    | RegisterUserKeyAlreadyExists String
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m RegisterUserFailure where
@@ -55,6 +59,8 @@ instance Monad m => ToJSON m RegisterUserFailure where
             object ["registerUserKeyFailure" .= keyFailure]
         RegisterUserKeyChangeAlreadyPending key ->
             object ["registerUserKeyChangeAlreadyPending" .= key]
+        RegisterUserKeyAlreadyExists pkHash ->
+            object ["registerUserKeyAlreadyExists" .= pkHash]
 
 validateRegisterUser
     :: Monad m
@@ -63,7 +69,7 @@ validateRegisterUser
     -> Change RegisterUserKey (OpI ())
     -> Validate RegisterUserFailure m Validated
 validateRegisterUser
-    validation@Validation{githubUserPublicKeys}
+    validation@Validation{githubUserPublicKeys, mpfsGetFacts}
     forRole
     change@(Change (Key key@(RegisterUserKey{platform, username, pubkeyhash})) _) = do
         when (forUser forRole)
@@ -73,6 +79,13 @@ validateRegisterUser
                 key
                 requestZooGetRegisterUserKey
         mapFailure RegisterUserKeyFailure $ insertValidation validation change
+        users :: [Fact RegisterUserKey ()] <- lift mpfsGetFacts
+        let matchUsername (RegisterUserKey platform' username' _) =
+                platform' == platform && username' == username
+        case find (\(Fact k' _) -> matchUsername k') users of
+            Just (Fact (RegisterUserKey _ _ (PublicKeyHash pkHash)) _) ->
+                notValidated $ RegisterUserKeyAlreadyExists pkHash
+            Nothing -> pure ()
         case platform of
             Platform "github" -> do
                 validationRes <- lift $ githubUserPublicKeys username pubkeyhash
