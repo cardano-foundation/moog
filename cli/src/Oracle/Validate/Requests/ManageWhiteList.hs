@@ -10,6 +10,13 @@ import Control.Monad.Trans.Class (MonadTrans (..))
 import Core.Types.Basic (Owner, Platform (..), Repository)
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Operation (Op (..))
+import Effects
+    ( Effects (..)
+    , GithubEffects (..)
+    , KeyFailure
+    , deleteValidation
+    , insertValidation
+    )
 import Lib.GitHub qualified as Github
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Oracle.Validate.Types
@@ -22,13 +29,6 @@ import Oracle.Validate.Types
 import Submitting (WalletError)
 import Text.JSON.Canonical (ToJSON (..))
 import User.Agent.Types (WhiteListKey (..))
-import Validation
-    ( GithubValidation (..)
-    , KeyFailure
-    , Validation (..)
-    , deleteValidation
-    , insertValidation
-    )
 
 data UpdateWhiteListFailure
     = WhiteListPlatformUnsupported Platform
@@ -70,14 +70,14 @@ validateAgent agent submitter = do
 
 validateAddWhiteListed
     :: Monad m
-    => Validation m
+    => Effects m
     -> Owner
     -> Owner
     -> Change WhiteListKey (OpI ())
     -> Validate UpdateWhiteListFailure m Validated
 validateAddWhiteListed
-    v@Validation
-        { githubValidation = GithubValidation{githubRepositoryExists}
+    v@Effects
+        { githubEffects = GithubEffects{githubRepositoryExists}
         }
     agent
     submitter
@@ -94,7 +94,7 @@ validateAddWhiteListed
 
 validateRemoveWhiteListed
     :: Monad m
-    => Validation m
+    => Effects m
     -> Owner
     -> Owner
     -> Change WhiteListKey (OpD ())

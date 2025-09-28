@@ -23,6 +23,13 @@ import Core.Types.Operation (Op (..), Operation (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.ByteString.Lazy qualified as BL
 import Data.Maybe (mapMaybe)
+import Effects
+    ( Effects (..)
+    , GithubEffects (..)
+    , KeyFailure
+    , hoistValidation
+    , insertValidation
+    )
 import Lib.GitHub (GithubResponseError, GithubResponseStatusCodeError)
 import Lib.JSON.Canonical.Extra (object, stringJSON, (.=))
 import Lib.SSH.Public (decodePublicKey)
@@ -57,13 +64,6 @@ import User.Types
     , TestRunState (..)
     , roleOfATestRun
     )
-import Validation
-    ( GithubValidation (..)
-    , KeyFailure
-    , Validation (..)
-    , hoistValidation
-    , insertValidation
-    )
 
 data CreateTestRunFailure
     = CreateTestRunRejections [TestRunRejection]
@@ -88,7 +88,7 @@ instance Monad m => ToJSON m CreateTestRunFailure where
 validateCreateTestRun
     :: Monad m
     => TestRunValidationConfig
-    -> Validation m
+    -> Effects m
     -> ForRole
     -> Change TestRun (OpI (TestRunState PendingT))
     -> Validate CreateTestRunFailure m Validated
@@ -178,9 +178,9 @@ checkDuration TestRunValidationConfig{maxDuration, minDuration} (Duration n)
     | otherwise = Nothing
 
 checkRole
-    :: Monad m => Validation m -> TestRun -> m (Maybe TestRunRejection)
+    :: Monad m => Effects m -> TestRun -> m (Maybe TestRunRejection)
 checkRole
-    Validation{mpfsGetFacts}
+    Effects{mpfsGetFacts}
     testRun = do
         fs <- mpfsGetFacts
         let roleFact = roleOfATestRun testRun
@@ -190,11 +190,11 @@ checkRole
 
 checkWhiteList
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRun
     -> m (Maybe TestRunRejection)
 checkWhiteList
-    Validation{mpfsGetFacts}
+    Effects{mpfsGetFacts}
     testRun = do
         let proposed = WhiteListKey testRun.platform testRun.repository
         facts :: [Fact WhiteListKey ()] <- mpfsGetFacts
@@ -204,11 +204,11 @@ checkWhiteList
 
 checkTryIndex
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRun
     -> m (Maybe TestRunRejection)
 checkTryIndex
-    Validation{mpfsGetTestRuns}
+    Effects{mpfsGetTestRuns}
     testRun = do
         testRuns :: [TestRun] <- mpfsGetTestRuns
         let sameCommitTestRuns =
@@ -230,11 +230,11 @@ checkTryIndex
 
 checkCommit
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRun
     -> m (Maybe TestRunRejection)
 checkCommit
-    Validation{githubValidation = GithubValidation{githubCommitExists}}
+    Effects{githubEffects = GithubEffects{githubCommitExists}}
     testRun = do
         existsE <- githubCommitExists testRun.repository (commitId testRun)
         pure $ case existsE of
@@ -246,12 +246,12 @@ checkCommit
 
 checkSignature
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRun
     -> Ed25519.Signature
     -> m (Maybe TestRunRejection)
 checkSignature
-    Validation{mpfsGetFacts}
+    Effects{mpfsGetFacts}
     testRun
     signature = do
         registeredUsers <- mpfsGetFacts @_ @()
@@ -273,7 +273,7 @@ checkSignature
 validateCreateTestRunCore
     :: Monad m
     => TestRunValidationConfig
-    -> Validation m
+    -> Effects m
     -> TestRun
     -> TestRunState PendingT
     -> Validate [TestRunRejection] m Validated

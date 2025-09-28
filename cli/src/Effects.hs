@@ -2,11 +2,11 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-module Validation
-    ( Validation (..)
-    , GithubValidation (..)
+module Effects
+    ( Effects (..)
+    , GithubEffects (..)
     , KeyFailure (..)
-    , mkValidation
+    , mkEffects
     , insertValidation
     , deleteValidation
     , updateValidation
@@ -40,6 +40,18 @@ import Data.Functor.Identity (Identity (..))
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text.IO qualified as T
+import Effects.DownloadFile
+    ( DownloadedFileFailure
+    , inspectDownloadedFile
+    )
+import Effects.RegisterRole
+    ( RepositoryRoleFailure
+    , inspectRepoRoleForUser
+    )
+import Effects.RegisterUser
+    ( PublicKeyFailure
+    , inspectPublicKey
+    )
 import GitHub (Auth)
 import Lib.GitHub qualified as GitHub
 import Lib.JSON.Canonical.Extra (object, (.=))
@@ -55,20 +67,8 @@ import System.IO.Temp qualified as Temp
 import Text.JSON.Canonical (FromJSON (..), ToJSON)
 import Text.JSON.Canonical.Class (ToJSON (..))
 import User.Types (TestRun)
-import Validation.DownloadFile
-    ( DownloadedFileFailure
-    , inspectDownloadedFile
-    )
-import Validation.RegisterRole
-    ( RepositoryRoleFailure
-    , inspectRepoRoleForUser
-    )
-import Validation.RegisterUser
-    ( PublicKeyFailure
-    , inspectPublicKey
-    )
 
-data GithubValidation m = GithubValidation
+data GithubEffects m = GithubEffects
     { githubCommitExists
         :: Repository
         -> Commit
@@ -102,12 +102,12 @@ data GithubValidation m = GithubValidation
         -> m (Either GitHub.GetGithubFileFailure ())
     }
 
-hoistGithubValidation
+hoistGithubEffects
     :: (MonadTransControl t, Monad m)
-    => GithubValidation m
-    -> GithubValidation (t m)
-hoistGithubValidation
-    GithubValidation
+    => GithubEffects m
+    -> GithubEffects (t m)
+hoistGithubEffects
+    GithubEffects
         { githubCommitExists
         , githubDirectoryExists
         , githubUserPublicKeys
@@ -116,7 +116,7 @@ hoistGithubValidation
         , githubGetFile
         , githubDownloadDirectory
         } =
-        GithubValidation
+        GithubEffects
             { githubCommitExists =
                 \repo commit -> f $ githubCommitExists repo commit
             , githubDirectoryExists =
@@ -137,14 +137,14 @@ hoistGithubValidation
         f = lift
 
 -- | Abstract the side effects necessary for validation.
-data Validation m = Validation
+data Effects m = Effects
     { mpfsGetFacts
         :: forall k v
          . (FromJSON Maybe k, FromJSON Maybe v)
         => m [Fact k v]
     , mpfsGetTestRuns :: m [TestRun]
     , mpfsGetTokenRequests :: m [RequestZoo]
-    , githubValidation :: GithubValidation m
+    , githubEffects :: GithubEffects m
     , withSystemTempDirectory
         :: forall a
          . String
@@ -158,25 +158,25 @@ data Validation m = Validation
 
 hoistValidation
     :: (MonadTransControl t, Monad m)
-    => Validation m
-    -> Validation (t m)
+    => Effects m
+    -> Effects (t m)
 hoistValidation
-    Validation
+    Effects
         { mpfsGetFacts
         , mpfsGetTestRuns
         , mpfsGetTokenRequests
-        , githubValidation
+        , githubEffects
         , withSystemTempDirectory
         , withCurrentDirectory
         , writeTextFile
         , directoryExists
         , decodePrivateSSHFile
         } =
-        Validation
+        Effects
             { mpfsGetFacts = f mpfsGetFacts
             , mpfsGetTestRuns = f mpfsGetTestRuns
             , mpfsGetTokenRequests = f mpfsGetTokenRequests
-            , githubValidation = hoistGithubValidation githubValidation
+            , githubEffects = hoistGithubEffects githubEffects
             , withSystemTempDirectory =
                 \template action -> controlT
                     $ \run -> withSystemTempDirectory template (run . action)
@@ -208,11 +208,11 @@ getTokenRequests mpfs tk = case tk of
         mtoken <- fromJSON <$> mpfsGetToken mpfs tokenId
         pure $ maybe [] (fmap runIdentity . tokenRequests) mtoken
 
-mkGithubValidation
+mkGithubEffects
     :: Auth
-    -> GithubValidation ClientM
-mkGithubValidation auth =
-    GithubValidation
+    -> GithubEffects ClientM
+mkGithubEffects auth =
+    GithubEffects
         { githubCommitExists = \repository commit ->
             liftIO $ GitHub.githubCommitExists auth repository commit
         , githubDirectoryExists = \repository commit dir ->
@@ -233,14 +233,14 @@ mkGithubValidation auth =
                     sourceDir
                     targetDir
         }
-mkValidation
-    :: Auth -> MPFS ClientM -> Maybe TokenId -> Validation ClientM
-mkValidation auth mpfs tk = do
-    Validation
+mkEffects
+    :: Auth -> MPFS ClientM -> Maybe TokenId -> Effects ClientM
+mkEffects auth mpfs tk = do
+    Effects
         { mpfsGetFacts = getFacts mpfs tk
         , mpfsGetTestRuns = getTestRuns mpfs tk
         , mpfsGetTokenRequests = getTokenRequests mpfs tk
-        , githubValidation = mkGithubValidation auth
+        , githubEffects = mkGithubEffects auth
         , withSystemTempDirectory = \template action ->
             control
                 (\run -> Temp.withSystemTempDirectory template (run . action))
@@ -273,10 +273,10 @@ instance Monad m => ToJSON m KeyFailure where
 insertValidation
     :: forall m k v
      . (Monad m, FromJSON Maybe k, Eq k, Show k, FromJSON Maybe v)
-    => Validation m
+    => Effects m
     -> Change k (OpI v)
     -> Validate KeyFailure m ()
-insertValidation Validation{mpfsGetFacts} (Change (Key k) _) = do
+insertValidation Effects{mpfsGetFacts} (Change (Key k) _) = do
     facts :: [Fact k v] <- lift mpfsGetFacts
     when (any (\(Fact k' _) -> k' == k) facts)
         $ notValidated
@@ -286,10 +286,10 @@ insertValidation Validation{mpfsGetFacts} (Change (Key k) _) = do
 deleteValidation
     :: forall m k v
      . (Monad m, FromJSON Maybe k, Eq k, Show k, FromJSON Maybe v)
-    => Validation m
+    => Effects m
     -> Change k (OpD v)
     -> Validate KeyFailure m ()
-deleteValidation Validation{mpfsGetFacts} (Change (Key k) _) = do
+deleteValidation Effects{mpfsGetFacts} (Change (Key k) _) = do
     facts :: [Fact k v] <- lift mpfsGetFacts
     when (all (\(Fact k' _) -> k' /= k) facts)
         $ notValidated
@@ -299,10 +299,10 @@ deleteValidation Validation{mpfsGetFacts} (Change (Key k) _) = do
 updateValidation
     :: forall m k v w
      . (Monad m, FromJSON Maybe k, Eq k, Show k, FromJSON Maybe v)
-    => Validation m
+    => Effects m
     -> Change k (OpU v w)
     -> Validate KeyFailure m ()
-updateValidation Validation{mpfsGetFacts} (Change (Key k) _) = do
+updateValidation Effects{mpfsGetFacts} (Change (Key k) _) = do
     facts :: [Fact k v] <- lift mpfsGetFacts
     when (not $ any (\(Fact k' _) -> k' == k) facts)
         $ notValidated

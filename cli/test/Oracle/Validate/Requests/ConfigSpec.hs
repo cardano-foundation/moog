@@ -17,7 +17,7 @@ import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
     )
 import Oracle.Validate.Requests.TestRun.Lib
-    ( mkValidation
+    ( mkEffects
     , noValidation
     )
 import Oracle.Validate.Types
@@ -61,7 +61,7 @@ spec = do
                             }
             let test =
                     validateInsertConfig
-                        (mkValidation mockMPFS noValidation)
+                        (mkEffects mockMPFS noValidation)
                         oracleOwner
                         oracleOwner
                         change
@@ -88,7 +88,7 @@ spec = do
                                 }
                 let test =
                         validateInsertConfig
-                            (mkValidation mockMPFS noValidation)
+                            (mkEffects mockMPFS noValidation)
                             oracleOwner
                             oracleOwner
                             change
@@ -118,7 +118,7 @@ spec = do
                                 }
                 let test =
                         validateInsertConfig
-                            (mkValidation mockMPFS noValidation)
+                            (mkEffects mockMPFS noValidation)
                             oracleOwner
                             oracleOwner
                             change
@@ -153,7 +153,7 @@ spec = do
                                 }
                 let test =
                         validateInsertConfig
-                            (mkValidation mockMPFS noValidation)
+                            (mkEffects mockMPFS noValidation)
                             oracleOwner
                             attacker
                             change

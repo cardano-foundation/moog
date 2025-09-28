@@ -5,18 +5,18 @@ module Oracle.Validate.Requests.Lib
 import Control.Monad (void)
 import Control.Monad.Trans.Class (MonadTrans (..))
 import Data.List (find)
+import Effects (Effects (..))
 import Oracle.Types (RequestZoo)
 import Oracle.Validate.Types (Validate, throwJusts)
-import Validation (Validation (..))
 
 keyAlreadyPendingFailure
     :: (Monad m, Eq k)
-    => Validation m
+    => Effects m
     -> (k -> e)
     -> k
     -> (RequestZoo -> Maybe k)
     -> Validate e m ()
-keyAlreadyPendingFailure Validation{mpfsGetTokenRequests} e key requestZooGetRegisterUserKey = do
+keyAlreadyPendingFailure Effects{mpfsGetTokenRequests} e key requestZooGetRegisterUserKey = do
     rqs <- lift mpfsGetTokenRequests
     void
         $ throwJusts

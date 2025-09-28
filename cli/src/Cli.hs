@@ -13,6 +13,7 @@ import Core.Types.MPFS (MPFSClient (..))
 import Core.Types.Tx (TxHash, WithTxHash (..))
 import Core.Types.Wallet (Wallet)
 import Data.Functor.Identity (Identity (..))
+import Effects (mkEffects)
 import Facts (FactsSelection, factsCmd)
 import GitHub (Auth)
 import Lib.JSON.Canonical.Extra
@@ -52,7 +53,6 @@ import User.Requester.Cli
     ( RequesterCommand
     , requesterCmd
     )
-import Validation (mkValidation)
 import Wallet.Cli (WalletCommand, walletCmd)
 
 data Command a where
@@ -89,7 +89,7 @@ cmd = \case
             runMPFS
                 $ withContext
                     mpfsClient
-                    (mkValidation auth)
+                    (mkEffects auth)
                     submitTx
                 $ requesterCmd requesterCommand
     OracleCommand
@@ -99,7 +99,7 @@ cmd = \case
             runMPFS
                 $ withContext
                     mpfsClient
-                    (mkValidation auth)
+                    (mkEffects auth)
                     submitTx
                 $ oracleCmd oracleCommand
     AgentCommand
@@ -109,7 +109,7 @@ cmd = \case
             runMPFS
                 $ withContext
                     mpfsClient
-                    (mkValidation auth)
+                    (mkEffects auth)
                     submitTx
                 $ agentCmd agentCommand
     RetractRequest
@@ -124,7 +124,7 @@ cmd = \case
                     retractChange address refId
     GetFacts MPFSClient{runMPFS} tokenId factsCommand -> do
         let validation =
-                mkValidation
+                mkEffects
                     (error "shouldn't need this...")
                     mpfsClient
                     $ Just tokenId
@@ -142,7 +142,7 @@ cmd = \case
             runMPFS
                 $ withContext
                     mpfsClient
-                    (mkValidation auth)
+                    (mkEffects auth)
                     submitTx
                 $ do
                     validation <- askValidation $ Just tk

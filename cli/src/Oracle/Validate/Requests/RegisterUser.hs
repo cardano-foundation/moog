@@ -15,6 +15,16 @@ import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..))
 import Data.List (find)
+import Effects
+    ( Effects (..)
+    , GithubEffects (..)
+    , KeyFailure
+    , deleteValidation
+    , insertValidation
+    )
+import Effects.RegisterUser
+    ( PublicKeyFailure (..)
+    )
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Oracle.Types (requestZooGetRegisterUserKey)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
@@ -30,16 +40,6 @@ import Oracle.Validate.Types
 import Text.JSON.Canonical (ToJSON (..))
 import User.Types
     ( RegisterUserKey (..)
-    )
-import Validation
-    ( GithubValidation (..)
-    , KeyFailure
-    , Validation (..)
-    , deleteValidation
-    , insertValidation
-    )
-import Validation.RegisterUser
-    ( PublicKeyFailure (..)
     )
 
 data RegisterUserFailure
@@ -65,14 +65,14 @@ instance Monad m => ToJSON m RegisterUserFailure where
 
 validateRegisterUser
     :: Monad m
-    => Validation m
+    => Effects m
     -> ForRole
     -> Change RegisterUserKey (OpI ())
     -> Validate RegisterUserFailure m Validated
 validateRegisterUser
-    validation@Validation
+    validation@Effects
         { mpfsGetFacts
-        , githubValidation = GithubValidation{githubUserPublicKeys}
+        , githubEffects = GithubEffects{githubUserPublicKeys}
         }
     forRole
     change@(Change (Key key@(RegisterUserKey{platform, username, pubkeyhash})) _) = do
@@ -122,12 +122,12 @@ instance Monad m => ToJSON m UnregisterUserFailure where
 
 validateUnregisterUser
     :: Monad m
-    => Validation m
+    => Effects m
     -> ForRole
     -> Change RegisterUserKey (OpD ())
     -> Validate UnregisterUserFailure m Validated
 validateUnregisterUser
-    validation@Validation{githubValidation = GithubValidation{githubUserPublicKeys}}
+    validation@Effects{githubEffects = GithubEffects{githubUserPublicKeys}}
     forRole
     change@(Change (Key key@(RegisterUserKey{platform, username, pubkeyhash})) _v) = do
         when (forUser forRole)

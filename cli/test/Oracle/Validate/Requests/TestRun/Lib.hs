@@ -4,7 +4,7 @@
 module Oracle.Validate.Requests.TestRun.Lib
     ( jsFactRole
     , jsFactUser
-    , mkValidation
+    , mkEffects
     , noValidation
     , gitCommit
     , gitDirectory
@@ -60,6 +60,19 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.List qualified as L
 import Data.Text (Text)
+import Effects
+    ( Effects (..)
+    , GithubEffects (..)
+    , getFacts
+    , getTestRuns
+    , getTokenRequests
+    )
+import Effects.DownloadFile
+    ( DownloadedFileFailure (..)
+    , analyzeDownloadedFile
+    )
+import Effects.RegisterRole (RepositoryRoleFailure (..))
+import Effects.RegisterUser (analyzeKeys)
 import Lib.GitHub
     ( GetGithubFileFailure (..)
     )
@@ -95,19 +108,6 @@ import User.Types
     , requesterL
     , tryIndexL
     )
-import Validation
-    ( GithubValidation (..)
-    , Validation (..)
-    , getFacts
-    , getTestRuns
-    , getTokenRequests
-    )
-import Validation.DownloadFile
-    ( DownloadedFileFailure (..)
-    , analyzeDownloadedFile
-    )
-import Validation.RegisterRole (RepositoryRoleFailure (..))
-import Validation.RegisterUser (analyzeKeys)
 
 jsFactRole :: Monad m => TestRun -> m JSFact
 jsFactRole testRun =
@@ -143,11 +143,11 @@ data MockValidation = MockValidation
 aToken :: Maybe TokenId
 aToken = Just $ error "TokenId not needed for tests"
 
-mkGithubValidation
+mkGithubEffects
     :: Monad m
     => MockValidation
-    -> GithubValidation m
-mkGithubValidation
+    -> GithubEffects m
+mkGithubEffects
     MockValidation
         { mockCommits
         , mockDirectories
@@ -156,7 +156,7 @@ mkGithubValidation
         , mockReposExists
         , mockAssets
         } =
-        GithubValidation
+        GithubEffects
             { githubCommitExists = \repository commit ->
                 return $ Right $ (repository, commit) `elem` mockCommits
             , githubDirectoryExists = \repository commit dir ->
@@ -189,22 +189,22 @@ mkGithubValidation
             , githubDownloadDirectory = \_ _ _ _ -> pure $ Right ()
             }
 
-mkValidation
+mkEffects
     :: Monad m
     => MPFS m
     -> MockValidation
-    -> Validation m
-mkValidation
+    -> Effects m
+mkEffects
     mpfs
     mock@MockValidation
         { mockPermissions
         , mockSSHPrivateKey
         } =
-        Validation
+        Effects
             { mpfsGetFacts = getFacts mpfs aToken
             , mpfsGetTestRuns = getTestRuns mpfs aToken
             , mpfsGetTokenRequests = getTokenRequests mpfs aToken
-            , githubValidation = mkGithubValidation mock
+            , githubEffects = mkGithubEffects mock
             , directoryExists = \dir ->
                 pure
                     $ dir

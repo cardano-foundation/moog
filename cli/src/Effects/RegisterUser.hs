@@ -1,6 +1,6 @@
 {-# LANGUAGE StrictData #-}
 
-module Validation.RegisterUser
+module Effects.RegisterUser
     ( PublicKeyFailure (..)
     , inspectPublicKeyTemplate
     , inspectPublicKey

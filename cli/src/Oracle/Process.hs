@@ -25,6 +25,7 @@ import Core.Types.MPFS (MPFSClient (..), mpfsClientOption)
 import Core.Types.Wallet (Wallet)
 import Data.Functor (void)
 import Data.String.QQ (s)
+import Effects (mkEffects)
 import GitHub (Auth)
 import MPFS.API (mpfsClient)
 import OptEnvConf
@@ -40,7 +41,6 @@ import Oracle.Types
     )
 import Oracle.Validate.Types (AValidationResult (..), Validated (..))
 import Paths_anti (version)
-import Validation (mkValidation)
 
 intro :: String
 intro =
@@ -122,7 +122,7 @@ oracleProcess = \case
         runMPFS
             $ withContext
                 mpfsClient
-                (mkValidation poAuth)
+                (mkEffects poAuth)
                 submitTx
             $ processServer opts
 

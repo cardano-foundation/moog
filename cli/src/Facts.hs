@@ -17,6 +17,7 @@ import Data.ByteString.Char8 qualified as B8
 import Data.Foldable (find)
 import Data.Functor ((<&>))
 import Data.Functor.Identity (Identity (..))
+import Effects (Effects (..))
 import Lib.CryptoBox (decryptOnly)
 import Lib.CryptoBox qualified as CB
 import Lib.JSON.Canonical.Extra (blakeHashOfJSON)
@@ -34,7 +35,6 @@ import User.Types
     , TestRunState (..)
     , URL (..)
     )
-import Validation (Validation (..))
 
 data All = All | Requester Username
     deriving (Eq, Show)
@@ -97,7 +97,7 @@ whoseFilter whose facts = filterOn facts factKey
 factsCmd
     :: forall m a
      . Monad m
-    => Maybe (Validation m)
+    => Maybe (Effects m)
     -> MPFS m
     -> TokenId
     -> FactsSelection a

@@ -14,6 +14,11 @@ import Core.Types.Fact
     ( Fact (..)
     , keyHash
     )
+import Effects
+    ( Effects (..)
+    , GithubEffects (..)
+    , hoistValidation
+    )
 import Lib.GitHub
     ( GetGithubFileFailure
     , GithubResponseStatusCodeError
@@ -40,11 +45,6 @@ import User.Agent.Types
 import User.Types
     ( Phase (..)
     , TestRun (..)
-    )
-import Validation
-    ( GithubValidation (..)
-    , Validation (..)
-    , hoistValidation
     )
 
 data AssetValidationFailure
@@ -95,12 +95,12 @@ data SourceDirFailure
 
 checkSourceDirectory
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRun
     -> m (Maybe SourceDirFailure)
 checkSourceDirectory
-    Validation
-        { githubValidation = GithubValidation{githubDirectoryExists}
+    Effects
+        { githubEffects = GithubEffects{githubDirectoryExists}
         }
     testRun = do
         existsE <-
@@ -117,7 +117,7 @@ checkSourceDirectory
 
 downloadAssetsDirectory
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRun
     -> Directory
     -> m (Maybe GetGithubFileFailure)
@@ -126,7 +126,7 @@ downloadAssetsDirectory validation testRun dir = do
         commit = commitId testRun
         repository' = repository testRun
     r <-
-        (githubDownloadDirectory . githubValidation)
+        (githubDownloadDirectory . githubEffects)
             validation
             repository'
             (Just commit)
@@ -138,7 +138,7 @@ downloadAssetsDirectory validation testRun dir = do
 
 validateDownloadAssets
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRunMap
     -> TestRunId
     -> Directory
@@ -173,7 +173,7 @@ validateDownloadAssets validation TestRunMap{pending, running, done} testid dir 
 validateAssets
     :: Monad m
     => Directory
-    -> Validation m
+    -> Effects m
     -> TestRun
     -> Validate AssetValidationFailure m Validated
 validateAssets dir validation testRun = do

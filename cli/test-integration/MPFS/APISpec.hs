@@ -55,6 +55,7 @@ import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.Sequence.Strict qualified as Seq
 import Data.Text (Text)
 import Data.Text.Encoding qualified as T
+import Effects (mkEffects)
 import GitHub (Auth)
 import MPFS.API
     ( RequestDeleteBody (RequestDeleteBody)
@@ -102,7 +103,6 @@ import Text.JSON.Canonical
     , JSValue (..)
     , fromJSString
     )
-import Validation (mkValidation)
 
 newtype UnencryptedWallet = UnencryptedWallet
     { _unencryptedMenmonics :: Text
@@ -210,7 +210,7 @@ setup auth = do
     ValidationSuccess (WithTxHash txHash mTokenId) <- calling call $ do
         withContext
             mpfsClient
-            (mkValidation auth)
+            (mkEffects auth)
             wait180S
             $ tokenCmdCore
             $ BootToken oracleWallet
@@ -234,7 +234,7 @@ teardown auth Context{mpfs, tokenId, wait180S, oracleWallet} = do
     txHash <- calling mpfs $ do
         withContext
             mpfsClient
-            (mkValidation auth)
+            (mkEffects auth)
             wait180S
             $ tokenCmdCore
             $ EndToken tokenId oracleWallet

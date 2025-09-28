@@ -19,6 +19,7 @@ import Control.Monad.Trans.Reader (ReaderT (..), ask)
 import Core.Types.Basic (Owner, TokenId)
 import Core.Types.Fact (Fact (..), parseFacts)
 import Core.Types.Wallet (Wallet)
+import Effects (Effects)
 import MPFS.API (MPFS (..))
 import Oracle.Config.Types
     ( Config (configAgent, configTestRun)
@@ -28,13 +29,12 @@ import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig
     )
 import Submitting (Submission)
-import Validation (Validation)
 
 -- it would be nice to modulate it a bit depending con the command but we do not
 -- have a type for each command
 data Context m = Context
     { ctxMPFS :: MPFS m
-    , ctxMkValidation :: Maybe TokenId -> Validation m
+    , ctxMkValidation :: Maybe TokenId -> Effects m
     , ctxSubmit :: Wallet -> Submission m
     }
 
@@ -77,7 +77,7 @@ askAgentPKH :: Monad m => TokenId -> WithContext m (Maybe Owner)
 askAgentPKH tokenId = withConfig tokenId configAgent
 
 askValidation
-    :: Monad m => Maybe TokenId -> WithContext m (Validation m)
+    :: Monad m => Maybe TokenId -> WithContext m (Effects m)
 askValidation tokenId = do
     ctx <- WithContext ask
     return $ ctxMkValidation ctx tokenId
@@ -87,15 +87,15 @@ askSubmit w = flip ctxSubmit w <$> WithContext ask
 
 withContext
     :: MPFS m
-    -> (MPFS m -> Maybe TokenId -> Validation m)
+    -> (MPFS m -> Maybe TokenId -> Effects m)
     -> (Wallet -> Submission m)
     -> WithContext m a
     -> m a
-withContext mpfs mkValidation submit (WithContext action) =
+withContext mpfs mkEffects submit (WithContext action) =
     runReaderT
         action
         Context
             { ctxMPFS = mpfs
-            , ctxMkValidation = mkValidation mpfs
+            , ctxMkValidation = mkEffects mpfs
             , ctxSubmit = submit
             }

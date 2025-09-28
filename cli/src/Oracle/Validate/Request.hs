@@ -3,6 +3,7 @@ module Oracle.Validate.Request
     ) where
 
 import Core.Types.Basic (Owner)
+import Effects (Effects (..))
 import Oracle.Config.Types (Config (..))
 import Oracle.Types
     ( Request (..)
@@ -37,13 +38,12 @@ import Oracle.Validate.Types
     , mapFailure
     , notValidated
     )
-import Validation (Validation (..))
 
 validateRequest
     :: Monad m
     => Owner
     -> Maybe Config
-    -> Validation m
+    -> Effects m
     -> RequestZoo
     -> Validate RequestValidationFailure m Validated
 validateRequest _ _ validation (RegisterUserRequest (Request _ _ change)) =

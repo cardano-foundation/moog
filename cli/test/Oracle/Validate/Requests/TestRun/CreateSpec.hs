@@ -47,7 +47,7 @@ import Oracle.Validate.Requests.TestRun.Lib
     , gitDirectory
     , jsFactRole
     , jsFactUser
-    , mkValidation
+    , mkEffects
     , noValidation
     , signTestRun
     , signatureGen
@@ -164,7 +164,7 @@ spec = do
                             "testnet: true"
 
                 validation =
-                    mkValidation (withFacts facts mockMPFS)
+                    mkEffects (withFacts facts mockMPFS)
                         $ noValidation
                             { mockCommits = [commit]
                             , mockDirectories = [directory]
@@ -221,7 +221,7 @@ spec = do
                                 }
                 db <- genBlind $ oneof [pure [], pure [pendingRequest]]
                 let validation =
-                        mkValidation (withRequests db mockMPFS) noValidation
+                        mkEffects (withRequests db mockMPFS) noValidation
                 pure
                     $ when (not (null db) && forUser forRole)
                     $ do
@@ -247,7 +247,7 @@ spec = do
                     runValidate
                         $ validateCreateTestRunCore
                             testConfig
-                            (mkValidation mockMPFS noValidation)
+                            (mkEffects mockMPFS noValidation)
                             testRun
                             testRunState
                 let expectedMinDuration = minDuration testConfig
@@ -274,7 +274,7 @@ spec = do
                         ]
             roleFact <- jsFactRole testRunFact
             let validation =
-                    mkValidation
+                    mkEffects
                         (withFacts [roleFact] mockMPFS)
                         noValidation
                 testRunState = Pending (Duration duration) signature
@@ -337,7 +337,7 @@ spec = do
                         ]
             testRunFact <- toJSFact testRunDB testRunStateDB
             let validation =
-                    mkValidation
+                    mkEffects
                         (withFacts [testRunFact | testRunDB.tryIndex > 0] mockMPFS)
                         noValidation
             let testRunState = Pending (Duration duration) signature
@@ -373,7 +373,7 @@ spec = do
             let testRunState = Pending (Duration duration) signature
             testRunFact <- toJSFact testRun' testRunState
             let validation =
-                    mkValidation (withFacts [testRunFact] mockMPFS)
+                    mkEffects (withFacts [testRunFact] mockMPFS)
                         $ noValidation
                             { mockDirectories = [gitDirectory testRun']
                             }
@@ -408,7 +408,7 @@ spec = do
                     $ oneof
                         [pure [], pure [whiteListFact]]
             let validation =
-                    mkValidation (withFacts whiteListed mockMPFS) noValidation
+                    mkEffects (withFacts whiteListed mockMPFS) noValidation
             pure $ do
                 mresult <-
                     runValidate

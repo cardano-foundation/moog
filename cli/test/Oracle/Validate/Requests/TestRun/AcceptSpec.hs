@@ -16,7 +16,7 @@ import MockMPFS (mockMPFS, withFacts, withRequests)
 import Oracle.Types (Request (..), RequestZoo (AcceptRequest))
 import Oracle.Validate.Requests.RegisterUserSpec (genForRole)
 import Oracle.Validate.Requests.TestRun.Lib
-    ( mkValidation
+    ( mkEffects
     , noValidation
     , signatureGen
     , testRunEGen
@@ -60,7 +60,7 @@ spec = do
             let pendingState = Pending (Duration 5) signature
             testRunFact <- toJSFact testRun pendingState
             let validation =
-                    mkValidation (withFacts [testRunFact] mockMPFS) noValidation
+                    mkEffects (withFacts [testRunFact] mockMPFS) noValidation
                 newTestRunState = Accepted pendingState
                 test = validateToRunningCore validation testRun newTestRunState
             pure $ test `shouldReturn` Nothing
@@ -79,7 +79,7 @@ spec = do
                             (Request{outputRefId = RequestRefId "", owner = anOwner, change})
                 db <- genBlind $ oneof [pure [], pure [pendingRequest]]
                 let validation =
-                        mkValidation (withRequests db mockMPFS) noValidation
+                        mkEffects (withRequests db mockMPFS) noValidation
                     test = validateToRunningUpdate validation forRole anOwner anOwner change
                 pure
                     $ when (not (null db) && forUser forRole)
@@ -96,7 +96,7 @@ spec = do
                     newTestRunState = Accepted pendingState
                     test =
                         validateToRunningCore
-                            (mkValidation mockMPFS noValidation)
+                            (mkEffects mockMPFS noValidation)
                             testRun
                             newTestRunState
                 pure $ test `shouldReturn` Just PreviousStateWrong
@@ -115,7 +115,7 @@ spec = do
                         Pending (Duration differentDuration) differentSignature
                 testRunFact <- toJSFact testRun fact
                 let validation =
-                        mkValidation (withFacts [testRunFact] mockMPFS) noValidation
+                        mkEffects (withFacts [testRunFact] mockMPFS) noValidation
                     newTestRunState = Accepted request
                     test = validateToRunningCore validation testRun newTestRunState
                 pure

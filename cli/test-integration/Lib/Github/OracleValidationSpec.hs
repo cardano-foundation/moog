@@ -11,6 +11,14 @@ import Core.Types.Basic
     , Username (..)
     )
 import Data.Text qualified as T
+import Effects.RegisterRole
+    ( RepositoryRoleFailure (..)
+    , inspectRepoRoleForUserTemplate
+    )
+import Effects.RegisterUser
+    ( PublicKeyFailure (..)
+    , inspectPublicKeyTemplate
+    )
 import GitHub (Auth)
 import Lib.GitHub
     ( GetGithubFileFailure (..)
@@ -23,14 +31,6 @@ import Test.Hspec
     , describe
     , it
     , shouldReturn
-    )
-import Validation.RegisterRole
-    ( RepositoryRoleFailure (..)
-    , inspectRepoRoleForUserTemplate
-    )
-import Validation.RegisterUser
-    ( PublicKeyFailure (..)
-    , inspectPublicKeyTemplate
     )
 
 existenceSpec :: SpecWith Auth

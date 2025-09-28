@@ -31,6 +31,11 @@ import Core.Types.Wallet (Wallet)
 import Crypto.PubKey.Ed25519 (Signature)
 import Data.ByteString.Lazy qualified as BL
 import Data.Functor (($>))
+import Effects
+    ( Effects (..)
+    , GithubEffects (..)
+    , hoistValidation
+    )
 import Lib.GitHub (GetGithubFileFailure)
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Lib.SSH.Private
@@ -77,11 +82,6 @@ import User.Types
     , RegisterUserKey (..)
     , TestRun (..)
     , TestRunState (..)
-    )
-import Validation
-    ( GithubValidation (..)
-    , Validation (..)
-    , hoistValidation
     )
 
 data RequesterCommand a where
@@ -155,8 +155,8 @@ generateAssets
     => Directory
     -> WithContext m (AValidationResult GetGithubFileFailure Success)
 generateAssets (Directory targetDirectory) = do
-    Validation
-        { githubValidation = GithubValidation{githubDownloadDirectory}
+    Effects
+        { githubEffects = GithubEffects{githubDownloadDirectory}
         } <-
         askValidation Nothing
     lift

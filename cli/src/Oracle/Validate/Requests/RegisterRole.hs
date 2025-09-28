@@ -14,6 +14,16 @@ import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Operation
     ( Op (..)
     )
+import Effects
+    ( Effects (..)
+    , GithubEffects (..)
+    , KeyFailure
+    , deleteValidation
+    , insertValidation
+    )
+import Effects.RegisterRole
+    ( RepositoryRoleFailure (..)
+    )
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Oracle.Types (requestZooGetRegisterRoleKey)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
@@ -28,16 +38,6 @@ import Oracle.Validate.Types
 import Text.JSON.Canonical (ToJSON (..))
 import User.Types
     ( RegisterRoleKey (..)
-    )
-import Validation
-    ( GithubValidation (..)
-    , KeyFailure
-    , Validation (..)
-    , deleteValidation
-    , insertValidation
-    )
-import Validation.RegisterRole
-    ( RepositoryRoleFailure (..)
     )
 
 data RegisterRoleFailure
@@ -61,12 +61,12 @@ instance Monad m => ToJSON m RegisterRoleFailure where
 
 validateRegisterRole
     :: Monad m
-    => Validation m
+    => Effects m
     -> ForRole
     -> Change RegisterRoleKey (OpI ())
     -> Validate RegisterRoleFailure m Validated
 validateRegisterRole
-    validation@Validation{githubValidation = GithubValidation{githubRepositoryRole}}
+    validation@Effects{githubEffects = GithubEffects{githubRepositoryRole}}
     forRole
     change@(Change (Key k) _) = do
         when (forUser forRole)
@@ -108,12 +108,12 @@ instance Monad m => ToJSON m UnregisterRoleFailure where
 
 validateUnregisterRole
     :: Monad m
-    => Validation m
+    => Effects m
     -> ForRole
     -> Change RegisterRoleKey (OpD ())
     -> Validate UnregisterRoleFailure m Validated
 validateUnregisterRole
-    validation@Validation{githubValidation = GithubValidation{githubRepositoryRole}}
+    validation@Effects{githubEffects = GithubEffects{githubRepositoryRole}}
     forRole
     change@(Change (Key k) _) = do
         when (forUser forRole)

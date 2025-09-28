@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
 
-module Validation.DownloadFile
+module Effects.DownloadFile
     ( DownloadedFileFailure (..)
     , inspectDownloadedFileTemplate
     , inspectDownloadedFile

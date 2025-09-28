@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
 
-module Validation.RegisterRole
+module Effects.RegisterRole
     ( RepositoryRoleFailure (..)
     , inspectRepoRoleForUserTemplate
     , inspectRepoRoleForUser

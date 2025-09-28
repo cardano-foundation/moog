@@ -49,7 +49,7 @@ import Oracle.Validate.Requests.TestRun.Config
 import Oracle.Validate.Requests.TestRun.Lib
     ( MockValidation (..)
     , gitAsset
-    , mkValidation
+    , mkEffects
     , noValidation
     )
 import Oracle.Validate.Types (AValidationResult (..))
@@ -202,7 +202,7 @@ spec = describe "User.Requester.Cli" $ do
         withContext
             mockMPFS{mpfsGetTokenFacts = const $ toJSON facts}
             ( \_ _ ->
-                mkValidation
+                mkEffects
                     (withFacts facts mockMPFS)
                     $ noValidation
                         { mockSSHPrivateKey = validSSHKeys

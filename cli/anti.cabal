@@ -104,6 +104,10 @@ library
     Core.Types.Tx
     Core.Types.Wallet
     Docker
+    Effects
+    Effects.DownloadFile
+    Effects.RegisterRole
+    Effects.RegisterUser
     Facts
     Lib.Box
     Lib.CryptoBox
@@ -149,10 +153,6 @@ library
     User.Requester.Cli
     User.Requester.Options
     User.Types
-    Validation
-    Validation.DownloadFile
-    Validation.RegisterRole
-    Validation.RegisterUser
     Wallet.Cli
     Wallet.Options
     Words

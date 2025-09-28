@@ -9,6 +9,7 @@ import Core.Types.Basic (Owner (..), Platform (..), Repository (..))
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (toJSFact)
 import Core.Types.Operation (Op (OpD, OpI), Operation (..))
+import Effects (KeyFailure (..))
 import MockMPFS (mockMPFS, withFacts)
 import Oracle.Validate.Requests.ManageWhiteList
     ( UpdateWhiteListFailure (..)
@@ -17,7 +18,7 @@ import Oracle.Validate.Requests.ManageWhiteList
     )
 import Oracle.Validate.Requests.TestRun.Lib
     ( MockValidation (..)
-    , mkValidation
+    , mkEffects
     , noValidation
     )
 import Oracle.Validate.Types
@@ -39,7 +40,6 @@ import Test.QuickCheck.JSString (genAscii)
 import Test.QuickCheck.Lib (withAPresence, withAPresenceInAList)
 import User.Agent.Types (WhiteListKey (..))
 import User.Agent.TypesSpec (genRepository)
-import Validation (KeyFailure (..))
 
 addWhiteListKey
     :: Platform
@@ -68,7 +68,7 @@ spec = do
             repo <- gen genRepository
             agent <- gen genAscii
             let validation =
-                    mkValidation mockMPFS
+                    mkEffects mockMPFS
                         $ noValidation
                             { mockReposExists = [repo]
                             }
@@ -88,7 +88,7 @@ spec = do
                 agent <- gen genAscii
                 platform <- gen $ withAPresence 0.5 "github" genAscii
                 let validation =
-                        mkValidation mockMPFS
+                        mkEffects mockMPFS
                             $ noValidation
                                 { mockReposExists = [repo]
                                 }
@@ -112,7 +112,7 @@ spec = do
                 agent <- gen genAscii
                 presence <- gen $ withAPresenceInAList 0.5 repo genRepository
                 let validation =
-                        mkValidation mockMPFS
+                        mkEffects mockMPFS
                             $ noValidation
                                 { mockReposExists = presence
                                 }
@@ -146,7 +146,7 @@ spec = do
                 presenceInFacts <-
                     gen $ oneof [pure [], pure [fact]]
                 let validation =
-                        mkValidation (withFacts presenceInFacts mockMPFS)
+                        mkEffects (withFacts presenceInFacts mockMPFS)
                             $ noValidation
                                 { mockReposExists = presenceInGithub
                                 }
@@ -174,7 +174,7 @@ spec = do
             presenceInGithub <-
                 gen $ withAPresenceInAList 0.5 repo genRepository
             let validation =
-                    mkValidation (withFacts [fact] mockMPFS)
+                    mkEffects (withFacts [fact] mockMPFS)
                         $ noValidation
                             { mockReposExists = presenceInGithub
                             }
@@ -201,7 +201,7 @@ spec = do
                 presenceInFacts <-
                     gen $ oneof [pure [], pure [fact]]
                 let validation =
-                        mkValidation (withFacts presenceInFacts mockMPFS)
+                        mkEffects (withFacts presenceInFacts mockMPFS)
                             $ noValidation
                                 { mockReposExists = presenceInGithub
                                 }
@@ -230,7 +230,7 @@ spec = do
                 fact <- toJSFact key ()
                 presenceInGithub <- gen $ withAPresenceInAList 0.5 repo genRepository
                 let validation =
-                        mkValidation (withFacts [fact] mockMPFS)
+                        mkEffects (withFacts [fact] mockMPFS)
                             $ noValidation
                                 { mockReposExists = presenceInGithub
                                 }
@@ -264,7 +264,7 @@ spec = do
                 presenceInFacts <-
                     gen $ oneof [pure [], pure [fact]]
                 let validation =
-                        mkValidation (withFacts presenceInFacts mockMPFS)
+                        mkEffects (withFacts presenceInFacts mockMPFS)
                             $ noValidation
                                 { mockReposExists = presenceInGithub
                                 }

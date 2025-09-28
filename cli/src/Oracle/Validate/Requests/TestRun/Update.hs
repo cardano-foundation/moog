@@ -14,6 +14,11 @@ import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..), Operation (..))
 import Data.Foldable (for_)
+import Effects
+    ( Effects (..)
+    , KeyFailure
+    , updateValidation
+    )
 import Lib.JSON.Canonical.Extra
 import Oracle.Types (requestZooGetTestRunKey)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
@@ -30,11 +35,6 @@ import User.Types
     ( Phase (..)
     , TestRun (..)
     , TestRunState (..)
-    )
-import Validation
-    ( KeyFailure
-    , Validation (..)
-    , updateValidation
     )
 
 data AgentRejection = PreviousStateWrong
@@ -93,7 +93,7 @@ checkingUpdates operation f = case operation of
 
 validateToDoneUpdate
     :: (Monad m, FromJSON Maybe x)
-    => Validation m
+    => Effects m
     -> ForRole
     -> Owner
     -> Owner
@@ -119,7 +119,7 @@ validateToDoneUpdate
 
 validateToDoneCore
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRun
     -> TestRunState DoneT
     -> m (Maybe AgentRejection)
@@ -131,11 +131,11 @@ validateToDoneCore
 
 checkPastState
     :: (Monad m, FromJSON Maybe (TestRunState t))
-    => Validation m
+    => Effects m
     -> TestRun
     -> TestRunState t
     -> m (Maybe AgentRejection)
-checkPastState Validation{mpfsGetFacts} testRun accepted = do
+checkPastState Effects{mpfsGetFacts} testRun accepted = do
     testRuns <- mpfsGetFacts
     if Fact testRun accepted `elem` testRuns
         then pure Nothing
@@ -143,7 +143,7 @@ checkPastState Validation{mpfsGetFacts} testRun accepted = do
 
 validateToRunningUpdate
     :: Monad m
-    => Validation m
+    => Effects m
     -> ForRole
     -> Owner
     -> Owner
@@ -168,7 +168,7 @@ validateToRunningUpdate
 
 validateToRunningCore
     :: Monad m
-    => Validation m
+    => Effects m
     -> TestRun
     -> TestRunState RunningT
     -> m (Maybe AgentRejection)

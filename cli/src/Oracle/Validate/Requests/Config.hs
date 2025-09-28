@@ -9,6 +9,12 @@ import Control.Monad (when)
 import Core.Types.Basic (Owner)
 import Core.Types.Change (Change (..))
 import Core.Types.Operation (Op (..), Operation (..))
+import Effects
+    ( Effects
+    , KeyFailure
+    , insertValidation
+    , updateValidation
+    )
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Oracle.Config.Types
     ( Config (Config, configTestRun)
@@ -24,12 +30,6 @@ import Oracle.Validate.Types
     , notValidated
     )
 import Text.JSON.Canonical (Int54, ToJSON (..))
-import Validation
-    ( KeyFailure
-    , Validation
-    , insertValidation
-    , updateValidation
-    )
 
 data ConfigFailure
     = ConfigureKeyValidationFailure KeyFailure
@@ -76,7 +76,7 @@ commonValidation oracleOwner submitterOwner configTestRun = do
 
 validateInsertConfig
     :: Monad m
-    => Validation m
+    => Effects m
     -> Owner
     -- ^ Oracle
     -> Owner
@@ -97,7 +97,7 @@ validateInsertConfig
 
 validateUpdateConfig
     :: Monad m
-    => Validation m
+    => Effects m
     -> Owner
     -- ^ Oracle
     -> Owner

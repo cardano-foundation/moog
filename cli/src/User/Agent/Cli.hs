@@ -52,6 +52,7 @@ import Data.Function ((&))
 import Data.Functor (($>), (<&>))
 import Data.Functor.Identity (Identity (..))
 import Data.List (find)
+import Effects (Effects)
 import Lib.CryptoBox qualified as CB
 import Lib.JSON.Canonical.Extra (blakeHashOfJSON, object, (.=))
 import Lib.SSH.Public (decodePublicKey)
@@ -123,7 +124,6 @@ import User.Types
     , TestRunState (..)
     , URL (..)
     )
-import Validation (Validation)
 
 type ValidateWithContext m a =
     Validate UpdateTestRunFailure (WithContext m) a
@@ -479,7 +479,7 @@ downloadAssets tokenId testRunId dir = do
 
 signAndSubmitAnUpdate
     :: (ToJSON m key, ToJSON m old, ToJSON m new, Monad m)
-    => ( Validation m
+    => ( Effects m
          -> Owner
          -> Owner
          -> Change key ('OpU old new)

@@ -16,7 +16,7 @@ import MockMPFS (mockMPFS, withFacts, withRequests)
 import Oracle.Types (Request (..), RequestZoo (..))
 import Oracle.Validate.Requests.RegisterUserSpec (genForRole)
 import Oracle.Validate.Requests.TestRun.Lib
-    ( mkValidation
+    ( mkEffects
     , noValidation
     , signatureGen
     , testRunEGen
@@ -61,7 +61,7 @@ spec = do
             let pendingState = Pending (Duration 5) signature
             testRunFact <- toJSFact testRun pendingState
             let validation =
-                    mkValidation
+                    mkEffects
                         (withFacts [testRunFact] mockMPFS)
                         noValidation
                 newTestRunState = Rejected pendingState [BrokenInstructions]
@@ -89,7 +89,7 @@ spec = do
                             Request{outputRefId = RequestRefId "", owner = anOwner, change}
                 db <- genBlind $ oneof [pure [], pure [pendingRequest]]
                 let validation =
-                        mkValidation
+                        mkEffects
                             (withRequests db mockMPFS)
                             noValidation
                     test = validateToDoneUpdate validation forRole anOwner anOwner change
@@ -108,7 +108,7 @@ spec = do
                     newTestRunState = Rejected pendingState [BrokenInstructions]
                     test =
                         validateToDoneCore
-                            (mkValidation mockMPFS noValidation)
+                            (mkEffects mockMPFS noValidation)
                             testRun
                             newTestRunState
                 pure $ test `shouldReturn` Just PreviousStateWrong
@@ -127,7 +127,7 @@ spec = do
                         Pending (Duration differentDuration) differentSignature
                 testRunFact <- toJSFact testRun fact
                 let validation =
-                        mkValidation
+                        mkEffects
                             (withFacts [testRunFact] mockMPFS)
                             noValidation
                     newTestRunState = Rejected request [BrokenInstructions]
