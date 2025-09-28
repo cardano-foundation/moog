@@ -19,6 +19,7 @@ import Core.Types.Basic
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Operation (Operation (..))
 import Core.Types.Tx (Root (..))
+import Data.CaseInsensitive (mk)
 import Data.Functor.Identity (Identity (..))
 import Oracle.Types
 import Test.Hspec (Spec, describe, it)
@@ -49,7 +50,7 @@ genPlatform :: Gen Platform
 genPlatform = elements [Platform "linux", Platform "windows", Platform "macos"]
 
 genUsername :: Gen GithubUsername
-genUsername = GithubUsername <$> listOf (elements ['a' .. 'z'])
+genUsername = GithubUsername . mk <$> listOf (elements ['a' .. 'z'])
 
 genPublicKeyHash :: Gen PublicKeyHash
 genPublicKeyHash = PublicKeyHash <$> listOf (elements $ ['a' .. 'f'] ++ ['0' .. '9'])

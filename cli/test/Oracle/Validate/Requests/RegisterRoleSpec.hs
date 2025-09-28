@@ -14,6 +14,7 @@ import Core.Types.Basic
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (toJSFact)
 import Core.Types.Operation (Op (OpD, OpI), Operation (..))
+import Data.CaseInsensitive (mk)
 import Data.Char (isAscii)
 import Effects (KeyFailure (..))
 import Effects.RegisterRole
@@ -52,11 +53,11 @@ import User.Types (RegisterRoleKey (..))
 
 genRoleDBElement :: Gen (GithubUsername, GithubRepository)
 genRoleDBElement = do
-    user <- GithubUsername <$> arbitrary `suchThat` all isAscii
+    user <- GithubUsername . mk <$> arbitrary `suchThat` all isAscii
     repo <-
-        GithubRepository
+        GithubRepository . mk
             <$> arbitrary `suchThat` all isAscii
-            <*> arbitrary `suchThat` all isAscii
+            <*> (mk <$> arbitrary `suchThat` all isAscii)
     pure (user, repo)
 
 registerRoleChange

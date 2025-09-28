@@ -17,6 +17,7 @@ import Core.Types.Basic
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (toJSFact)
 import Core.Types.Operation (Op (OpD, OpI), Operation (..))
+import Data.CaseInsensitive (mk)
 import Data.Char (isAscii)
 import Effects (KeyFailure (..))
 import Effects.RegisterUser (PublicKeyFailure (..))
@@ -60,13 +61,13 @@ import User.Types (RegisterUserKey (..))
 
 genUserDBElement :: Gen (GithubUsername, SSHPublicKey)
 genUserDBElement = do
-    user <- GithubUsername <$> genAscii
+    user <- GithubUsername . mk <$> genAscii
     pk <- SSHPublicKey <$> genAscii
     pure (user, pk)
 
 genValidDBElement :: EGen (GithubUsername, SSHPublicKey)
 genValidDBElement = do
-    user <- gen $ GithubUsername <$> genAscii
+    user <- gen $ GithubUsername . mk <$> genAscii
     (_sign, pk) <- genBlind sshGen
     pure (user, encodeSSHPublicKey pk)
 
@@ -112,7 +113,7 @@ genForRole = gen $ oneof [pure ForOracle, pure ForUser]
 
 genDBElementOther :: Gen (GithubUsername, OtherSSHPublicKey)
 genDBElementOther = do
-    user <- GithubUsername <$> arbitrary `suchThat` all isAscii
+    user <- GithubUsername . mk <$> arbitrary `suchThat` all isAscii
     pk <- arbitrary `suchThat` all isAscii
     pure (user, OtherSSHPublicKey $ "ssh-rsa " <> pk)
 

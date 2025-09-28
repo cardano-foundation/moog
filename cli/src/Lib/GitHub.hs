@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Redundant $" #-}
 module Lib.GitHub
     ( GithubResponseError (..)
     , GetGithubFileFailure (..)
@@ -32,6 +35,7 @@ import Core.Types.Basic
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as B
 import Data.ByteString.Base64 qualified as B64
+import Data.CaseInsensitive (CI (..))
 import Data.Foldable (Foldable (..), forM_)
 import Data.Function ((&))
 import Data.Text qualified as T
@@ -157,9 +161,9 @@ githubCommitExists auth (GithubRepository owner repo) (Commit sha) = do
                 Right a -> return a
         Right _ -> return $ Right True
   where
-    owner' = N $ T.pack owner
-    repo' = N $ T.pack repo
-    sha' = N $ T.pack sha
+    owner' = N $ T.pack $ foldedCase owner
+    repo' = N $ T.pack $ foldedCase repo
+    sha' = N $ T.pack $ sha
 
 githubRepositoryExists
     :: Auth
@@ -173,8 +177,8 @@ githubRepositoryExists auth (GithubRepository owner repo) = do
                 return $ Just False
         Right _ -> return $ Right True
   where
-    owner' = N $ T.pack owner
-    repo' = N $ T.pack repo
+    owner' = N $ T.pack $ foldedCase owner
+    repo' = N $ T.pack $ foldedCase repo
 
 githubDirectoryExists
     :: Auth
@@ -197,15 +201,16 @@ githubDirectoryExists auth (GithubRepository owner repo) (Commit sha) (Directory
                 return $ Just False
         Right _ -> return $ Right True
   where
-    owner' = N $ T.pack owner
-    repo' = N $ T.pack repo
+    owner' = N $ T.pack $ foldedCase owner
+    repo' = N $ T.pack $ foldedCase repo
     sha' = T.pack sha
 
 githubUserPublicKeys
     :: Auth -> GithubUsername -> IO (Either GithubResponseError [T.Text])
 githubUserPublicKeys auth (GithubUsername name) = do
     result <-
-        github auth $ GH.publicSSHKeysForR (N $ T.pack name) FetchAll
+        github auth
+            $ GH.publicSSHKeysForR (N $ T.pack $ foldedCase name) FetchAll
     case result of
         Left e ->
             pure
@@ -306,8 +311,8 @@ githubGetFile auth (GithubRepository owner repo) commitM (FileName filename) = d
                 . Left
                 $ GetGithubFileNotAFile
   where
-    owner' = N $ T.pack owner
-    repo' = N $ T.pack repo
+    owner' = N $ T.pack $ foldedCase owner
+    repo' = N $ T.pack $ foldedCase repo
 
 githubStreamDirectoryContents
     :: Auth
@@ -374,8 +379,8 @@ githubStreamDirectoryContents
                                 $ parseRelDir (T.unpack contentPath)
                         go dir'
       where
-        owner' = N $ T.pack owner
-        repo' = N $ T.pack repo
+        owner' = N $ T.pack $ foldedCase owner
+        repo' = N $ T.pack $ foldedCase repo
 
 dirToFile
     :: Monad m => Path b t -> ExceptT GetGithubFileFailure m (Path Rel File)

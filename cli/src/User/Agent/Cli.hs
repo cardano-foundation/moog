@@ -47,6 +47,7 @@ import Core.Types.Tx (WithTxHash (..))
 import Core.Types.Wallet (Wallet (..))
 import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Char8 qualified as B8
+import Data.CaseInsensitive (CI (..))
 import Data.Either (rights)
 import Data.Function ((&))
 import Data.Functor (($>), (<&>))
@@ -276,11 +277,11 @@ data ReportFailure
 instance Monad m => ToJSON m ReportFailure where
     toJSON (ReportFailureUserKeyNotFound (GithubUsername user)) =
         object
-            [ "userKeyNotFound" .= user
+            [ "userKeyNotFound" .= foldedCase user
             ]
     toJSON (ReportFailureUserKeyUnparsable (GithubUsername user)) =
         object
-            [ "userKeyUnparsable" .= user
+            [ "userKeyUnparsable" .= foldedCase user
             ]
     toJSON (ReportFailureFactNotFound (TestRunId trId)) =
         object

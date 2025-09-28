@@ -36,6 +36,7 @@ import Core.Types.Fact (Fact (..))
 import Core.Types.MPFS (MPFSClient (..), mpfsClientOption)
 import Core.Types.Tx (WithTxHash)
 import Core.Types.Wallet (Wallet)
+import Data.CaseInsensitive (mk)
 import Data.Foldable (find, for_)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.String.QQ (s)
@@ -175,7 +176,7 @@ someRequestersOption :: Parser Requesters
 someRequestersOption =
     let fromOption =
             many
-                $ GithubUsername
+                $ GithubUsername . mk
                     <$> strOption
                         [ long "trusted-test-requester"
                         , short 'c'
@@ -188,7 +189,7 @@ someRequestersOption =
         fromConfig =
             fmap (fromMaybe [])
                 $ optional
-                $ fmap GithubUsername
+                $ fmap (GithubUsername . mk)
                     <$> setting
                         [ conf "trustedRequesters"
                         , help "List of trusted test-run requesters GitHub usernames."

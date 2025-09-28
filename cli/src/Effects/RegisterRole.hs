@@ -8,6 +8,7 @@ module Effects.RegisterRole
     ) where
 
 import Core.Types.Basic (GithubRepository, GithubUsername (..))
+import Data.CaseInsensitive (CI (..))
 import Data.List qualified as L
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
@@ -68,7 +69,7 @@ analyzeResponseCodeownersFile (GithubUsername user) = \case
         getUsersWithRole
             <$> L.take 1 (lineWithRole file)
     foundUser file =
-        L.filter (== ("@" <> T.pack user)) . T.words
+        L.filter (== ("@" <> T.pack (foldedCase user))) . T.words
             <$> catMaybes (users file)
 
 inspectRepoRoleForUserTemplate

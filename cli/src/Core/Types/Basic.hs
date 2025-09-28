@@ -27,6 +27,7 @@ import Control.Lens (Lens', Wrapped)
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Base16 (encode)
 import Data.ByteString.Char8 qualified as B
+import Data.CaseInsensitive (CI (..), mk)
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Generics (Generic)
@@ -142,14 +143,14 @@ newtype FileName = FileName String
 
 instance Wrapped FileName
 
-newtype GithubUsername = GithubUsername String
+newtype GithubUsername = GithubUsername (CI String)
     deriving (Eq, Show, Generic)
 
 instance Wrapped GithubUsername
 
 data GithubRepository = GithubRepository
-    { organization :: String
-    , project :: String
+    { organization :: CI String
+    , project :: CI String
     }
     deriving (Eq, Show)
 
@@ -157,20 +158,20 @@ instance (Monad m) => ToJSON m GithubRepository where
     toJSON
         (GithubRepository owner repo) =
             object
-                [ ("organization", stringJSON owner)
-                , ("repo", stringJSON repo)
+                [ ("organization", stringJSON $ foldedCase owner)
+                , ("repo", stringJSON $ foldedCase repo)
                 ]
 
 instance (ReportSchemaErrors m) => FromJSON m GithubRepository where
     fromJSON = withObject "GithubRepository" $ \v -> do
-        organization <- v .: "organization"
-        project <- v .: "repo"
+        organization <- mk <$> v .: "organization"
+        project <- mk <$> v .: "repo"
         pure $ GithubRepository organization project
 
-organizationL :: Lens' GithubRepository String
+organizationL :: Lens' GithubRepository (CI String)
 organizationL f (GithubRepository org proj) = (`GithubRepository` proj) <$> f org
 
-projectL :: Lens' GithubRepository String
+projectL :: Lens' GithubRepository (CI String)
 projectL f (GithubRepository org proj) = GithubRepository org <$> f proj
 
 newtype Port = Port Int

@@ -33,6 +33,7 @@ import Core.Types.Mnemonics.Options (mnemonicsParser)
 import Core.Types.Wallet
     ( Wallet
     )
+import Data.CaseInsensitive (mk)
 import Data.Text qualified as T
 import OptEnvConf
     ( Parser
@@ -68,7 +69,8 @@ platformOption =
 
 parseRepository :: String -> Maybe GithubRepository
 parseRepository repoStr = case break (== '/') repoStr of
-    (org, '/' : proj) -> Just $ GithubRepository org proj
+    (org, '/' : proj) ->
+        Just $ GithubRepository{organization = mk org, project = mk proj}
     _ -> Nothing
 
 repositoryOption :: Parser GithubRepository

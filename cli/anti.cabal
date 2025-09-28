@@ -178,6 +178,7 @@ library
     , cardano-ledger-api     ^>=1.11.0.0
     , cardano-ledger-binary  ^>=1.6.0.0
     , cardano-ledger-core    ^>=1.17.0.0
+    , case-insensitive
     , containers             ^>=0.6.8
     , crypton
     , crypton-box
@@ -377,6 +378,7 @@ test-suite anti-unit-test
     , base
     , bytestring
     , canonical-json
+    , case-insensitive
     , crypton
     , directory
     , hspec

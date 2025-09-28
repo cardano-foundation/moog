@@ -9,6 +9,7 @@ import Core.Types.Basic
     ( GithubRepository (..)
     , Platform (Platform)
     )
+import Data.CaseInsensitive (mk)
 import Data.Char (isAscii)
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Canonical (roundTrip)
@@ -24,8 +25,9 @@ import User.Agent.Types (WhiteListKey (..))
 
 genRepository :: Gen GithubRepository
 genRepository = do
-    owner <- genAscii
-    GithubRepository owner <$> genAscii
+    owner <- mk <$> genAscii
+    project <- mk <$> genAscii
+    pure $ GithubRepository{organization = owner, project = project}
 
 genWhiteListKey :: Gen WhiteListKey
 genWhiteListKey = do

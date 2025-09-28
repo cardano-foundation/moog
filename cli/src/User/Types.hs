@@ -40,6 +40,7 @@ import Core.Types.Basic
 import Crypto.Error (CryptoFailable (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.ByteArray qualified as BA
+import Data.CaseInsensitive (CI (..), mk)
 import Data.Map.Strict qualified as Map
 import Lib.JSON.Canonical.Extra
     ( byteStringFromJSON
@@ -115,7 +116,7 @@ instance (Monad m) => ToJSON m TestRun where
                 , ("directory", stringJSON directory)
                 , ("commitId", stringJSON commitId)
                 , ("try", intJSON tryIndex)
-                , ("requester", stringJSON requester)
+                , ("requester", stringJSON $ foldedCase requester)
                 ]
 
 instance (Monad m, ReportSchemaErrors m) => FromJSON m TestRun where
@@ -129,7 +130,11 @@ instance (Monad m, ReportSchemaErrors m) => FromJSON m TestRun where
                     repoMapping <- getStringMapField "repository" mapping
                     owner <- getStringField "organization" repoMapping
                     repo <- getStringField "repo" repoMapping
-                    pure $ GithubRepository{organization = owner, project = repo}
+                    pure
+                        $ GithubRepository
+                            { organization = mk owner
+                            , project = mk repo
+                            }
                 directory <- getStringField "directory" mapping
                 commitId <- getStringField "commitId" mapping
                 tryIndex <- getIntegralField "try" mapping
@@ -141,7 +146,7 @@ instance (Monad m, ReportSchemaErrors m) => FromJSON m TestRun where
                         , directory = Directory directory
                         , commitId = Commit commitId
                         , tryIndex = Try tryIndex
-                        , requester = GithubUsername requester
+                        , requester = GithubUsername $ mk requester
                         }
             _ ->
                 expectedButGotValue
@@ -305,7 +310,7 @@ instance (Monad m) => ToJSON m RegisterUserKey where
                 $ Map.fromList
                     [ ("type", JSString $ toJSString "register-user")
                     , ("platform" :: String, JSString $ toJSString platform)
-                    , ("user", JSString $ toJSString user)
+                    , ("user", JSString $ toJSString $ foldedCase user)
                     , ("publickeyhash", JSString $ toJSString pubkeyhash)
                     ]
 
@@ -323,7 +328,7 @@ instance
         pure
             $ RegisterUserKey
                 { platform = Platform platform
-                , username = GithubUsername user
+                , username = GithubUsername $ mk user
                 , pubkeyhash = PublicKeyHash pubkeyhash
                 }
     fromJSON r =
@@ -348,13 +353,13 @@ instance (ReportSchemaErrors m, Alternative m) => FromJSON m RegisterRoleKey whe
             repoMapping <- mapping .: "repository"
             owner <- repoMapping .: "organization"
             repo <- repoMapping .: "project"
-            pure $ GithubRepository{organization = owner, project = repo}
+            pure $ GithubRepository{organization = mk owner, project = mk repo}
         user <- mapping .: "user"
         pure
             $ RegisterRoleKey
                 { platform = Platform platform
                 , repository = repository
-                , username = GithubUsername user
+                , username = GithubUsername $ mk user
                 }
     fromJSON r =
         expectedButGotValue
@@ -374,11 +379,11 @@ instance (Monad m) => ToJSON m RegisterRoleKey where
                 ,
                     ( "repository"
                     , object
-                        [ ("organization", stringJSON owner)
-                        , ("project", stringJSON repo)
+                        [ ("organization", stringJSON $ foldedCase owner)
+                        , ("project", stringJSON $ foldedCase repo)
                         ]
                     )
-                , ("user", stringJSON user)
+                , ("user", stringJSON $ foldedCase user)
                 ]
 
 data AgentValidation = AgentValidation

@@ -58,6 +58,7 @@ import Core.Types.Fact
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy.Char8 qualified as BL
+import Data.CaseInsensitive (CI (..), mk)
 import Data.List qualified as L
 import Data.Text (Text)
 import Effects
@@ -234,17 +235,20 @@ testRunGen = do
             { platform = Platform platform
             , repository =
                 GithubRepository
-                    { organization = organization
-                    , project = project
+                    { organization = mk organization
+                    , project = mk project
                     }
             , directory = Directory directory
             , commitId = Commit commitId
             , tryIndex = Try tryIndex
-            , requester = GithubUsername username
+            , requester = GithubUsername $ mk username
             }
 
 testRunEGen :: EGen TestRun
 testRunEGen = gen testRunGen
+
+brokenCIL :: Lens' String (CI String)
+brokenCIL f s = foldedCase <$> f (mk s)
 
 asciiStringL
     :: Functor f => (String -> f String) -> ASCIIString -> f ASCIIString
@@ -263,16 +267,19 @@ changeDirectory :: TestRun -> Gen TestRun
 changeDirectory = changeTestRun (directoryL . _Wrapped') asciiStringL
 
 changeOrganization :: TestRun -> Gen TestRun
-changeOrganization = changeTestRun (repositoryL . organizationL) asciiStringL
+changeOrganization =
+    changeTestRun
+        (repositoryL . organizationL)
+        (asciiStringL . brokenCIL)
 
 changeProject :: TestRun -> Gen TestRun
-changeProject = changeTestRun (repositoryL . projectL) asciiStringL
+changeProject = changeTestRun (repositoryL . projectL) (asciiStringL . brokenCIL)
 
 changeTry :: TestRun -> Gen TestRun
 changeTry = changeTestRun (tryIndexL . _Wrapped') positiveL
 
 changeRequester :: TestRun -> Gen TestRun
-changeRequester = changeTestRun (requesterL . _Wrapped') asciiStringL
+changeRequester = changeTestRun (requesterL . _Wrapped') (asciiStringL . brokenCIL)
 
 changeTestRun
     :: (Arbitrary b, Eq a)
