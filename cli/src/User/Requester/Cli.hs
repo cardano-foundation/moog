@@ -19,7 +19,7 @@ import Core.Context
 import Core.Types.Basic
     ( Directory (..)
     , Duration
-    , Repository (..)
+    , GithubRepository (..)
     , Success (..)
     , TokenId
     )
@@ -165,7 +165,7 @@ generateAssets (Directory targetDirectory) = do
             r <-
                 lift
                     $ githubDownloadDirectory
-                        (Repository "cardano-foundation" "antithesis")
+                        (GithubRepository "cardano-foundation" "antithesis")
                         Nothing
                         (Directory "compose/testnets/cardano_node_master")
                         (Directory targetDirectory)

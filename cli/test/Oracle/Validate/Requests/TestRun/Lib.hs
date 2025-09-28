@@ -42,10 +42,10 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , FileName (..)
+    , GithubRepository (..)
     , GithubUsername (GithubUsername)
     , Platform (Platform)
     , PublicKeyHash
-    , Repository (..)
     , TokenId
     , Try (Try)
     , organizationL
@@ -130,12 +130,12 @@ jsFactUser testRun pubkeyhash =
         ()
 
 data MockValidation = MockValidation
-    { mockCommits :: [(Repository, Commit)]
-    , mockDirectories :: [(Repository, Commit, Directory)]
+    { mockCommits :: [(GithubRepository, Commit)]
+    , mockDirectories :: [(GithubRepository, Commit, Directory)]
     , mockUserKeys :: [(GithubUsername, SSHPublicKey)]
-    , mockRepoRoles :: [(GithubUsername, Repository)]
-    , mockReposExists :: [Repository]
-    , mockAssets :: [((Repository, Maybe Commit, FileName), Text)]
+    , mockRepoRoles :: [(GithubUsername, GithubRepository)]
+    , mockReposExists :: [GithubRepository]
+    , mockAssets :: [((GithubRepository, Maybe Commit, FileName), Text)]
     , mockPermissions :: [(Directory, Permissions)]
     , mockSSHPrivateKey :: [(FilePath, ByteString)]
     }
@@ -233,7 +233,7 @@ testRunGen = do
         TestRun
             { platform = Platform platform
             , repository =
-                Repository
+                GithubRepository
                     { organization = organization
                     , project = project
                     }
@@ -298,13 +298,13 @@ noValidation =
         , mockSSHPrivateKey = []
         }
 
-gitCommit :: TestRun -> (Repository, Commit)
+gitCommit :: TestRun -> (GithubRepository, Commit)
 gitCommit testRun =
     ( testRun.repository
     , testRun.commitId
     )
 
-gitDirectory :: TestRun -> (Repository, Commit, Directory)
+gitDirectory :: TestRun -> (GithubRepository, Commit, Directory)
 gitDirectory testRun =
     ( testRun.repository
     , testRun.commitId
@@ -320,7 +320,7 @@ gitAsset
     :: TestRun
     -> FileName
     -> Text
-    -> [((Repository, Maybe Commit, FileName), Text)]
+    -> [((GithubRepository, Maybe Commit, FileName), Text)]
 gitAsset testRun filename content =
     [
         ( (testRun.repository, Just testRun.commitId, prefixed testRun filename)

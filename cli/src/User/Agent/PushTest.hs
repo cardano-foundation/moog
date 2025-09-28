@@ -181,7 +181,7 @@ instance Monad m => ToJSON m TestRunWithId where
             ]
 
 instance ReportSchemaErrors m => FromJSON m TestRunWithId where
-    fromJSON = withObject "Repository" $ \v -> do
+    fromJSON = withObject "GithubRepository" $ \v -> do
         trId <- v .: "testRunId"
         tr <- v .: "testRun"
         return $ TestRunWithId trId tr

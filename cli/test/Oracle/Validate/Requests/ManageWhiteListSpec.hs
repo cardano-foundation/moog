@@ -5,7 +5,11 @@ module Oracle.Validate.Requests.ManageWhiteListSpec (spec)
 where
 
 import Control.Monad (unless, when)
-import Core.Types.Basic (Owner (..), Platform (..), Repository (..))
+import Core.Types.Basic
+    ( GithubRepository (..)
+    , Owner (..)
+    , Platform (..)
+    )
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (toJSFact)
 import Core.Types.Operation (Op (OpD, OpI), Operation (..))
@@ -43,7 +47,7 @@ import User.Agent.TypesSpec (genRepository)
 
 addWhiteListKey
     :: Platform
-    -> Repository
+    -> GithubRepository
     -> Change WhiteListKey (OpI ())
 addWhiteListKey platform repo =
     Change
@@ -53,7 +57,7 @@ addWhiteListKey platform repo =
 
 removeWhiteListKey
     :: Platform
-    -> Repository
+    -> GithubRepository
     -> Change WhiteListKey (OpD ())
 removeWhiteListKey platform repo =
     Change

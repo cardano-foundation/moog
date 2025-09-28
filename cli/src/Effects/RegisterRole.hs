@@ -7,7 +7,7 @@ module Effects.RegisterRole
     , inspectRepoRoleForUser
     ) where
 
-import Core.Types.Basic (GithubUsername (..), Repository)
+import Core.Types.Basic (GithubRepository, GithubUsername (..))
 import Data.List qualified as L
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
@@ -73,8 +73,8 @@ analyzeResponseCodeownersFile (GithubUsername user) = \case
 
 inspectRepoRoleForUserTemplate
     :: GithubUsername
-    -> Repository
-    -> (Repository -> IO (Either GetGithubFileFailure Text))
+    -> GithubRepository
+    -> (GithubRepository -> IO (Either GetGithubFileFailure Text))
     -> IO (Maybe RepositoryRoleFailure)
 inspectRepoRoleForUserTemplate username repo downloadCodeownersFile = do
     resp <- downloadCodeownersFile repo
@@ -83,7 +83,7 @@ inspectRepoRoleForUserTemplate username repo downloadCodeownersFile = do
 inspectRepoRoleForUser
     :: Auth
     -> GithubUsername
-    -> Repository
+    -> GithubRepository
     -> IO (Maybe RepositoryRoleFailure)
 inspectRepoRoleForUser auth username repo =
     inspectRepoRoleForUserTemplate

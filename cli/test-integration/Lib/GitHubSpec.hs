@@ -2,7 +2,11 @@
 
 module Lib.GitHubSpec (githubSpec) where
 
-import Core.Types.Basic (Commit (..), Directory (..), Repository (..))
+import Core.Types.Basic
+    ( Commit (..)
+    , Directory (..)
+    , GithubRepository (..)
+    )
 import GitHub (Auth)
 import Lib.GitHub (githubDownloadDirectory)
 import Path
@@ -25,9 +29,9 @@ import Test.Hspec
     , shouldReturn
     )
 
-repo :: Repository
+repo :: GithubRepository
 repo =
-    Repository
+    GithubRepository
         { organization = "cardano-foundation"
         , project = "hal-fixture-sin"
         }

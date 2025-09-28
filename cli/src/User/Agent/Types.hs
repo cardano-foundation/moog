@@ -8,7 +8,7 @@ module User.Agent.Types
     ) where
 
 import Control.Monad (unless)
-import Core.Types.Basic (Platform, Repository)
+import Core.Types.Basic (GithubRepository, Platform)
 import Core.Types.Fact (Fact (..), keyHash)
 import Data.Functor.Identity (Identity (..))
 import Lib.JSON.Canonical.Extra (object, withObject, (.:), (.=))
@@ -41,7 +41,7 @@ instance (ReportSchemaErrors m) => FromJSON m TestRunId where
 
 data WhiteListKey = WhiteListKey
     { platform :: Platform
-    , repository :: Repository
+    , repository :: GithubRepository
     }
     deriving (Show, Eq)
 

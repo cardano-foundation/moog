@@ -26,8 +26,8 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , FileName (..)
+    , GithubRepository (..)
     , GithubUsername (..)
-    , Repository (..)
     )
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as B
@@ -134,8 +134,11 @@ onStatusCodeOfException e f = case e of
 
 -- | Check if a commit exists in a GitHub repository.
 githubCommitExists
-    :: Auth -> Repository -> Commit -> IO (Either GithubResponseError Bool)
-githubCommitExists auth (Repository owner repo) (Commit sha) = do
+    :: Auth
+    -> GithubRepository
+    -> Commit
+    -> IO (Either GithubResponseError Bool)
+githubCommitExists auth (GithubRepository owner repo) (Commit sha) = do
     commit <-
         github auth
             $ GH.commitR
@@ -159,8 +162,10 @@ githubCommitExists auth (Repository owner repo) (Commit sha) = do
     sha' = N $ T.pack sha
 
 githubRepositoryExists
-    :: Auth -> Repository -> IO (Either GithubResponseStatusCodeError Bool)
-githubRepositoryExists auth (Repository owner repo) = do
+    :: Auth
+    -> GithubRepository
+    -> IO (Either GithubResponseStatusCodeError Bool)
+githubRepositoryExists auth (GithubRepository owner repo) = do
     response <- github auth $ GH.repositoryR owner' repo'
     case response of
         Left e -> do
@@ -173,11 +178,11 @@ githubRepositoryExists auth (Repository owner repo) = do
 
 githubDirectoryExists
     :: Auth
-    -> Repository
+    -> GithubRepository
     -> Commit
     -> Directory
     -> IO (Either GithubResponseStatusCodeError Bool)
-githubDirectoryExists auth (Repository owner repo) (Commit sha) (Directory dir) = do
+githubDirectoryExists auth (GithubRepository owner repo) (Commit sha) (Directory dir) = do
     let path = T.pack dir
     contents <-
         github auth
@@ -210,7 +215,7 @@ githubUserPublicKeys auth (GithubUsername name) = do
         Right r -> pure $ Right $ GH.basicPublicSSHKeyKey <$> toList r
 
 githubGetCodeOwnersFile
-    :: Auth -> Repository -> IO (Either GetGithubFileFailure T.Text)
+    :: Auth -> GithubRepository -> IO (Either GetGithubFileFailure T.Text)
 githubGetCodeOwnersFile auth repository =
     githubGetFile auth repository Nothing (FileName "CODEOWNERS")
 
@@ -251,11 +256,11 @@ instance Exception GetGithubFileFailure
 
 githubGetFile
     :: Auth
-    -> Repository
+    -> GithubRepository
     -> Maybe Commit
     -> FileName
     -> IO (Either GetGithubFileFailure T.Text)
-githubGetFile auth (Repository owner repo) commitM (FileName filename) = do
+githubGetFile auth (GithubRepository owner repo) commitM (FileName filename) = do
     response <-
         github auth
             $ GH.contentsForR
@@ -306,7 +311,7 @@ githubGetFile auth (Repository owner repo) commitM (FileName filename) = do
 
 githubStreamDirectoryContents
     :: Auth
-    -> Repository
+    -> GithubRepository
     -> Maybe Commit
     -> Path Rel Dir
     -> Stream
@@ -315,7 +320,7 @@ githubStreamDirectoryContents
         ()
 githubStreamDirectoryContents
     auth
-    (Repository owner repo)
+    (GithubRepository owner repo)
     commitM
     startDir =
         ($ startDir) $ fix $ \go dir -> do
@@ -417,7 +422,7 @@ absolutizePath (Abs absPath) = pure absPath
 
 githubDownloadDirectory
     :: Auth
-    -> Repository
+    -> GithubRepository
     -> Maybe Commit
     -> Directory
     -- ^ Source directory in the GitHub repository

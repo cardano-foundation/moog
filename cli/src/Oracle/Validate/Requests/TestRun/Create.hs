@@ -13,8 +13,8 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , Duration (..)
+    , GithubRepository (..)
     , GithubUsername (..)
-    , Repository (..)
     , Try (..)
     )
 import Core.Types.Change (Change (..), Key (..))
@@ -114,7 +114,7 @@ validateCreateTestRun
 
 data TestRunRejection
     = UnacceptableDuration Int Int
-    | UnacceptableCommit Repository Commit
+    | UnacceptableCommit GithubRepository Commit
     | UnacceptableTryIndex Try
     | UnacceptableRole RegisterRoleKey
     | NoRegisteredKeyVerifiesTheSignature
@@ -132,7 +132,7 @@ instance Monad m => ToJSON m TestRunRejection where
                 <> show minDuration
                 <> " and "
                 <> show maxDuration
-    toJSON (UnacceptableCommit (Repository org repo) (Commit commit)) =
+    toJSON (UnacceptableCommit (GithubRepository org repo) (Commit commit)) =
         stringJSON
             $ "unacceptable commit. The specified commit "
                 <> show commit
@@ -147,7 +147,7 @@ instance Monad m => ToJSON m TestRunRejection where
                 <> " run attempts for a given commit"
     toJSON
         ( UnacceptableRole
-                (RegisterRoleKey _ (Repository org repo) (GithubUsername user))
+                (RegisterRoleKey _ (GithubRepository org repo) (GithubUsername user))
             ) =
             stringJSON
                 $ "unacceptable role. User "

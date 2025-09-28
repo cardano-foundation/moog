@@ -6,9 +6,9 @@ where
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
+    , GithubRepository (..)
     , GithubUsername (..)
     , Platform (..)
-    , Repository (..)
     , Try (..)
     )
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
@@ -59,7 +59,7 @@ spec = do
                 testRun =
                     TestRun
                         { platform = Platform "github"
-                        , repository = Repository "cardano-foundation" "antithesis"
+                        , repository = GithubRepository "cardano-foundation" "antithesis"
                         , directory = Directory "tests"
                         , commitId = Commit "abcdef1234567890"
                         , tryIndex = Try 1

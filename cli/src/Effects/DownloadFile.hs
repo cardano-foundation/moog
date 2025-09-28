@@ -9,7 +9,7 @@ module Effects.DownloadFile
     , analyzeDownloadedFile
     ) where
 
-import Core.Types.Basic (Commit, FileName (..), Repository)
+import Core.Types.Basic (Commit, FileName (..), GithubRepository)
 import Data.Aeson (Value)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -73,10 +73,10 @@ analyzeDownloadedFile (FileName filename) = \case
                         Left DownloadedFileNotSupported
 
 inspectDownloadedFileTemplate
-    :: Repository
+    :: GithubRepository
     -> Maybe Commit
     -> FileName
-    -> ( Repository
+    -> ( GithubRepository
          -> Maybe Commit
          -> FileName
          -> IO (Either GetGithubFileFailure Text)
@@ -88,7 +88,7 @@ inspectDownloadedFileTemplate repo commit filename downloadFile = do
 
 inspectDownloadedFile
     :: Auth
-    -> Repository
+    -> GithubRepository
     -> Maybe Commit
     -> FileName
     -> IO (Either DownloadedFileFailure Text)

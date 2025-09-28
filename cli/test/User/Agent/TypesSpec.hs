@@ -6,8 +6,8 @@ module User.Agent.TypesSpec
 where
 
 import Core.Types.Basic
-    ( Platform (Platform)
-    , Repository (..)
+    ( GithubRepository (..)
+    , Platform (Platform)
     )
 import Data.Char (isAscii)
 import Test.Hspec (Spec, describe, it)
@@ -22,10 +22,10 @@ import Test.QuickCheck
 import Test.QuickCheck.JSString (genAscii)
 import User.Agent.Types (WhiteListKey (..))
 
-genRepository :: Gen Repository
+genRepository :: Gen GithubRepository
 genRepository = do
     owner <- genAscii
-    Repository owner <$> genAscii
+    GithubRepository owner <$> genAscii
 
 genWhiteListKey :: Gen WhiteListKey
 genWhiteListKey = do

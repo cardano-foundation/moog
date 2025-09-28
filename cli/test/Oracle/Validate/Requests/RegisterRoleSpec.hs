@@ -5,10 +5,10 @@ where
 
 import Control.Monad (when)
 import Core.Types.Basic
-    ( GithubUsername (..)
+    ( GithubRepository (..)
+    , GithubUsername (..)
     , Owner (..)
     , Platform (..)
-    , Repository (..)
     , RequestRefId (..)
     )
 import Core.Types.Change (Change (..), Key (..))
@@ -50,11 +50,11 @@ import Test.QuickCheck.EGen (egenProperty, gen, genBlind)
 import Test.QuickCheck.Lib (withAPresence, withAPresenceInAList)
 import User.Types (RegisterRoleKey (..))
 
-genRoleDBElement :: Gen (GithubUsername, Repository)
+genRoleDBElement :: Gen (GithubUsername, GithubRepository)
 genRoleDBElement = do
     user <- GithubUsername <$> arbitrary `suchThat` all isAscii
     repo <-
-        Repository
+        GithubRepository
             <$> arbitrary `suchThat` all isAscii
             <*> arbitrary `suchThat` all isAscii
     pure (user, repo)
@@ -62,7 +62,7 @@ genRoleDBElement = do
 registerRoleChange
     :: Platform
     -> GithubUsername
-    -> Repository
+    -> GithubRepository
     -> Change RegisterRoleKey (OpI ())
 registerRoleChange platform user repo =
     Change
@@ -79,7 +79,7 @@ registerRoleChange platform user repo =
 unregisterRoleChange
     :: Platform
     -> GithubUsername
-    -> Repository
+    -> GithubRepository
     -> Change RegisterRoleKey (OpD ())
 unregisterRoleChange platform user repo =
     Change

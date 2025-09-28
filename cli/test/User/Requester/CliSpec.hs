@@ -12,11 +12,11 @@ import Core.Types.Basic
     , Directory (..)
     , Duration (..)
     , FileName (..)
+    , GithubRepository (..)
     , GithubUsername (..)
     , Owner (..)
     , Platform (..)
     , PublicKeyHash (PublicKeyHash)
-    , Repository (..)
     , TokenId (..)
     )
 import Core.Types.Fact (JSFact, keyHash, toJSFact)
@@ -88,8 +88,8 @@ sshClient =
         , sshKeyFile = "alice_id_ed25519"
         , sshKeyPassphrase = "testpassphrase"
         }
-testRepository :: Repository
-testRepository = Repository{organization = "alice", project = "repo"}
+testRepository :: GithubRepository
+testRepository = GithubRepository{organization = "alice", project = "repo"}
 
 testCommit :: Commit
 testCommit = Commit "1234"
@@ -97,7 +97,7 @@ testCommit = Commit "1234"
 testDirectory :: Directory
 testDirectory = Directory "tests"
 
-testAssets :: [((Repository, Maybe Commit, FileName), Text)]
+testAssets :: [((GithubRepository, Maybe Commit, FileName), Text)]
 testAssets =
     gitAsset testRun (FileName "README.md") "Test file"
         <> gitAsset testRun (FileName "docker-compose.yaml") "version: '3'"

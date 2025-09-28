@@ -6,9 +6,9 @@ module Lib.Github.OracleValidationSpec
 where
 
 import Core.Types.Basic
-    ( GithubUsername (..)
+    ( GithubRepository (..)
+    , GithubUsername (..)
     , PublicKeyHash (..)
-    , Repository (..)
     )
 import Data.Text qualified as T
 import Effects.RegisterRole
@@ -39,12 +39,12 @@ existenceSpec = do
         it "should return true for hal-fixture-sin" $ \auth -> do
             githubRepositoryExists
                 auth
-                (Repository "cardano-foundation" "hal-fixture-sin")
+                (GithubRepository "cardano-foundation" "hal-fixture-sin")
                 `shouldReturn` Right True
         it "should return false for hal-fixture-son" $ \auth -> do
             githubRepositoryExists
                 auth
-                (Repository "cardano-foundation" "hal-fixture-son")
+                (GithubRepository "cardano-foundation" "hal-fixture-son")
                 `shouldReturn` Right False
 
 roleSpecs :: SpecWith Auth
@@ -52,25 +52,25 @@ roleSpecs = do
     it "should download CODEOWNERS file from repo with main" $ \auth -> do
         githubGetCodeOwnersFile
             auth
-            (Repository "cardano-foundation" "hal-fixture-sin")
+            (GithubRepository "cardano-foundation" "hal-fixture-sin")
             `shouldReturn` Right "antithesis: @notunrandom @cfhal\n"
 
     it "should download CODEOWNERS file from repo with master" $ \auth -> do
         githubGetCodeOwnersFile
             auth
-            (Repository "cardano-foundation" "hal-fixture-cos")
+            (GithubRepository "cardano-foundation" "hal-fixture-cos")
             `shouldReturn` Right "* @notunrandom\n"
 
     it "should download CODEOWNERS file from repo with trunk" $ \auth -> do
         githubGetCodeOwnersFile
             auth
-            (Repository "cardano-foundation" "hal-fixture-tan")
+            (GithubRepository "cardano-foundation" "hal-fixture-tan")
             `shouldReturn` Right "* @notunrandom\n"
 
     it "should throw if missing CODEOWNERS file" $ \auth -> do
         githubGetCodeOwnersFile
             auth
-            (Repository "cardano-foundation" "hal-fixture-sec")
+            (GithubRepository "cardano-foundation" "hal-fixture-sec")
             `shouldReturn` Left GetGithubFileDirectoryNotFound
 
 userSpec :: Spec
@@ -146,7 +146,7 @@ userSpec = do
                         , "command-line/     @user"
                         ]
             user = GithubUsername "user1"
-            repo = Repository "org" "repo"
+            repo = GithubRepository "org" "repo"
         inspectRepoRoleForUserTemplate user repo noRoleEntry
             `shouldReturn` Just NoRoleEntryInCodeowners
 
@@ -162,7 +162,7 @@ userSpec = do
                         , "antithesis:"
                         ]
             user = GithubUsername "user1"
-            repo = Repository "org" "repo"
+            repo = GithubRepository "org" "repo"
         inspectRepoRoleForUserTemplate user repo noRoleEntry
             `shouldReturn` Just NoUsersAssignedToRoleInCodeowners
 
@@ -178,7 +178,7 @@ userSpec = do
                         , "antithesis: @user1 @user3"
                         ]
             user = GithubUsername "user2"
-            repo = Repository "org" "repo"
+            repo = GithubRepository "org" "repo"
         inspectRepoRoleForUserTemplate user repo noRoleEntry
             `shouldReturn` Just NoUserInCodeowners
 
@@ -194,6 +194,6 @@ userSpec = do
                         , "antithesis: @user1 @user2 @user3"
                         ]
             user = GithubUsername "user2"
-            repo = Repository "org" "repo"
+            repo = GithubRepository "org" "repo"
         inspectRepoRoleForUserTemplate user repo noRoleEntry
             `shouldReturn` Nothing

@@ -12,7 +12,7 @@ module Core.Types.Basic
     , Platform (..)
     , Port (..)
     , PublicKeyHash (..)
-    , Repository (..)
+    , GithubRepository (..)
     , RequestRefId (..)
     , TokenId (..)
     , Try (..)
@@ -147,31 +147,31 @@ newtype GithubUsername = GithubUsername String
 
 instance Wrapped GithubUsername
 
-data Repository = Repository
+data GithubRepository = GithubRepository
     { organization :: String
     , project :: String
     }
     deriving (Eq, Show)
 
-instance (Monad m) => ToJSON m Repository where
+instance (Monad m) => ToJSON m GithubRepository where
     toJSON
-        (Repository owner repo) =
+        (GithubRepository owner repo) =
             object
                 [ ("organization", stringJSON owner)
                 , ("repo", stringJSON repo)
                 ]
 
-instance (ReportSchemaErrors m) => FromJSON m Repository where
-    fromJSON = withObject "Repository" $ \v -> do
+instance (ReportSchemaErrors m) => FromJSON m GithubRepository where
+    fromJSON = withObject "GithubRepository" $ \v -> do
         organization <- v .: "organization"
         project <- v .: "repo"
-        pure $ Repository organization project
+        pure $ GithubRepository organization project
 
-organizationL :: Lens' Repository String
-organizationL f (Repository org proj) = (`Repository` proj) <$> f org
+organizationL :: Lens' GithubRepository String
+organizationL f (GithubRepository org proj) = (`GithubRepository` proj) <$> f org
 
-projectL :: Lens' Repository String
-projectL f (Repository org proj) = Repository org <$> f proj
+projectL :: Lens' GithubRepository String
+projectL f (GithubRepository org proj) = GithubRepository org <$> f proj
 
 newtype Port = Port Int
     deriving (Eq, Show)

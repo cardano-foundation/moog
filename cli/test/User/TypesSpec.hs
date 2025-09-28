@@ -10,10 +10,10 @@ import Core.Types.Basic
     ( Commit (Commit)
     , Directory (Directory)
     , Duration (..)
+    , GithubRepository (GithubRepository, organization, project)
     , GithubUsername (GithubUsername)
     , Platform (Platform)
     , PublicKeyHash (..)
-    , Repository (Repository, organization, project)
     , Try (..)
     )
 import Test.Hspec (Spec, describe, it)
@@ -51,7 +51,7 @@ spec = do
                     TestRun
                         { platform = Platform "github"
                         , repository =
-                            Repository
+                            GithubRepository
                                 { organization = "user"
                                 , project = "repo"
                                 }

@@ -31,10 +31,10 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , Duration (..)
+    , GithubRepository (..)
     , GithubUsername (..)
     , Platform (..)
     , PublicKeyHash (..)
-    , Repository (..)
     , Try (..)
     )
 import Crypto.Error (CryptoFailable (..))
@@ -67,7 +67,7 @@ import Text.JSON.Canonical
 
 data TestRun = TestRun
     { platform :: Platform
-    , repository :: Repository
+    , repository :: GithubRepository
     , directory :: Directory
     , commitId :: Commit
     , tryIndex :: Try
@@ -129,7 +129,7 @@ instance (Monad m, ReportSchemaErrors m) => FromJSON m TestRun where
                     repoMapping <- getStringMapField "repository" mapping
                     owner <- getStringField "organization" repoMapping
                     repo <- getStringField "repo" repoMapping
-                    pure $ Repository{organization = owner, project = repo}
+                    pure $ GithubRepository{organization = owner, project = repo}
                 directory <- getStringField "directory" mapping
                 commitId <- getStringField "commitId" mapping
                 tryIndex <- getIntegralField "try" mapping
@@ -333,7 +333,7 @@ instance
 
 data RegisterRoleKey = RegisterRoleKey
     { platform :: Platform
-    , repository :: Repository
+    , repository :: GithubRepository
     , username :: GithubUsername
     }
     deriving (Eq, Show)
@@ -348,7 +348,7 @@ instance (ReportSchemaErrors m, Alternative m) => FromJSON m RegisterRoleKey whe
             repoMapping <- mapping .: "repository"
             owner <- repoMapping .: "organization"
             repo <- repoMapping .: "project"
-            pure $ Repository{organization = owner, project = repo}
+            pure $ GithubRepository{organization = owner, project = repo}
         user <- mapping .: "user"
         pure
             $ RegisterRoleKey
@@ -365,7 +365,7 @@ instance (Monad m) => ToJSON m RegisterRoleKey where
     toJSON
         ( RegisterRoleKey
                 (Platform platform)
-                (Repository owner repo)
+                (GithubRepository owner repo)
                 (GithubUsername user)
             ) =
             object

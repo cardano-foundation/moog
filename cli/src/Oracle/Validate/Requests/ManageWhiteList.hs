@@ -7,7 +7,7 @@ where
 
 import Control.Monad (void)
 import Control.Monad.Trans.Class (MonadTrans (..))
-import Core.Types.Basic (Owner, Platform (..), Repository)
+import Core.Types.Basic (GithubRepository, Owner, Platform (..))
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Operation (Op (..))
 import Effects
@@ -32,7 +32,7 @@ import User.Agent.Types (WhiteListKey (..))
 
 data UpdateWhiteListFailure
     = WhiteListPlatformUnsupported Platform
-    | WhiteListRepositoryNotInThePlatform Repository
+    | WhiteListRepositoryNotInThePlatform GithubRepository
     | WhiteListRepositoryKeyValidation KeyFailure
     | WhiteListGithubFailed Github.GithubResponseStatusCodeError
     | WhiteListAgentNotRecognized Owner
@@ -45,10 +45,13 @@ instance Monad m => ToJSON m UpdateWhiteListFailure where
         object ["error" .= ("Platform is missing: " ++ show platform)]
     toJSON (WhiteListRepositoryNotInThePlatform repo) =
         object
-            ["error" .= ("Repository is not in the platform: " ++ show repo)]
+            [ "error" .= ("GithubRepository is not in the platform: " ++ show repo)
+            ]
     toJSON (WhiteListRepositoryKeyValidation keyFailure) =
         object
-            ["error" .= ("Repository key validation failed: " ++ show keyFailure)]
+            [ "error"
+                .= ("GithubRepository key validation failed: " ++ show keyFailure)
+            ]
     toJSON (WhiteListGithubFailed err) =
         object ["error" .= ("GitHub error: " ++ show err)]
     toJSON (WhiteListAgentNotRecognized agent) =

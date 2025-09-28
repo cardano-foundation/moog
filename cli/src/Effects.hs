@@ -28,9 +28,9 @@ import Core.Types.Basic
     ( Commit
     , Directory (..)
     , FileName
+    , GithubRepository
     , GithubUsername
     , PublicKeyHash
-    , Repository
     , TokenId
     )
 import Core.Types.Change (Change (..), Key (..))
@@ -70,11 +70,11 @@ import User.Types (TestRun)
 
 data GithubEffects m = GithubEffects
     { githubCommitExists
-        :: Repository
+        :: GithubRepository
         -> Commit
         -> m (Either GitHub.GithubResponseError Bool)
     , githubDirectoryExists
-        :: Repository
+        :: GithubRepository
         -> Commit
         -> Directory
         -> m (Either GitHub.GithubResponseStatusCodeError Bool)
@@ -83,19 +83,19 @@ data GithubEffects m = GithubEffects
         -> PublicKeyHash
         -> m (Maybe PublicKeyFailure)
     , githubRepositoryExists
-        :: Repository
+        :: GithubRepository
         -> m (Either GitHub.GithubResponseStatusCodeError Bool)
     , githubRepositoryRole
         :: GithubUsername
-        -> Repository
+        -> GithubRepository
         -> m (Maybe RepositoryRoleFailure)
     , githubGetFile
-        :: Repository
+        :: GithubRepository
         -> Maybe Commit
         -> FileName
         -> m (Either DownloadedFileFailure Text)
     , githubDownloadDirectory
-        :: Repository
+        :: GithubRepository
         -> Maybe Commit
         -> Directory
         -> Directory

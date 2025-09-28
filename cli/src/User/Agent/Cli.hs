@@ -29,10 +29,10 @@ import Core.Context
 import Core.Types.Basic
     ( Directory
     , Duration
+    , GithubRepository
     , GithubUsername (..)
     , Owner
     , Platform
-    , Repository
     , Success (..)
     , TokenId
     )
@@ -340,7 +340,7 @@ data AgentCommand (phase :: IsReady) result where
         :: TokenId
         -> Wallet
         -> Platform
-        -> Repository
+        -> GithubRepository
         -> AgentCommand
             phase
             (AValidationResult UpdateWhiteListFailure (WithTxHash Success))
@@ -348,7 +348,7 @@ data AgentCommand (phase :: IsReady) result where
         :: TokenId
         -> Wallet
         -> Platform
-        -> Repository
+        -> GithubRepository
         -> AgentCommand
             phase
             (AValidationResult UpdateWhiteListFailure (WithTxHash Success))
@@ -394,7 +394,7 @@ whiteList
     => TokenId
     -> Wallet
     -> Platform
-    -> Repository
+    -> GithubRepository
     -> WithContext
         m
         ( AValidationResult
@@ -427,7 +427,7 @@ blackList
     => TokenId
     -> Wallet
     -> Platform
-    -> Repository
+    -> GithubRepository
     -> WithContext
         m
         ( AValidationResult

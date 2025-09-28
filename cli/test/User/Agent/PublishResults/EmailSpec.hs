@@ -7,9 +7,9 @@ where
 import Core.Types.Basic
     ( Commit (Commit)
     , Directory (Directory)
+    , GithubRepository (GithubRepository, organization, project)
     , GithubUsername (GithubUsername)
     , Platform (Platform)
-    , Repository (Repository, organization, project)
     )
 import Data.ByteString qualified as B
 import Data.Maybe (fromJust)
@@ -64,7 +64,7 @@ spec = do
                                     , directory = Directory "antithesis-test"
                                     , platform = Platform "github"
                                     , repository =
-                                        Repository
+                                        GithubRepository
                                             { organization =
                                                 "cardano-foundation"
                                             , project = "hal-fixture-sin"
@@ -108,7 +108,7 @@ spec = do
                                     , directory = Directory "antithesis-test"
                                     , platform = Platform "github"
                                     , repository =
-                                        Repository
+                                        GithubRepository
                                             { organization = "cardano-foundation"
                                             , project = "hal-fixture-sin"
                                             }

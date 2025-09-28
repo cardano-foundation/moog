@@ -21,10 +21,10 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , Duration (..)
+    , GithubRepository (..)
     , GithubUsername (..)
     , Platform (..)
     , PublicKeyHash (..)
-    , Repository (..)
     , RequestRefId (..)
     , TokenId (..)
     , Try (..)
@@ -66,12 +66,12 @@ platformOption =
             , reader str
             ]
 
-parseRepository :: String -> Maybe Repository
+parseRepository :: String -> Maybe GithubRepository
 parseRepository repoStr = case break (== '/') repoStr of
-    (org, '/' : proj) -> Just $ Repository org proj
+    (org, '/' : proj) -> Just $ GithubRepository org proj
     _ -> Nothing
 
-repositoryOption :: Parser Repository
+repositoryOption :: Parser GithubRepository
 repositoryOption =
     setting
         [ long "repository"
