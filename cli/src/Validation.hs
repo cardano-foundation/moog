@@ -1,8 +1,10 @@
+{-# HLINT ignore "Use unless" #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
-{-# HLINT ignore "Use unless" #-}
 module Validation
     ( Validation (..)
+    , GithubValidation (..)
     , KeyFailure (..)
     , mkValidation
     , insertValidation
@@ -66,15 +68,8 @@ import Validation.RegisterUser
     , inspectPublicKey
     )
 
--- | Abstract the side effects necessary for validation.
-data Validation m = Validation
-    { mpfsGetFacts
-        :: forall k v
-         . (FromJSON Maybe k, FromJSON Maybe v)
-        => m [Fact k v]
-    , mpfsGetTestRuns :: m [TestRun]
-    , mpfsGetTokenRequests :: m [RequestZoo]
-    , githubCommitExists
+data GithubValidation m = GithubValidation
+    { githubCommitExists
         :: Repository
         -> Commit
         -> m (Either GitHub.GithubResponseError Bool)
@@ -105,6 +100,51 @@ data Validation m = Validation
         -> Directory
         -> Directory
         -> m (Either GitHub.GetGithubFileFailure ())
+    }
+
+hoistGithubValidation
+    :: (MonadTransControl t, Monad m)
+    => GithubValidation m
+    -> GithubValidation (t m)
+hoistGithubValidation
+    GithubValidation
+        { githubCommitExists
+        , githubDirectoryExists
+        , githubUserPublicKeys
+        , githubRepositoryExists
+        , githubRepositoryRole
+        , githubGetFile
+        , githubDownloadDirectory
+        } =
+        GithubValidation
+            { githubCommitExists =
+                \repo commit -> f $ githubCommitExists repo commit
+            , githubDirectoryExists =
+                \repo commit dir -> f $ githubDirectoryExists repo commit dir
+            , githubUserPublicKeys =
+                \username publicKey -> f $ githubUserPublicKeys username publicKey
+            , githubRepositoryExists = f . githubRepositoryExists
+            , githubRepositoryRole =
+                \username repository -> f $ githubRepositoryRole username repository
+            , githubGetFile =
+                \repository commit filename -> f $ githubGetFile repository commit filename
+            , githubDownloadDirectory =
+                \repository commit sourceDir targetDir ->
+                    f
+                        $ githubDownloadDirectory repository commit sourceDir targetDir
+            }
+      where
+        f = lift
+
+-- | Abstract the side effects necessary for validation.
+data Validation m = Validation
+    { mpfsGetFacts
+        :: forall k v
+         . (FromJSON Maybe k, FromJSON Maybe v)
+        => m [Fact k v]
+    , mpfsGetTestRuns :: m [TestRun]
+    , mpfsGetTokenRequests :: m [RequestZoo]
+    , githubValidation :: GithubValidation m
     , withSystemTempDirectory
         :: forall a
          . String
@@ -125,13 +165,7 @@ hoistValidation
         { mpfsGetFacts
         , mpfsGetTestRuns
         , mpfsGetTokenRequests
-        , githubCommitExists
-        , githubDirectoryExists
-        , githubUserPublicKeys
-        , githubRepositoryExists
-        , githubRepositoryRole
-        , githubGetFile
-        , githubDownloadDirectory
+        , githubValidation
         , withSystemTempDirectory
         , withCurrentDirectory
         , writeTextFile
@@ -142,22 +176,7 @@ hoistValidation
             { mpfsGetFacts = f mpfsGetFacts
             , mpfsGetTestRuns = f mpfsGetTestRuns
             , mpfsGetTokenRequests = f mpfsGetTokenRequests
-            , githubCommitExists =
-                \repo commit -> f $ githubCommitExists repo commit
-            , githubDirectoryExists =
-                \repo commit dir -> f $ githubDirectoryExists repo commit dir
-            , githubUserPublicKeys =
-                \username publicKey -> f $ githubUserPublicKeys username publicKey
-            , githubRepositoryExists =
-                f . githubRepositoryExists
-            , githubRepositoryRole =
-                \username repository -> f $ githubRepositoryRole username repository
-            , githubGetFile =
-                \repository commit filename -> f $ githubGetFile repository commit filename
-            , githubDownloadDirectory =
-                \repository commit sourceDir targetDir ->
-                    f
-                        $ githubDownloadDirectory repository commit sourceDir targetDir
+            , githubValidation = hoistGithubValidation githubValidation
             , withSystemTempDirectory =
                 \template action -> controlT
                     $ \run -> withSystemTempDirectory template (run . action)
@@ -189,14 +208,12 @@ getTokenRequests mpfs tk = case tk of
         mtoken <- fromJSON <$> mpfsGetToken mpfs tokenId
         pure $ maybe [] (fmap runIdentity . tokenRequests) mtoken
 
-mkValidation
-    :: Auth -> MPFS ClientM -> Maybe TokenId -> Validation ClientM
-mkValidation auth mpfs tk = do
-    Validation
-        { mpfsGetFacts = getFacts mpfs tk
-        , mpfsGetTestRuns = getTestRuns mpfs tk
-        , mpfsGetTokenRequests = getTokenRequests mpfs tk
-        , githubCommitExists = \repository commit ->
+mkGithubValidation
+    :: Auth
+    -> GithubValidation ClientM
+mkGithubValidation auth =
+    GithubValidation
+        { githubCommitExists = \repository commit ->
             liftIO $ GitHub.githubCommitExists auth repository commit
         , githubDirectoryExists = \repository commit dir ->
             liftIO $ GitHub.githubDirectoryExists auth repository commit dir
@@ -215,6 +232,15 @@ mkValidation auth mpfs tk = do
                     commit
                     sourceDir
                     targetDir
+        }
+mkValidation
+    :: Auth -> MPFS ClientM -> Maybe TokenId -> Validation ClientM
+mkValidation auth mpfs tk = do
+    Validation
+        { mpfsGetFacts = getFacts mpfs tk
+        , mpfsGetTestRuns = getTestRuns mpfs tk
+        , mpfsGetTokenRequests = getTokenRequests mpfs tk
+        , githubValidation = mkGithubValidation auth
         , withSystemTempDirectory = \template action ->
             control
                 (\run -> Temp.withSystemTempDirectory template (run . action))

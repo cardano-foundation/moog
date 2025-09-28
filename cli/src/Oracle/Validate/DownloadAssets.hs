@@ -42,7 +42,8 @@ import User.Types
     , TestRun (..)
     )
 import Validation
-    ( Validation (..)
+    ( GithubValidation (..)
+    , Validation (..)
     , hoistValidation
     )
 
@@ -98,7 +99,9 @@ checkSourceDirectory
     -> TestRun
     -> m (Maybe SourceDirFailure)
 checkSourceDirectory
-    Validation{githubDirectoryExists}
+    Validation
+        { githubValidation = GithubValidation{githubDirectoryExists}
+        }
     testRun = do
         existsE <-
             githubDirectoryExists
@@ -123,7 +126,7 @@ downloadAssetsDirectory validation testRun dir = do
         commit = commitId testRun
         repository' = repository testRun
     r <-
-        githubDownloadDirectory
+        (githubDownloadDirectory . githubValidation)
             validation
             repository'
             (Just commit)

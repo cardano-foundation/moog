@@ -58,7 +58,8 @@ import User.Types
     , roleOfATestRun
     )
 import Validation
-    ( KeyFailure
+    ( GithubValidation (..)
+    , KeyFailure
     , Validation (..)
     , hoistValidation
     , insertValidation
@@ -233,7 +234,7 @@ checkCommit
     -> TestRun
     -> m (Maybe TestRunRejection)
 checkCommit
-    Validation{githubCommitExists}
+    Validation{githubValidation = GithubValidation{githubCommitExists}}
     testRun = do
         existsE <- githubCommitExists testRun.repository (commitId testRun)
         pure $ case existsE of

@@ -30,7 +30,8 @@ import User.Types
     ( RegisterRoleKey (..)
     )
 import Validation
-    ( KeyFailure
+    ( GithubValidation (..)
+    , KeyFailure
     , Validation (..)
     , deleteValidation
     , insertValidation
@@ -65,7 +66,7 @@ validateRegisterRole
     -> Change RegisterRoleKey (OpI ())
     -> Validate RegisterRoleFailure m Validated
 validateRegisterRole
-    validation@Validation{githubRepositoryRole}
+    validation@Validation{githubValidation = GithubValidation{githubRepositoryRole}}
     forRole
     change@(Change (Key k) _) = do
         when (forUser forRole)
@@ -112,7 +113,7 @@ validateUnregisterRole
     -> Change RegisterRoleKey (OpD ())
     -> Validate UnregisterRoleFailure m Validated
 validateUnregisterRole
-    validation@Validation{githubRepositoryRole}
+    validation@Validation{githubValidation = GithubValidation{githubRepositoryRole}}
     forRole
     change@(Change (Key k) _) = do
         when (forUser forRole)

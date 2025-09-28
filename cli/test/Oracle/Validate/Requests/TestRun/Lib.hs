@@ -96,7 +96,8 @@ import User.Types
     , tryIndexL
     )
 import Validation
-    ( Validation (..)
+    ( GithubValidation (..)
+    , Validation (..)
     , getFacts
     , getTestRuns
     , getTokenRequests
@@ -142,13 +143,11 @@ data MockValidation = MockValidation
 aToken :: Maybe TokenId
 aToken = Just $ error "TokenId not needed for tests"
 
-mkValidation
+mkGithubValidation
     :: Monad m
-    => MPFS m
-    -> MockValidation
-    -> Validation m
-mkValidation
-    mpfs
+    => MockValidation
+    -> GithubValidation m
+mkGithubValidation
     MockValidation
         { mockCommits
         , mockDirectories
@@ -156,14 +155,9 @@ mkValidation
         , mockRepoRoles
         , mockReposExists
         , mockAssets
-        , mockPermissions
-        , mockSSHPrivateKey
         } =
-        Validation
-            { mpfsGetFacts = getFacts mpfs aToken
-            , mpfsGetTestRuns = getTestRuns mpfs aToken
-            , mpfsGetTokenRequests = getTokenRequests mpfs aToken
-            , githubCommitExists = \repository commit ->
+        GithubValidation
+            { githubCommitExists = \repository commit ->
                 return $ Right $ (repository, commit) `elem` mockCommits
             , githubDirectoryExists = \repository commit dir ->
                 return $ Right $ (repository, commit, dir) `elem` mockDirectories
@@ -193,6 +187,24 @@ mkValidation
                     Just filecontent ->
                         pure $ analyzeDownloadedFile filename (Right filecontent)
             , githubDownloadDirectory = \_ _ _ _ -> pure $ Right ()
+            }
+
+mkValidation
+    :: Monad m
+    => MPFS m
+    -> MockValidation
+    -> Validation m
+mkValidation
+    mpfs
+    mock@MockValidation
+        { mockPermissions
+        , mockSSHPrivateKey
+        } =
+        Validation
+            { mpfsGetFacts = getFacts mpfs aToken
+            , mpfsGetTestRuns = getTestRuns mpfs aToken
+            , mpfsGetTokenRequests = getTokenRequests mpfs aToken
+            , githubValidation = mkGithubValidation mock
             , directoryExists = \dir ->
                 pure
                     $ dir

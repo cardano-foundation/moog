@@ -23,7 +23,8 @@ import Submitting (WalletError)
 import Text.JSON.Canonical (ToJSON (..))
 import User.Agent.Types (WhiteListKey (..))
 import Validation
-    ( KeyFailure
+    ( GithubValidation (..)
+    , KeyFailure
     , Validation (..)
     , deleteValidation
     , insertValidation
@@ -75,7 +76,9 @@ validateAddWhiteListed
     -> Change WhiteListKey (OpI ())
     -> Validate UpdateWhiteListFailure m Validated
 validateAddWhiteListed
-    v@Validation{githubRepositoryExists}
+    v@Validation
+        { githubValidation = GithubValidation{githubRepositoryExists}
+        }
     agent
     submitter
     c@(Change (Key (WhiteListKey platform repo)) _) = do

@@ -78,7 +78,11 @@ import User.Types
     , TestRun (..)
     , TestRunState (..)
     )
-import Validation (Validation (..), hoistValidation)
+import Validation
+    ( GithubValidation (..)
+    , Validation (..)
+    , hoistValidation
+    )
 
 data RequesterCommand a where
     RegisterUser
@@ -151,7 +155,10 @@ generateAssets
     => Directory
     -> WithContext m (AValidationResult GetGithubFileFailure Success)
 generateAssets (Directory targetDirectory) = do
-    Validation{githubDownloadDirectory} <- askValidation Nothing
+    Validation
+        { githubValidation = GithubValidation{githubDownloadDirectory}
+        } <-
+        askValidation Nothing
     lift
         $ runValidate
         $ do

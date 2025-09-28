@@ -32,7 +32,8 @@ import User.Types
     ( RegisterUserKey (..)
     )
 import Validation
-    ( KeyFailure
+    ( GithubValidation (..)
+    , KeyFailure
     , Validation (..)
     , deleteValidation
     , insertValidation
@@ -69,7 +70,10 @@ validateRegisterUser
     -> Change RegisterUserKey (OpI ())
     -> Validate RegisterUserFailure m Validated
 validateRegisterUser
-    validation@Validation{githubUserPublicKeys, mpfsGetFacts}
+    validation@Validation
+        { mpfsGetFacts
+        , githubValidation = GithubValidation{githubUserPublicKeys}
+        }
     forRole
     change@(Change (Key key@(RegisterUserKey{platform, username, pubkeyhash})) _) = do
         when (forUser forRole)
@@ -123,7 +127,7 @@ validateUnregisterUser
     -> Change RegisterUserKey (OpD ())
     -> Validate UnregisterUserFailure m Validated
 validateUnregisterUser
-    validation@Validation{githubUserPublicKeys}
+    validation@Validation{githubValidation = GithubValidation{githubUserPublicKeys}}
     forRole
     change@(Change (Key key@(RegisterUserKey{platform, username, pubkeyhash})) _v) = do
         when (forUser forRole)
