@@ -7,9 +7,9 @@ where
 import Core.Types.Basic
     ( Commit (Commit)
     , Directory (Directory)
+    , GithubUsername (GithubUsername)
     , Platform (Platform)
     , Repository (Repository, organization, project)
-    , Username (Username)
     )
 import Data.ByteString qualified as B
 import Data.Maybe (fromJust)
@@ -69,7 +69,7 @@ spec = do
                                                 "cardano-foundation"
                                             , project = "hal-fixture-sin"
                                             }
-                                    , requester = Username "cfhal"
+                                    , requester = GithubUsername "cfhal"
                                     , tryIndex = 1
                                     }
                             , date =
@@ -112,7 +112,7 @@ spec = do
                                             { organization = "cardano-foundation"
                                             , project = "hal-fixture-sin"
                                             }
-                                    , requester = Username "cfhal"
+                                    , requester = GithubUsername "cfhal"
                                     , tryIndex = 2
                                     }
                             , date =

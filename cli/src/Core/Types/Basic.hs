@@ -16,7 +16,7 @@ module Core.Types.Basic
     , RequestRefId (..)
     , TokenId (..)
     , Try (..)
-    , Username (..)
+    , GithubUsername (..)
     , Success (..)
     , organizationL
     , projectL
@@ -142,10 +142,10 @@ newtype FileName = FileName String
 
 instance Wrapped FileName
 
-newtype Username = Username String
+newtype GithubUsername = GithubUsername String
     deriving (Eq, Show, Generic)
 
-instance Wrapped Username
+instance Wrapped GithubUsername
 
 data Repository = Repository
     { organization :: String

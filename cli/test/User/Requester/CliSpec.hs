@@ -12,12 +12,12 @@ import Core.Types.Basic
     , Directory (..)
     , Duration (..)
     , FileName (..)
+    , GithubUsername (..)
     , Owner (..)
     , Platform (..)
     , PublicKeyHash (PublicKeyHash)
     , Repository (..)
     , TokenId (..)
-    , Username (..)
     )
 import Core.Types.Fact (JSFact, keyHash, toJSFact)
 import Core.Types.Mnemonics
@@ -111,7 +111,7 @@ testRun =
         , directory = testDirectory
         , commitId = testCommit
         , tryIndex = 1
-        , requester = Username "alice"
+        , requester = GithubUsername "alice"
         }
 
 testRunId :: TestRunId
@@ -139,7 +139,7 @@ facts = runIdentity $ do
             ( RegisterRoleKey
                 { platform = testPlatform
                 , repository = testRepository
-                , username = Username "alice"
+                , username = GithubUsername "alice"
                 }
             )
             ()
@@ -147,7 +147,7 @@ facts = runIdentity $ do
         toJSFact
             ( RegisterUserKey
                 { platform = testPlatform
-                , username = Username "alice"
+                , username = GithubUsername "alice"
                 , pubkeyhash =
                     PublicKeyHash
                         "AAAAC3NzaC1lZDI1NTE5AAAAIMNl2+jewJ5dBlIaOXM9PrPFpykU0mmzzQAAK/QF10Iy"

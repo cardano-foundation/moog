@@ -6,10 +6,10 @@ where
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
+    , GithubUsername (..)
     , Platform (..)
     , Repository (..)
     , Try (..)
-    , Username (..)
     )
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 import User.Agent.PushTest
@@ -63,7 +63,7 @@ spec = do
                         , directory = Directory "tests"
                         , commitId = Commit "abcdef1234567890"
                         , tryIndex = Try 1
-                        , requester = Username "alice"
+                        , requester = GithubUsername "alice"
                         }
                 testRunId = TestRunId "test-run-001"
                 auth = AntithesisAuth "user" "pass"

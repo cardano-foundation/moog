@@ -10,11 +10,11 @@ module Oracle.TypesSpec
 where
 
 import Core.Types.Basic
-    ( Owner (..)
+    ( GithubUsername (GithubUsername)
+    , Owner (..)
     , Platform (Platform)
     , PublicKeyHash (..)
     , RequestRefId (RequestRefId)
-    , Username (Username)
     )
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Operation (Operation (..))
@@ -48,8 +48,8 @@ genRequest genKey genValue =
 genPlatform :: Gen Platform
 genPlatform = elements [Platform "linux", Platform "windows", Platform "macos"]
 
-genUsername :: Gen Username
-genUsername = Username <$> listOf (elements ['a' .. 'z'])
+genUsername :: Gen GithubUsername
+genUsername = GithubUsername <$> listOf (elements ['a' .. 'z'])
 
 genPublicKeyHash :: Gen PublicKeyHash
 genPublicKeyHash = PublicKeyHash <$> listOf (elements $ ['a' .. 'f'] ++ ['0' .. '9'])

@@ -13,9 +13,9 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , Duration (..)
+    , GithubUsername (..)
     , Repository (..)
     , Try (..)
-    , Username (..)
     )
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..))
@@ -147,7 +147,7 @@ instance Monad m => ToJSON m TestRunRejection where
                 <> " run attempts for a given commit"
     toJSON
         ( UnacceptableRole
-                (RegisterRoleKey _ (Repository org repo) (Username user))
+                (RegisterRoleKey _ (Repository org repo) (GithubUsername user))
             ) =
             stringJSON
                 $ "unacceptable role. User "

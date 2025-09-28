@@ -8,11 +8,11 @@ where
 
 import Control.Monad (when)
 import Core.Types.Basic
-    ( Owner (..)
+    ( GithubUsername (..)
+    , Owner (..)
     , Platform (..)
     , PublicKeyHash (..)
     , RequestRefId (..)
-    , Username (..)
     )
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (toJSFact)
@@ -58,21 +58,21 @@ import Test.QuickCheck.JSString (genAscii)
 import Test.QuickCheck.Lib (withAPresence, withAPresenceInAList)
 import User.Types (RegisterUserKey (..))
 
-genUserDBElement :: Gen (Username, SSHPublicKey)
+genUserDBElement :: Gen (GithubUsername, SSHPublicKey)
 genUserDBElement = do
-    user <- Username <$> genAscii
+    user <- GithubUsername <$> genAscii
     pk <- SSHPublicKey <$> genAscii
     pure (user, pk)
 
-genValidDBElement :: EGen (Username, SSHPublicKey)
+genValidDBElement :: EGen (GithubUsername, SSHPublicKey)
 genValidDBElement = do
-    user <- gen $ Username <$> genAscii
+    user <- gen $ GithubUsername <$> genAscii
     (_sign, pk) <- genBlind sshGen
     pure (user, encodeSSHPublicKey pk)
 
 registerUserChange
     :: Platform
-    -> Username
+    -> GithubUsername
     -> PublicKeyHash
     -> Change RegisterUserKey (OpI ())
 registerUserChange platform username pubkeyhash =
@@ -89,7 +89,7 @@ registerUserChange platform username pubkeyhash =
 
 unregisterUserChange
     :: Platform
-    -> Username
+    -> GithubUsername
     -> PublicKeyHash
     -> Change RegisterUserKey (OpD ())
 unregisterUserChange platform username pubkeyhash =
@@ -110,9 +110,9 @@ newtype OtherSSHPublicKey = OtherSSHPublicKey String
 genForRole :: EGen ForRole
 genForRole = gen $ oneof [pure ForOracle, pure ForUser]
 
-genDBElementOther :: Gen (Username, OtherSSHPublicKey)
+genDBElementOther :: Gen (GithubUsername, OtherSSHPublicKey)
 genDBElementOther = do
-    user <- Username <$> arbitrary `suchThat` all isAscii
+    user <- GithubUsername <$> arbitrary `suchThat` all isAscii
     pk <- arbitrary `suchThat` all isAscii
     pure (user, OtherSSHPublicKey $ "ssh-rsa " <> pk)
 

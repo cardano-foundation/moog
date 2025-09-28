@@ -10,11 +10,11 @@ import Core.Types.Basic
     ( Commit (Commit)
     , Directory (Directory)
     , Duration (..)
+    , GithubUsername (GithubUsername)
     , Platform (Platform)
     , PublicKeyHash (..)
     , Repository (Repository, organization, project)
     , Try (..)
-    , Username (Username)
     )
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Canonical (roundTrip)
@@ -57,7 +57,7 @@ spec = do
                                 }
                         , commitId = Commit "abc123"
                         , directory = Directory "src"
-                        , requester = Username "tester"
+                        , requester = GithubUsername "tester"
                         , tryIndex = Try 1
                         }
             roundTrip testRun
@@ -90,7 +90,7 @@ spec = do
             let registerPubKey =
                     RegisterUserKey
                         { platform = Platform "github"
-                        , username = Username "tester"
+                        , username = GithubUsername "tester"
                         , pubkeyhash =
                             PublicKeyHash
                                 "AAAAC3NzaC1lZDI1NTE5AAAAIO773JHqlyLm5XzOjSe+Q5yFJyLFuMLL6+n63t4t7HR8"

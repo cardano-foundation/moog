@@ -28,9 +28,9 @@ import Core.Options (tokenIdOption, walletOption)
 import Core.Types.Basic
     ( Directory (..)
     , Duration
+    , GithubUsername (..)
     , Success (..)
     , TokenId
-    , Username (..)
     )
 import Core.Types.Fact (Fact (..))
 import Core.Types.MPFS (MPFSClient (..), mpfsClientOption)
@@ -123,10 +123,10 @@ parseArgs =
             secretsFileOption
             processOptionsParser
 
-data Requesters = Some [Username] | AnyRequester
+data Requesters = Some [GithubUsername] | AnyRequester
     deriving (Eq, Show)
 
-allowRequester :: Requesters -> Username -> Bool
+allowRequester :: Requesters -> GithubUsername -> Bool
 allowRequester AnyRequester _ = True
 allowRequester (Some users) user = user `elem` users
 
@@ -175,7 +175,7 @@ someRequestersOption :: Parser Requesters
 someRequestersOption =
     let fromOption =
             many
-                $ Username
+                $ GithubUsername
                     <$> strOption
                         [ long "trusted-test-requester"
                         , short 'c'
@@ -188,7 +188,7 @@ someRequestersOption =
         fromConfig =
             fmap (fromMaybe [])
                 $ optional
-                $ fmap Username
+                $ fmap GithubUsername
                     <$> setting
                         [ conf "trustedRequesters"
                         , help "List of trusted test-run requesters GitHub usernames."

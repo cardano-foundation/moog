@@ -42,12 +42,12 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , FileName (..)
+    , GithubUsername (GithubUsername)
     , Platform (Platform)
     , PublicKeyHash
     , Repository (..)
     , TokenId
     , Try (Try)
-    , Username (Username)
     , organizationL
     , projectL
     )
@@ -132,8 +132,8 @@ jsFactUser testRun pubkeyhash =
 data MockValidation = MockValidation
     { mockCommits :: [(Repository, Commit)]
     , mockDirectories :: [(Repository, Commit, Directory)]
-    , mockUserKeys :: [(Username, SSHPublicKey)]
-    , mockRepoRoles :: [(Username, Repository)]
+    , mockUserKeys :: [(GithubUsername, SSHPublicKey)]
+    , mockRepoRoles :: [(GithubUsername, Repository)]
     , mockReposExists :: [Repository]
     , mockAssets :: [((Repository, Maybe Commit, FileName), Text)]
     , mockPermissions :: [(Directory, Permissions)]
@@ -240,7 +240,7 @@ testRunGen = do
             , directory = Directory directory
             , commitId = Commit commitId
             , tryIndex = Try tryIndex
-            , requester = Username username
+            , requester = GithubUsername username
             }
 
 testRunEGen :: EGen TestRun

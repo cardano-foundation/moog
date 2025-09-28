@@ -29,12 +29,12 @@ import Core.Context
 import Core.Types.Basic
     ( Directory
     , Duration
+    , GithubUsername (..)
     , Owner
     , Platform
     , Repository
     , Success (..)
     , TokenId
-    , Username (..)
     )
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact
@@ -265,8 +265,8 @@ type family ResolveId phase where
     ResolveId Ready = TestRun
 
 data ReportFailure
-    = ReportFailureUserKeyNotFound Username
-    | ReportFailureUserKeyUnparsable Username
+    = ReportFailureUserKeyNotFound GithubUsername
+    | ReportFailureUserKeyUnparsable GithubUsername
     | ReportFailureFactNotFound TestRunId
     | ReportFailureUpdate UpdateTestRunFailure
     | ReportFailureFailToEncrypt String
@@ -274,11 +274,11 @@ data ReportFailure
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m ReportFailure where
-    toJSON (ReportFailureUserKeyNotFound (Username user)) =
+    toJSON (ReportFailureUserKeyNotFound (GithubUsername user)) =
         object
             [ "userKeyNotFound" .= user
             ]
-    toJSON (ReportFailureUserKeyUnparsable (Username user)) =
+    toJSON (ReportFailureUserKeyUnparsable (GithubUsername user)) =
         object
             [ "userKeyUnparsable" .= user
             ]

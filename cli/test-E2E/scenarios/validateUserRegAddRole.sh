@@ -219,7 +219,7 @@ expectedUnRoleRes1=$(
 "validationFailed": {
     "unregisterRoleKeyFailure": {
         "keyDoesNotExist":
-        "RegisterRoleKey {platform = Platform \"github\", repository = Repository {organization = \"cardano-foundation\", project = \"hal-fixture-sinn\"}, username = Username \"cfhal\"}"
+        "RegisterRoleKey {platform = Platform \"github\", repository = Repository {organization = \"cardano-foundation\", project = \"hal-fixture-sinn\"}, username = GithubUsername \"cfhal\"}"
         }
     }
 }

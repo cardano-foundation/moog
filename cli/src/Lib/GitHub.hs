@@ -26,8 +26,8 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , FileName (..)
+    , GithubUsername (..)
     , Repository (..)
-    , Username (..)
     )
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as B
@@ -197,8 +197,8 @@ githubDirectoryExists auth (Repository owner repo) (Commit sha) (Directory dir) 
     sha' = T.pack sha
 
 githubUserPublicKeys
-    :: Auth -> Username -> IO (Either GithubResponseError [T.Text])
-githubUserPublicKeys auth (Username name) = do
+    :: Auth -> GithubUsername -> IO (Either GithubResponseError [T.Text])
+githubUserPublicKeys auth (GithubUsername name) = do
     result <-
         github auth $ GH.publicSSHKeysForR (N $ T.pack name) FetchAll
     case result of

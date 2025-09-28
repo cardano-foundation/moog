@@ -23,7 +23,7 @@ import Core.Options
     , tokenIdOption
     , walletOption
     )
-import Core.Types.Basic (Username (..))
+import Core.Types.Basic (GithubUsername (..))
 import Core.Types.MPFS (mpfsClientOption)
 import Data.ByteString.Char8 qualified as B
 import Data.Functor (($>))
@@ -186,7 +186,7 @@ whoseOption =
         , metavar "USERNAME|ALL"
         , long "whose"
         , option
-        , reader $ Requester . Username <$> str
+        , reader $ Requester . GithubUsername <$> str
         , value All
         ]
 

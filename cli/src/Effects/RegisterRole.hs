@@ -7,7 +7,7 @@ module Effects.RegisterRole
     , inspectRepoRoleForUser
     ) where
 
-import Core.Types.Basic (Repository, Username (..))
+import Core.Types.Basic (GithubUsername (..), Repository)
 import Data.List qualified as L
 import Data.Maybe (catMaybes)
 import Data.Text (Text)
@@ -39,10 +39,10 @@ instance Monad m => ToJSON m RepositoryRoleFailure where
 -- the expectation there a line:
 -- role: user1 user2 .. userX .. userN
 analyzeResponseCodeownersFile
-    :: Username
+    :: GithubUsername
     -> Either GetGithubFileFailure Text
     -> Maybe RepositoryRoleFailure
-analyzeResponseCodeownersFile (Username user) = \case
+analyzeResponseCodeownersFile (GithubUsername user) = \case
     Left failure ->
         Just $ GithubGetError failure
     Right file ->
@@ -72,7 +72,7 @@ analyzeResponseCodeownersFile (Username user) = \case
             <$> catMaybes (users file)
 
 inspectRepoRoleForUserTemplate
-    :: Username
+    :: GithubUsername
     -> Repository
     -> (Repository -> IO (Either GetGithubFileFailure Text))
     -> IO (Maybe RepositoryRoleFailure)
@@ -82,7 +82,7 @@ inspectRepoRoleForUserTemplate username repo downloadCodeownersFile = do
 
 inspectRepoRoleForUser
     :: Auth
-    -> Username
+    -> GithubUsername
     -> Repository
     -> IO (Maybe RepositoryRoleFailure)
 inspectRepoRoleForUser auth username repo =

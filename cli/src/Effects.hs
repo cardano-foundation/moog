@@ -28,10 +28,10 @@ import Core.Types.Basic
     ( Commit
     , Directory (..)
     , FileName
+    , GithubUsername
     , PublicKeyHash
     , Repository
     , TokenId
-    , Username
     )
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..), JSFact, parseFacts)
@@ -79,14 +79,14 @@ data GithubEffects m = GithubEffects
         -> Directory
         -> m (Either GitHub.GithubResponseStatusCodeError Bool)
     , githubUserPublicKeys
-        :: Username
+        :: GithubUsername
         -> PublicKeyHash
         -> m (Maybe PublicKeyFailure)
     , githubRepositoryExists
         :: Repository
         -> m (Either GitHub.GithubResponseStatusCodeError Bool)
     , githubRepositoryRole
-        :: Username
+        :: GithubUsername
         -> Repository
         -> m (Maybe RepositoryRoleFailure)
     , githubGetFile

@@ -31,11 +31,11 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , Duration (..)
+    , GithubUsername (..)
     , Platform (..)
     , PublicKeyHash (..)
     , Repository (..)
     , Try (..)
-    , Username (..)
     )
 import Crypto.Error (CryptoFailable (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
@@ -71,7 +71,7 @@ data TestRun = TestRun
     , directory :: Directory
     , commitId :: Commit
     , tryIndex :: Try
-    , requester :: Username
+    , requester :: GithubUsername
     }
     deriving (Eq, Show)
 
@@ -106,7 +106,7 @@ instance (Monad m) => ToJSON m TestRun where
                 (Directory directory)
                 (Commit commitId)
                 (Try tryIndex)
-                (Username requester)
+                (GithubUsername requester)
             ) =
             object
                 [ ("type", stringJSON "test-run")
@@ -141,7 +141,7 @@ instance (Monad m, ReportSchemaErrors m) => FromJSON m TestRun where
                         , directory = Directory directory
                         , commitId = Commit commitId
                         , tryIndex = Try tryIndex
-                        , requester = Username requester
+                        , requester = GithubUsername requester
                         }
             _ ->
                 expectedButGotValue
@@ -289,7 +289,7 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState RunningT) where
 
 data RegisterUserKey = RegisterUserKey
     { platform :: Platform
-    , username :: Username
+    , username :: GithubUsername
     , pubkeyhash :: PublicKeyHash
     }
     deriving (Eq, Show)
@@ -298,7 +298,7 @@ instance (Monad m) => ToJSON m RegisterUserKey where
     toJSON
         ( RegisterUserKey
                 (Platform platform)
-                (Username user)
+                (GithubUsername user)
                 (PublicKeyHash pubkeyhash)
             ) =
             toJSON
@@ -323,7 +323,7 @@ instance
         pure
             $ RegisterUserKey
                 { platform = Platform platform
-                , username = Username user
+                , username = GithubUsername user
                 , pubkeyhash = PublicKeyHash pubkeyhash
                 }
     fromJSON r =
@@ -334,7 +334,7 @@ instance
 data RegisterRoleKey = RegisterRoleKey
     { platform :: Platform
     , repository :: Repository
-    , username :: Username
+    , username :: GithubUsername
     }
     deriving (Eq, Show)
 
@@ -354,7 +354,7 @@ instance (ReportSchemaErrors m, Alternative m) => FromJSON m RegisterRoleKey whe
             $ RegisterRoleKey
                 { platform = Platform platform
                 , repository = repository
-                , username = Username user
+                , username = GithubUsername user
                 }
     fromJSON r =
         expectedButGotValue
@@ -366,7 +366,7 @@ instance (Monad m) => ToJSON m RegisterRoleKey where
         ( RegisterRoleKey
                 (Platform platform)
                 (Repository owner repo)
-                (Username user)
+                (GithubUsername user)
             ) =
             object
                 [ ("type", stringJSON "register-role")

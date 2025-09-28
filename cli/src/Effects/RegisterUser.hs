@@ -8,7 +8,7 @@ module Effects.RegisterUser
     ) where
 
 import Control.Lens ((<&>))
-import Core.Types.Basic (PublicKeyHash (..), Username)
+import Core.Types.Basic (GithubUsername, PublicKeyHash (..))
 import Data.List (isPrefixOf, stripPrefix)
 import Data.List qualified as L
 import Data.Maybe (mapMaybe)
@@ -76,9 +76,9 @@ analyzePublicKeyResponse pubkeyToValidate = \case
             $ SSHPublicKey . T.unpack <$> resp
 
 inspectPublicKeyTemplate
-    :: Username
+    :: GithubUsername
     -> PublicKeyHash
-    -> (Username -> IO (Either GithubResponseError [Text]))
+    -> (GithubUsername -> IO (Either GithubResponseError [Text]))
     -> IO (Maybe PublicKeyFailure)
 inspectPublicKeyTemplate username pubKeyExpected requestPublicKeysForUser = do
     resp <- requestPublicKeysForUser username
@@ -86,7 +86,7 @@ inspectPublicKeyTemplate username pubKeyExpected requestPublicKeysForUser = do
 
 inspectPublicKey
     :: Auth
-    -> Username
+    -> GithubUsername
     -> PublicKeyHash
     -> IO (Maybe PublicKeyFailure)
 inspectPublicKey auth username pubKeyExpected =

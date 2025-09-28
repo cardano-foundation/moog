@@ -6,9 +6,9 @@ module Lib.Github.OracleValidationSpec
 where
 
 import Core.Types.Basic
-    ( PublicKeyHash (..)
+    ( GithubUsername (..)
+    , PublicKeyHash (..)
     , Repository (..)
-    , Username (..)
     )
 import Data.Text qualified as T
 import Effects.RegisterRole
@@ -78,7 +78,7 @@ userSpec = do
     it "user needs to have public key(s) exposed"
         $ do
             let emptyPubKeyOfUser _ = pure $ Right []
-                user = Username "user1"
+                user = GithubUsername "user1"
                 pubkey = PublicKeyHash ""
             inspectPublicKeyTemplate
                 user
@@ -90,7 +90,7 @@ userSpec = do
         $ do
             let respKey = "ssh-rsa AAAAAAAA"
                 nonEd25519PubKeyOfUser _ = pure $ Right [respKey]
-                user = Username "user1"
+                user = GithubUsername "user1"
                 pubkey = PublicKeyHash ""
             inspectPublicKeyTemplate
                 user
@@ -102,7 +102,7 @@ userSpec = do
         $ do
             let respKey = "ssh-ed25519 AAAAAAAA"
                 noExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey]
-                user = Username "user1"
+                user = GithubUsername "user1"
                 pubkey = PublicKeyHash "XAAAAAAY"
             inspectPublicKeyTemplate
                 user
@@ -114,7 +114,7 @@ userSpec = do
         $ do
             let respKey = "ssh-ed25519 XAAAAAAY"
                 okExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey]
-                user = Username "user1"
+                user = GithubUsername "user1"
                 pubkey = PublicKeyHash "XAAAAAAY"
             inspectPublicKeyTemplate
                 user
@@ -128,7 +128,7 @@ userSpec = do
                 respKey2 = "ssh-ed25519 AAAAAAAA"
                 respKey3 = "ssh-rsa XXXXXXXXXXXXXXXXXXXXXXx"
                 okExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey1, respKey2, respKey3]
-                user = Username "user1"
+                user = GithubUsername "user1"
                 pubkey = PublicKeyHash "XAAAAAAY"
             inspectPublicKeyTemplate
                 user
@@ -145,7 +145,7 @@ userSpec = do
                         , "core        /     @user"
                         , "command-line/     @user"
                         ]
-            user = Username "user1"
+            user = GithubUsername "user1"
             repo = Repository "org" "repo"
         inspectRepoRoleForUserTemplate user repo noRoleEntry
             `shouldReturn` Just NoRoleEntryInCodeowners
@@ -161,7 +161,7 @@ userSpec = do
                         , ""
                         , "antithesis:"
                         ]
-            user = Username "user1"
+            user = GithubUsername "user1"
             repo = Repository "org" "repo"
         inspectRepoRoleForUserTemplate user repo noRoleEntry
             `shouldReturn` Just NoUsersAssignedToRoleInCodeowners
@@ -177,7 +177,7 @@ userSpec = do
                         , ""
                         , "antithesis: @user1 @user3"
                         ]
-            user = Username "user2"
+            user = GithubUsername "user2"
             repo = Repository "org" "repo"
         inspectRepoRoleForUserTemplate user repo noRoleEntry
             `shouldReturn` Just NoUserInCodeowners
@@ -193,7 +193,7 @@ userSpec = do
                         , ""
                         , "antithesis: @user1 @user2 @user3"
                         ]
-            user = Username "user2"
+            user = GithubUsername "user2"
             repo = Repository "org" "repo"
         inspectRepoRoleForUserTemplate user repo noRoleEntry
             `shouldReturn` Nothing

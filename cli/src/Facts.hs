@@ -10,7 +10,7 @@ where
 
 import Control.Arrow (left)
 import Control.Monad (filterM, when)
-import Core.Types.Basic (TokenId, Username)
+import Core.Types.Basic (GithubUsername, TokenId)
 import Core.Types.Fact (Fact (..), keyHash, parseFacts)
 import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Char8 qualified as B8
@@ -36,7 +36,7 @@ import User.Types
     , URL (..)
     )
 
-data All = All | Requester Username
+data All = All | Requester GithubUsername
     deriving (Eq, Show)
 data TestRunSelection a where
     TestRunPending
@@ -167,7 +167,7 @@ data URLDecryptionIssue
     | NonceNotCreatable
     | KeyConversionsFailed String
     | URLDecryptionFailed
-    | UsersNotRegistered Username
+    | UsersNotRegistered GithubUsername
 
 nothingLeft :: e -> Maybe a -> Either e a
 nothingLeft e = maybe (Left e) Right
