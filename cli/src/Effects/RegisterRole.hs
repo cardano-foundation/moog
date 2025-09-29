@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
 
 module Effects.RegisterRole
@@ -14,7 +13,7 @@ import Data.Maybe (catMaybes)
 import Data.Text (Text)
 import Data.Text qualified as T
 import GitHub (Auth)
-import Lib.GitHub (GetGithubFileFailure, githubGetCodeOwnersFile)
+import Lib.GitHub (CodeOwnersFailure, githubGetCodeOwnersFile)
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Text.JSON.Canonical (ToJSON (..))
 
@@ -22,7 +21,7 @@ data RepositoryRoleFailure
     = NoRoleEntryInCodeowners
     | NoUsersAssignedToRoleInCodeowners
     | NoUserInCodeowners
-    | GithubGetError GetGithubFileFailure
+    | GithubGetError CodeOwnersFailure
     deriving (Eq, Show)
 
 instance Monad m => ToJSON m RepositoryRoleFailure where
@@ -41,7 +40,7 @@ instance Monad m => ToJSON m RepositoryRoleFailure where
 -- role: user1 user2 .. userX .. userN
 analyzeResponseCodeownersFile
     :: GithubUsername
-    -> Either GetGithubFileFailure Text
+    -> Either CodeOwnersFailure Text
     -> Maybe RepositoryRoleFailure
 analyzeResponseCodeownersFile (GithubUsername user) = \case
     Left failure ->
@@ -75,7 +74,7 @@ analyzeResponseCodeownersFile (GithubUsername user) = \case
 inspectRepoRoleForUserTemplate
     :: GithubUsername
     -> GithubRepository
-    -> (GithubRepository -> IO (Either GetGithubFileFailure Text))
+    -> (GithubRepository -> IO (Either CodeOwnersFailure Text))
     -> IO (Maybe RepositoryRoleFailure)
 inspectRepoRoleForUserTemplate username repo downloadCodeownersFile = do
     resp <- downloadCodeownersFile repo

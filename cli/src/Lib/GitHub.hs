@@ -1,10 +1,8 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-
-{-# HLINT ignore "Redundant $" #-}
 module Lib.GitHub
     ( GithubResponseError (..)
     , GetGithubFileFailure (..)
     , GithubResponseStatusCodeError (..)
+    , CodeOwnersFailure (..)
     , githubCommitExists
     , githubDirectoryExists
     , githubUserPublicKeys
@@ -24,7 +22,12 @@ import Control.Exception
     , SomeException
     )
 import Control.Monad.Fix (fix)
-import Control.Monad.Trans.Except (ExceptT (..), runExceptT, throwE)
+import Control.Monad.Trans.Except
+    ( ExceptT (..)
+    , runExceptT
+    , throwE
+    , withExceptT
+    )
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
@@ -36,7 +39,7 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as B
 import Data.ByteString.Base64 qualified as B64
 import Data.CaseInsensitive (CI (..))
-import Data.Foldable (Foldable (..), forM_)
+import Data.Foldable (Foldable (..), asum, forM_)
 import Data.Function ((&))
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
@@ -163,7 +166,7 @@ githubCommitExists auth (GithubRepository owner repo) (Commit sha) = do
   where
     owner' = N $ T.pack $ foldedCase owner
     repo' = N $ T.pack $ foldedCase repo
-    sha' = N $ T.pack $ sha
+    sha' = N $ T.pack sha
 
 githubRepositoryExists
     :: Auth
@@ -219,10 +222,28 @@ githubUserPublicKeys auth (GithubUsername name) = do
                 $ show e
         Right r -> pure $ Right $ GH.basicPublicSSHKeyKey <$> toList r
 
+newtype CodeOwnersFailure
+    = CodeOwnersFailure [(FileName, GetGithubFileFailure)]
+    deriving (Eq, Show, Semigroup, Monoid)
+
+promoteFileFailure
+    :: FileName -> GetGithubFileFailure -> CodeOwnersFailure
+promoteFileFailure fn failure = CodeOwnersFailure [(fn, failure)]
+
+validCODEOWNERSFilenames :: [FileName]
+validCODEOWNERSFilenames =
+    FileName
+        <$> ["CODEOWNERS", ".github/CODEOWNERS", "docs/CODEOWNERS"]
+
 githubGetCodeOwnersFile
-    :: Auth -> GithubRepository -> IO (Either GetGithubFileFailure T.Text)
-githubGetCodeOwnersFile auth repository =
-    githubGetFile auth repository Nothing (FileName "CODEOWNERS")
+    :: Auth -> GithubRepository -> IO (Either CodeOwnersFailure T.Text)
+githubGetCodeOwnersFile auth repository = do
+    let tryFile fn =
+            withExceptT (promoteFileFailure fn)
+                . ExceptT
+                . githubGetFile auth repository Nothing
+                $ fn
+    runExceptT . asum $ tryFile <$> validCODEOWNERSFilenames
 
 data GetGithubFileFailure
     = GetGithubFileDirectoryNotFound

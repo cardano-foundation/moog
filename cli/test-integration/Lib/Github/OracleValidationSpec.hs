@@ -6,7 +6,8 @@ module Lib.Github.OracleValidationSpec
 where
 
 import Core.Types.Basic
-    ( GithubRepository (..)
+    ( FileName (..)
+    , GithubRepository (..)
     , GithubUsername (..)
     , PublicKeyHash (..)
     )
@@ -21,7 +22,8 @@ import Effects.RegisterUser
     )
 import GitHub (Auth)
 import Lib.GitHub
-    ( GetGithubFileFailure (..)
+    ( CodeOwnersFailure (CodeOwnersFailure)
+    , GetGithubFileFailure (..)
     , githubGetCodeOwnersFile
     , githubRepositoryExists
     )
@@ -71,7 +73,13 @@ roleSpecs = do
         githubGetCodeOwnersFile
             auth
             (GithubRepository "cardano-foundation" "hal-fixture-sec")
-            `shouldReturn` Left GetGithubFileDirectoryNotFound
+            `shouldReturn` Left
+                ( CodeOwnersFailure
+                    [ (FileName "CODEOWNERS", GetGithubFileDirectoryNotFound)
+                    , (FileName ".github/CODEOWNERS", GetGithubFileDirectoryNotFound)
+                    , (FileName "docs/CODEOWNERS", GetGithubFileDirectoryNotFound)
+                    ]
+                )
 
 userSpec :: Spec
 userSpec = do
