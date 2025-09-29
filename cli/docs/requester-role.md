@@ -70,6 +70,8 @@ Before you do this make sure your repository CODEOWNERS file contains a line lik
 antithesis: @your-github-username
 ```
 
+CODEOWNERS file can be in the root of the repository, or in the `.github` or `docs` directories.
+
 You can have as many users as you want but registering them as test-run requesters has to be done one by one.
 
 To register a role, you can use the `anti requester register-role` command.
