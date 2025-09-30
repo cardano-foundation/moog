@@ -30,7 +30,6 @@ import Core.Types.Basic
     , FileName
     , GithubRepository
     , GithubUsername
-    , PublicKeyHash
     , TokenId
     )
 import Core.Types.Change (Change (..), Key (..))
@@ -57,6 +56,7 @@ import Lib.GitHub qualified as GitHub
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Lib.SSH.Private (KeyPair, SSHClient, WithSelector (..))
 import Lib.SSH.Private qualified as SSH
+import Lib.SSH.Public (SSHPublicKey)
 import MPFS.API (MPFS (..))
 import Oracle.Types (RequestZoo, Token (tokenRequests))
 import Oracle.Validate.Types (Validate, notValidated)
@@ -80,7 +80,7 @@ data GithubEffects m = GithubEffects
         -> m (Either GitHub.GithubResponseStatusCodeError Bool)
     , githubUserPublicKeys
         :: GithubUsername
-        -> PublicKeyHash
+        -> SSHPublicKey
         -> m (Maybe PublicKeyFailure)
     , githubRepositoryExists
         :: GithubRepository

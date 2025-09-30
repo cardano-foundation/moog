@@ -4,7 +4,8 @@ module Lib.SSH.Public
     , encodePublicKey
     , encodeSSHPublicKey
     , SSHPublicKey (..)
-    , extractPublicKeyHash
+    , toPublicKeyHash
+    , fromPublicKeyHash
     ) where
 
 import Control.Monad (when)
@@ -73,9 +74,13 @@ encodeSSHPublicKey key =
     in
         SSHPublicKey $ "ssh-ed25519 " <> encoded
 
-extractPublicKeyHash :: SSHPublicKey -> PublicKeyHash
-extractPublicKeyHash (SSHPublicKey sshPk) =
+toPublicKeyHash :: SSHPublicKey -> PublicKeyHash
+toPublicKeyHash (SSHPublicKey sshPk) =
     let
         expectedPrefix = "ssh-ed25519 " :: String
     in
         PublicKeyHash $ drop (length expectedPrefix) sshPk
+
+fromPublicKeyHash :: PublicKeyHash -> SSHPublicKey
+fromPublicKeyHash (PublicKeyHash pk) =
+    SSHPublicKey $ "ssh-ed25519 " <> pk

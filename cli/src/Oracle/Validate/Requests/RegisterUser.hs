@@ -26,6 +26,7 @@ import Effects.RegisterUser
     ( PublicKeyFailure (..)
     )
 import Lib.JSON.Canonical.Extra (object, (.=))
+import Lib.SSH.Public (fromPublicKeyHash)
 import Oracle.Types (requestZooGetRegisterUserKey)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
 import Oracle.Validate.Types
@@ -92,7 +93,8 @@ validateRegisterUser
             Nothing -> pure ()
         case platform of
             Platform "github" -> do
-                validationRes <- lift $ githubUserPublicKeys username pubkeyhash
+                validationRes <-
+                    lift $ githubUserPublicKeys username $ fromPublicKeyHash pubkeyhash
                 mapFailure PublicKeyValidationFailure $ throwJusts validationRes
             Platform other -> notValidated $ RegisterUserPlatformNotSupported other
 
@@ -141,7 +143,8 @@ validateUnregisterUser
             $ deleteValidation validation change
         case platform of
             Platform "github" -> do
-                validationRes <- lift $ githubUserPublicKeys username pubkeyhash
+                validationRes <-
+                    lift $ githubUserPublicKeys username $ fromPublicKeyHash pubkeyhash
                 case validationRes of
                     Just NoEd25519KeyFound -> pure Validated
                     Just NoEd25519KeyMatch -> pure Validated

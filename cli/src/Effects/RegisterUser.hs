@@ -7,11 +7,8 @@ module Effects.RegisterUser
     , analyzeKeys
     ) where
 
-import Control.Lens ((<&>))
-import Core.Types.Basic (GithubUsername, PublicKeyHash (..))
-import Data.List (isPrefixOf, stripPrefix)
+import Core.Types.Basic (GithubUsername)
 import Data.List qualified as L
-import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
 import GitHub (Auth)
@@ -51,22 +48,19 @@ expectedPrefix :: String
 expectedPrefix = "ssh-ed25519 "
 
 analyzeKeys
-    :: PublicKeyHash
+    :: SSHPublicKey
     -> [SSHPublicKey]
     -> Maybe PublicKeyFailure
-analyzeKeys (PublicKeyHash pubkeyToValidate) resp
+analyzeKeys pubkeyToValidate resp
     | null resp = Just NoPublicKeyFound
-    | not (any hasExpectedPrefix keyTexts) = Just NoEd25519KeyFound
-    | hasNotTheKey keyTexts = Just NoEd25519KeyMatch
+    | hasNotTheKey resp = Just NoEd25519KeyMatch
     | otherwise = Nothing
   where
-    keyTexts = resp <&> \case SSHPublicKey key -> key
-    hasExpectedPrefix = isPrefixOf expectedPrefix
     hasNotTheKey =
-        L.notElem pubkeyToValidate . mapMaybe (stripPrefix expectedPrefix)
+        L.notElem pubkeyToValidate
 
 analyzePublicKeyResponse
-    :: PublicKeyHash
+    :: SSHPublicKey
     -> Either GithubResponseError [Text]
     -> Maybe PublicKeyFailure
 analyzePublicKeyResponse pubkeyToValidate = \case
@@ -77,7 +71,7 @@ analyzePublicKeyResponse pubkeyToValidate = \case
 
 inspectPublicKeyTemplate
     :: GithubUsername
-    -> PublicKeyHash
+    -> SSHPublicKey
     -> (GithubUsername -> IO (Either GithubResponseError [Text]))
     -> IO (Maybe PublicKeyFailure)
 inspectPublicKeyTemplate username pubKeyExpected requestPublicKeysForUser = do
@@ -87,7 +81,7 @@ inspectPublicKeyTemplate username pubKeyExpected requestPublicKeysForUser = do
 inspectPublicKey
     :: Auth
     -> GithubUsername
-    -> PublicKeyHash
+    -> SSHPublicKey
     -> IO (Maybe PublicKeyFailure)
 inspectPublicKey auth username pubKeyExpected =
     inspectPublicKeyTemplate

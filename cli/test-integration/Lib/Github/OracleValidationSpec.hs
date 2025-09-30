@@ -10,7 +10,6 @@ import Core.Types.Basic
     ( FileName (..)
     , GithubRepository (..)
     , GithubUsername (..)
-    , PublicKeyHash (..)
     )
 import Data.Text qualified as T
 import Effects.RegisterRole
@@ -29,6 +28,7 @@ import Lib.GitHub
     , githubGetCodeOwnersFile
     , githubRepositoryExists
     )
+import Lib.SSH.Public (SSHPublicKey (..))
 import Test.Hspec
     ( Spec
     , SpecWith
@@ -98,7 +98,7 @@ userSpec = do
         $ do
             let emptyPubKeyOfUser _ = pure $ Right []
                 user = GithubUsername "user1"
-                pubkey = PublicKeyHash ""
+                pubkey = SSHPublicKey "ssh-ed25519 "
             inspectPublicKeyTemplate
                 user
                 pubkey
@@ -110,19 +110,19 @@ userSpec = do
             let respKey = "ssh-rsa AAAAAAAA"
                 nonEd25519PubKeyOfUser _ = pure $ Right [respKey]
                 user = GithubUsername "user1"
-                pubkey = PublicKeyHash ""
+                pubkey = SSHPublicKey "ssh-ed25519 "
             inspectPublicKeyTemplate
                 user
                 pubkey
                 nonEd25519PubKeyOfUser
-        `shouldReturn` Just NoEd25519KeyFound
+        `shouldReturn` Just NoEd25519KeyMatch
 
     it "user needs to the expected ssh-ed25519 public key exposed"
         $ do
             let respKey = "ssh-ed25519 AAAAAAAA"
                 noExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey]
                 user = GithubUsername "user1"
-                pubkey = PublicKeyHash "XAAAAAAY"
+                pubkey = SSHPublicKey "ssh-ed25519 XAAAAAAY"
             inspectPublicKeyTemplate
                 user
                 pubkey
@@ -134,7 +134,7 @@ userSpec = do
             let respKey = "ssh-ed25519 XAAAAAAY"
                 okExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey]
                 user = GithubUsername "user1"
-                pubkey = PublicKeyHash "XAAAAAAY"
+                pubkey = SSHPublicKey "ssh-ed25519 XAAAAAAY"
             inspectPublicKeyTemplate
                 user
                 pubkey
@@ -148,7 +148,7 @@ userSpec = do
                 respKey3 = "ssh-rsa XXXXXXXXXXXXXXXXXXXXXXx"
                 okExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey1, respKey2, respKey3]
                 user = GithubUsername "user1"
-                pubkey = PublicKeyHash "XAAAAAAY"
+                pubkey = SSHPublicKey "ssh-ed25519 XAAAAAAY"
             inspectPublicKeyTemplate
                 user
                 pubkey

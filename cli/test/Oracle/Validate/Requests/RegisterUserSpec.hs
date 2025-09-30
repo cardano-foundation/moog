@@ -24,7 +24,7 @@ import Effects.RegisterUser (PublicKeyFailure (..))
 import Lib.SSH.Public
     ( SSHPublicKey (..)
     , encodeSSHPublicKey
-    , extractPublicKeyHash
+    , toPublicKeyHash
     )
 import MockMPFS (mockMPFS, withFacts, withRequests)
 import Oracle.Types (Request (..), RequestZoo (..))
@@ -131,7 +131,7 @@ spec = do
                 test =
                     validateRegisterUser validation forRole
                         $ registerUserChange (Platform "github") user
-                        $ extractPublicKeyHash pk
+                        $ toPublicKeyHash pk
             pure $ runValidate test `shouldReturn` ValidationSuccess Validated
         it "fail to validate a registration if the user is already registered"
             $ egenProperty
@@ -139,7 +139,7 @@ spec = do
                 e@(user, pk) <- genValidDBElement
                 forRole <- genForRole
                 let platform = "github"
-                    pubkey@(PublicKeyHash stringPk) = extractPublicKeyHash pk
+                    pubkey@(PublicKeyHash stringPk) = toPublicKeyHash pk
                     registration =
                         RegisterUserKey
                             { platform = Platform platform
@@ -148,7 +148,7 @@ spec = do
                             }
                 fact <- toJSFact registration ()
                 (_, pk1) <- genValidDBElement
-                let pubkey1 = extractPublicKeyHash pk1
+                let pubkey1 = toPublicKeyHash pk1
                 let
                     validation =
                         mkEffects (withFacts [fact] mockMPFS)
@@ -170,7 +170,7 @@ spec = do
                 (user, pk) <- genValidDBElement
                 forRole <- genForRole
                 let platform = "github"
-                    pubkey = extractPublicKeyHash pk
+                    pubkey = toPublicKeyHash pk
                     registration =
                         RegisterUserKey
                             { platform = Platform platform
@@ -222,7 +222,7 @@ spec = do
                     test =
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user
-                            $ extractPublicKeyHash pk
+                            $ toPublicKeyHash pk
                 pure
                     $ when (platform /= "github")
                     $ runValidate test
@@ -236,7 +236,7 @@ spec = do
                 e@(user, pk) <- gen genUserDBElement
                 forRole <- genForRole
                 let platform = "github"
-                    pubkey = extractPublicKeyHash pk
+                    pubkey = toPublicKeyHash pk
                     registration =
                         RegisterUserKey
                             { platform = Platform platform
@@ -262,7 +262,7 @@ spec = do
                 (user, pk) <- gen genUserDBElement
                 forRole <- genForRole
                 let platform = "github"
-                    pubkey = extractPublicKeyHash pk
+                    pubkey = toPublicKeyHash pk
                 let validation = mkEffects mockMPFS noValidation
                     test =
                         validateRegisterUser validation forRole
@@ -293,7 +293,7 @@ spec = do
                 pure
                     $ runValidate test
                     `shouldReturn` ValidationFailure
-                        (PublicKeyValidationFailure NoEd25519KeyFound)
+                        (PublicKeyValidationFailure NoEd25519KeyMatch)
 
         it
             "fail to validate a registration if there is different ssh-ed25519 public key for a user"
@@ -303,7 +303,7 @@ spec = do
                 forRole <- genForRole
                 (_, pk2) <- genValidDBElement
                 let platform = "github"
-                    pubkey = extractPublicKeyHash pk2
+                    pubkey = toPublicKeyHash pk2
                 let validation = mkEffects mockMPFS $ noValidation{mockUserKeys = [e]}
                     test =
                         validateRegisterUser validation forRole
@@ -321,7 +321,7 @@ spec = do
                 (user, pk) <- gen genUserDBElement
                 forRole <- genForRole
                 let platform = "github"
-                    pubkey = extractPublicKeyHash pk
+                    pubkey = toPublicKeyHash pk
                     registration =
                         RegisterUserKey
                             { platform = Platform platform
@@ -345,7 +345,7 @@ spec = do
                 (user, pk) <- gen genUserDBElement
                 forRole <- genForRole
                 let platform = "github"
-                    pubkey = extractPublicKeyHash pk
+                    pubkey = toPublicKeyHash pk
                     registration =
                         RegisterUserKey
                             { platform = Platform platform
@@ -379,7 +379,7 @@ spec = do
                 (userOther, _) <- gen genUserDBElement
                 forRole <- genForRole
                 let platform = "github"
-                    pubkey = extractPublicKeyHash pk
+                    pubkey = toPublicKeyHash pk
                     registration =
                         RegisterUserKey
                             { platform = Platform platform
@@ -420,7 +420,7 @@ spec = do
                             , username = user
                             , pubkeyhash = pubkey
                             }
-                    pubkey = extractPublicKeyHash pk
+                    pubkey = toPublicKeyHash pk
                 fact <- toJSFact registration ()
                 let validation = mkEffects (withFacts [fact] mockMPFS) noValidation
                     test =
@@ -440,8 +440,8 @@ spec = do
                 (_, pk1) <- gen genUserDBElement
                 forRole <- genForRole
                 let platform = "github"
-                    pubkey = extractPublicKeyHash pk
-                    pubkey1 = extractPublicKeyHash pk1
+                    pubkey = toPublicKeyHash pk
+                    pubkey1 = toPublicKeyHash pk1
                     registration =
                         RegisterUserKey
                             { platform = Platform platform
