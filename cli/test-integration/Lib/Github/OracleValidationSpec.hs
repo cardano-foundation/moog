@@ -18,7 +18,10 @@ import Effects.RegisterRole
     )
 import Effects.RegisterUser
     ( SSHPublicKeyFailure (..)
+    , VKey (..)
+    , VKeyFailure (..)
     , inspectPublicKeyTemplate
+    , inspectVKey
     )
 import GitHub (Auth)
 import Lib.GitHub
@@ -91,6 +94,23 @@ vkeySpec = do
             (GithubUsername "cfhal")
             `shouldReturn` Right
                 "vkey1n5wwq8zr3ts65e37yus206r4dzau3sc5ant6mxt304atnfudutrqwdzd5n"
+    it "should match anti-cli.vkey for cfhal" $ \auth -> do
+        inspectVKey
+            auth
+            (GithubUsername "cfhal")
+            (VKey "vkey1n5wwq8zr3ts65e37yus206r4dzau3sc5ant6mxt304atnfudutrqwdzd5n")
+            `shouldReturn` Nothing
+    it "should mismatch anti-cli.vkey for cfhal" $ \auth -> do
+        inspectVKey
+            auth
+            (GithubUsername "cfhal")
+            (VKey "vkey1n5wwq8zr3ts65e37yus206r4dzau3sc5ant6mxt304atnfudutrqwdzd5")
+            `shouldReturn` Just
+                ( VKeyMismatch
+                    ( VKey
+                        "vkey1n5wwq8zr3ts65e37yus206r4dzau3sc5ant6mxt304atnfudutrqwdzd5n"
+                    )
+                )
 
 userSpec :: Spec
 userSpec = do

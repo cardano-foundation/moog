@@ -73,7 +73,12 @@ import Effects.DownloadFile
     , analyzeDownloadedFile
     )
 import Effects.RegisterRole (RepositoryRoleFailure (..))
-import Effects.RegisterUser (analyzeKeys)
+import Effects.RegisterUser
+    ( VKey
+    , VKeyFailure (..)
+    , analyzeKeys
+    , analyzeVKeyResponse
+    )
 import Lib.GitHub
     ( GetGithubFileFailure (..)
     )
@@ -99,8 +104,8 @@ import Text.JSON.Canonical
     , renderCanonicalJSON
     )
 import User.Types
-    ( RegisterRoleKey (RegisterRoleKey, platform, repository, username)
-    , RegisterUserKey (RegisterUserKey, platform, pubkeyhash, username)
+    ( RegisterRoleKey (..)
+    , RegisterUserKey (..)
     , TestRun (..)
     , commitIdL
     , directoryL
@@ -133,7 +138,8 @@ jsFactUser testRun pubkeyhash =
 data MockValidation = MockValidation
     { mockCommits :: [(GithubRepository, Commit)]
     , mockDirectories :: [(GithubRepository, Commit, Directory)]
-    , mockUserKeys :: [(GithubUsername, SSHPublicKey)]
+    , mockSSHKeys :: [(GithubUsername, SSHPublicKey)]
+    , mockVKeys :: [(GithubUsername, VKey)]
     , mockRepoRoles :: [(GithubUsername, GithubRepository)]
     , mockReposExists :: [GithubRepository]
     , mockAssets :: [((GithubRepository, Maybe Commit, FileName), Text)]
@@ -152,7 +158,8 @@ mkGithubEffects
     MockValidation
         { mockCommits
         , mockDirectories
-        , mockUserKeys
+        , mockSSHKeys
+        , mockVKeys
         , mockRepoRoles
         , mockReposExists
         , mockAssets
@@ -168,7 +175,17 @@ mkGithubEffects
                     $ map snd
                     $ filter
                         ((== username) . fst)
-                        mockUserKeys
+                        mockSSHKeys
+            , githubUserVKeys = \username vkey ->
+                pure
+                    $ case lookup
+                        username
+                        mockVKeys of
+                        Nothing ->
+                            Just
+                                $ VKeyGithubError
+                                    (GetGithubFileOtherFailure "" "no vkey")
+                        Just actualVKey -> analyzeVKeyResponse vkey (Right actualVKey)
             , githubRepositoryExists = \repo ->
                 if repo `elem` mockReposExists
                     then pure $ Right True
@@ -297,7 +314,8 @@ noValidation =
     MockValidation
         { mockCommits = []
         , mockDirectories = []
-        , mockUserKeys = []
+        , mockSSHKeys = []
+        , mockVKeys = []
         , mockRepoRoles = []
         , mockReposExists = []
         , mockAssets = []

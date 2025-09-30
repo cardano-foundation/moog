@@ -49,7 +49,10 @@ import Effects.RegisterRole
     )
 import Effects.RegisterUser
     ( SSHPublicKeyFailure
+    , VKey
+    , VKeyFailure (..)
     , inspectPublicKey
+    , inspectVKey
     )
 import GitHub (Auth)
 import Lib.GitHub qualified as GitHub
@@ -82,6 +85,10 @@ data GithubEffects m = GithubEffects
         :: GithubUsername
         -> SSHPublicKey
         -> m (Maybe SSHPublicKeyFailure)
+    , githubUserVKeys
+        :: GithubUsername
+        -> VKey
+        -> m (Maybe VKeyFailure)
     , githubRepositoryExists
         :: GithubRepository
         -> m (Either GitHub.GithubResponseStatusCodeError Bool)
@@ -111,6 +118,7 @@ hoistGithubEffects
         { githubCommitExists
         , githubDirectoryExists
         , githubUserPublicKeys
+        , githubUserVKeys
         , githubRepositoryExists
         , githubRepositoryRole
         , githubGetFile
@@ -123,6 +131,8 @@ hoistGithubEffects
                 \repo commit dir -> f $ githubDirectoryExists repo commit dir
             , githubUserPublicKeys =
                 \username publicKey -> f $ githubUserPublicKeys username publicKey
+            , githubUserVKeys =
+                \username vkey -> f $ githubUserVKeys username vkey
             , githubRepositoryExists = f . githubRepositoryExists
             , githubRepositoryRole =
                 \username repository -> f $ githubRepositoryRole username repository
@@ -219,6 +229,8 @@ mkGithubEffects auth =
             liftIO $ GitHub.githubDirectoryExists auth repository commit dir
         , githubUserPublicKeys = \username publicKey ->
             liftIO $ inspectPublicKey auth username publicKey
+        , githubUserVKeys = \username vkey ->
+            liftIO $ inspectVKey auth username vkey
         , githubRepositoryExists = liftIO . GitHub.githubRepositoryExists auth
         , githubRepositoryRole = \username repository ->
             liftIO $ inspectRepoRoleForUser auth username repository

@@ -81,7 +81,7 @@ import Test.QuickCheck
     , oneof
     , suchThat
     )
-import Test.QuickCheck.Crypton (sshGen)
+import Test.QuickCheck.Crypton (ed25519Gen)
 import Test.QuickCheck.EGen
     ( egenProperty
     , gen
@@ -129,7 +129,7 @@ spec = do
                         `suchThat` \(Positive d) ->
                             d >= testConfig.minDuration
                                 && d <= testConfig.maxDuration
-            (sign, pk) <- genBlind sshGen
+            (sign, pk) <- genBlind ed25519Gen
             user <- jsFactUser testRun $ encodePublicKey pk
             role <- jsFactRole testRun
             whiteListRepo <-
@@ -200,7 +200,7 @@ spec = do
                             `suchThat` \(Positive d) ->
                                 d >= testConfig.minDuration
                                     && d <= testConfig.maxDuration
-                (sign, _pk) <- genBlind sshGen
+                (sign, _pk) <- genBlind ed25519Gen
                 forRole <- genForRole
                 testRunState <-
                     Pending (Duration duration)

@@ -27,7 +27,7 @@ import Test.QuickCheck
     , forAllBlind
     , listOf
     )
-import Test.QuickCheck.Crypton (sshGen)
+import Test.QuickCheck.Crypton (ed25519Gen)
 import User.Types
     ( RegisterUserKey (..)
     , TestRun (..)
@@ -68,7 +68,7 @@ spec = do
             $ \message
                duration
                (ASCIIString url) -> forAll (listOf testRunRejectionGen) $ \rejections -> do
-                    forAllBlind sshGen $ \(sign, _verify) -> do
+                    forAllBlind ed25519Gen $ \(sign, _verify) -> do
                         let pending = Pending (Duration duration) $ sign message
                         roundTrip pending
                         let rejected =

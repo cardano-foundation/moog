@@ -5,14 +5,24 @@ module Effects.RegisterUser
     , inspectPublicKeyTemplate
     , inspectPublicKey
     , analyzeKeys
+    , inspectVKey
+    , VKey (..)
+    , VKeyFailure (..)
+    , analyzeVKeyResponse
     ) where
 
 import Core.Types.Basic (GithubUsername)
+import Core.Types.VKey (VKey (..))
 import Data.List qualified as L
 import Data.Text (Text)
 import Data.Text qualified as T
 import GitHub (Auth)
-import Lib.GitHub (GithubResponseError, githubUserPublicKeys)
+import Lib.GitHub
+    ( GetGithubFileFailure
+    , GithubResponseError
+    , githubGetAntiCLIVKey
+    , githubUserPublicKeys
+    )
 import Lib.SSH.Public (SSHPublicKey (..))
 import Text.JSON.Canonical (ToJSON (..))
 
@@ -88,3 +98,24 @@ inspectPublicKey auth username pubKeyExpected =
         username
         pubKeyExpected
         $ githubUserPublicKeys auth
+
+data VKeyFailure
+    = VKeyMismatch VKey
+    | VKeyGithubError GetGithubFileFailure
+    deriving (Eq, Show)
+
+inspectVKey
+    :: Auth
+    -> GithubUsername
+    -> VKey
+    -> IO (Maybe VKeyFailure)
+inspectVKey auth username expectedVKey = do
+    resp <- githubGetAntiCLIVKey auth username
+    pure $ analyzeVKeyResponse expectedVKey $ VKey <$> resp
+
+analyzeVKeyResponse
+    :: VKey -> Either GetGithubFileFailure VKey -> Maybe VKeyFailure
+analyzeVKeyResponse _expected (Left err) = Just $ VKeyGithubError err
+analyzeVKeyResponse expected (Right resp)
+    | resp == expected = Nothing
+    | otherwise = Just $ VKeyMismatch resp

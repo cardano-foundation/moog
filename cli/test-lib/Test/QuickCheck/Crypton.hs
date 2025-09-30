@@ -2,7 +2,7 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 
 module Test.QuickCheck.Crypton
-    ( sshGen
+    ( ed25519Gen
     )
 where
 
@@ -24,12 +24,12 @@ instance MonadRandom Gen where
         bytes <- vectorOf n (choose (0, 255) :: Gen Word8)
         return $ BA.pack bytes
 
-sshGen
+ed25519Gen
     :: Gen
         ( String -> Ed25519.Signature
         , Ed25519.PublicKey
         )
-sshGen = do
+ed25519Gen = do
     private <- generateSecretKey
     let public = Ed25519.toPublic private
         sign message =

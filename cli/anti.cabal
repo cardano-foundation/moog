@@ -102,6 +102,7 @@ library
     Core.Types.MPFS
     Core.Types.Operation
     Core.Types.Tx
+    Core.Types.VKey
     Core.Types.Wallet
     Docker
     Effects
@@ -335,6 +336,7 @@ test-suite anti-unit-test
   -- Modules included in this executable, other than Main.
   other-modules:
     Core.EncryptionSpec
+    Core.Types.VKeySpec
     Lib.CryptoBoxSpec
     Lib.EdToCurveSpec
     Lib.JSON.Canonical.AesonSpec

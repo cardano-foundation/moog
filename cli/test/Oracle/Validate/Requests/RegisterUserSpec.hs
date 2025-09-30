@@ -53,7 +53,7 @@ import Test.Hspec
     , shouldReturn
     )
 import Test.QuickCheck (Gen, arbitrary, oneof, suchThat)
-import Test.QuickCheck.Crypton (sshGen)
+import Test.QuickCheck.Crypton (ed25519Gen)
 import Test.QuickCheck.EGen (EGen, egenProperty, gen, genBlind)
 import Test.QuickCheck.JSString (genAscii)
 import Test.QuickCheck.Lib (withAPresence, withAPresenceInAList)
@@ -68,7 +68,7 @@ genUserDBElement = do
 genValidDBElement :: EGen (GithubUsername, SSHPublicKey)
 genValidDBElement = do
     user <- gen $ GithubUsername . mk <$> genAscii
-    (_sign, pk) <- genBlind sshGen
+    (_sign, pk) <- genBlind ed25519Gen
     pure (user, encodeSSHPublicKey pk)
 
 registerUserChange
@@ -126,7 +126,7 @@ spec = do
             let validation =
                     mkEffects mockMPFS
                         $ noValidation
-                            { mockUserKeys = [e]
+                            { mockSSHKeys = [e]
                             }
                 test =
                     validateRegisterUser validation forRole
@@ -152,7 +152,7 @@ spec = do
                 let
                     validation =
                         mkEffects (withFacts [fact] mockMPFS)
-                            $ noValidation{mockUserKeys = [e, (user, pk1)]}
+                            $ noValidation{mockSSHKeys = [e, (user, pk1)]}
                     test =
                         validateRegisterUser validation forRole
                             $ registerUserChange
@@ -218,7 +218,7 @@ spec = do
                 platform <- gen $ withAPresence 0.5 "github" arbitrary
                 let validation =
                         mkEffects mockMPFS
-                            $ noValidation{mockUserKeys = db}
+                            $ noValidation{mockSSHKeys = db}
                     test =
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user
@@ -246,7 +246,7 @@ spec = do
                 fact <- toJSFact registration ()
                 let validation =
                         mkEffects (withFacts [fact] mockMPFS)
-                            $ noValidation{mockUserKeys = [e]}
+                            $ noValidation{mockSSHKeys = [e]}
                     test =
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user pubkey
@@ -286,7 +286,7 @@ spec = do
                             PublicKeyHash $ drop (length expectedPrefix) sshPk
                     pubkey = extractOtherPublicKeyHash pk
                     e = (user, SSHPublicKey pk)
-                let validation = mkEffects mockMPFS $ noValidation{mockUserKeys = [e]}
+                let validation = mkEffects mockMPFS $ noValidation{mockSSHKeys = [e]}
                     test =
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user pubkey
@@ -304,7 +304,7 @@ spec = do
                 (_, pk2) <- genValidDBElement
                 let platform = "github"
                     pubkey = toPublicKeyHash pk2
-                let validation = mkEffects mockMPFS $ noValidation{mockUserKeys = [e]}
+                let validation = mkEffects mockMPFS $ noValidation{mockSSHKeys = [e]}
                     test =
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user pubkey
