@@ -48,7 +48,7 @@ import Effects.RegisterRole
     , inspectRepoRoleForUser
     )
 import Effects.RegisterUser
-    ( PublicKeyFailure
+    ( SSHPublicKeyFailure
     , inspectPublicKey
     )
 import GitHub (Auth)
@@ -81,7 +81,7 @@ data GithubEffects m = GithubEffects
     , githubUserPublicKeys
         :: GithubUsername
         -> SSHPublicKey
-        -> m (Maybe PublicKeyFailure)
+        -> m (Maybe SSHPublicKeyFailure)
     , githubRepositoryExists
         :: GithubRepository
         -> m (Either GitHub.GithubResponseStatusCodeError Bool)

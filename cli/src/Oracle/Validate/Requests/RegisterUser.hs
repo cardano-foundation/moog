@@ -23,7 +23,7 @@ import Effects
     , insertValidation
     )
 import Effects.RegisterUser
-    ( PublicKeyFailure (..)
+    ( SSHPublicKeyFailure (..)
     )
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Lib.SSH.Public (fromPublicKeyHash)
@@ -44,7 +44,7 @@ import User.Types
     )
 
 data RegisterUserFailure
-    = PublicKeyValidationFailure PublicKeyFailure
+    = PublicKeyValidationFailure SSHPublicKeyFailure
     | RegisterUserPlatformNotSupported String
     | RegisterUserKeyFailure KeyFailure
     | RegisterUserKeyChangeAlreadyPending RegisterUserKey

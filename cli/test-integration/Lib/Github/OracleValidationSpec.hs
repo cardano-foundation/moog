@@ -17,7 +17,7 @@ import Effects.RegisterRole
     , inspectRepoRoleForUserTemplate
     )
 import Effects.RegisterUser
-    ( PublicKeyFailure (..)
+    ( SSHPublicKeyFailure (..)
     , inspectPublicKeyTemplate
     )
 import GitHub (Auth)

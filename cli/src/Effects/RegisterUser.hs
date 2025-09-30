@@ -1,7 +1,7 @@
 {-# LANGUAGE StrictData #-}
 
 module Effects.RegisterUser
-    ( PublicKeyFailure (..)
+    ( SSHPublicKeyFailure (..)
     , inspectPublicKeyTemplate
     , inspectPublicKey
     , analyzeKeys
@@ -16,14 +16,14 @@ import Lib.GitHub (GithubResponseError, githubUserPublicKeys)
 import Lib.SSH.Public (SSHPublicKey (..))
 import Text.JSON.Canonical (ToJSON (..))
 
-data PublicKeyFailure
+data SSHPublicKeyFailure
     = NoPublicKeyFound
     | NoEd25519KeyFound
     | NoEd25519KeyMatch
     | GithubError String
     deriving (Eq, Show)
 
-instance Monad m => ToJSON m PublicKeyFailure where
+instance Monad m => ToJSON m SSHPublicKeyFailure where
     toJSON = \case
         NoPublicKeyFound ->
             toJSON
@@ -50,7 +50,7 @@ expectedPrefix = "ssh-ed25519 "
 analyzeKeys
     :: SSHPublicKey
     -> [SSHPublicKey]
-    -> Maybe PublicKeyFailure
+    -> Maybe SSHPublicKeyFailure
 analyzeKeys pubkeyToValidate resp
     | null resp = Just NoPublicKeyFound
     | hasNotTheKey resp = Just NoEd25519KeyMatch
@@ -62,7 +62,7 @@ analyzeKeys pubkeyToValidate resp
 analyzePublicKeyResponse
     :: SSHPublicKey
     -> Either GithubResponseError [Text]
-    -> Maybe PublicKeyFailure
+    -> Maybe SSHPublicKeyFailure
 analyzePublicKeyResponse pubkeyToValidate = \case
     Left err -> Just $ GithubError $ show err
     Right resp ->
@@ -73,7 +73,7 @@ inspectPublicKeyTemplate
     :: GithubUsername
     -> SSHPublicKey
     -> (GithubUsername -> IO (Either GithubResponseError [Text]))
-    -> IO (Maybe PublicKeyFailure)
+    -> IO (Maybe SSHPublicKeyFailure)
 inspectPublicKeyTemplate username pubKeyExpected requestPublicKeysForUser = do
     resp <- requestPublicKeysForUser username
     pure $ analyzePublicKeyResponse pubKeyExpected resp
@@ -82,7 +82,7 @@ inspectPublicKey
     :: Auth
     -> GithubUsername
     -> SSHPublicKey
-    -> IO (Maybe PublicKeyFailure)
+    -> IO (Maybe SSHPublicKeyFailure)
 inspectPublicKey auth username pubKeyExpected =
     inspectPublicKeyTemplate
         username

@@ -20,7 +20,7 @@ import Core.Types.Operation (Op (OpD, OpI), Operation (..))
 import Data.CaseInsensitive (mk)
 import Data.Char (isAscii)
 import Effects (KeyFailure (..))
-import Effects.RegisterUser (PublicKeyFailure (..))
+import Effects.RegisterUser (SSHPublicKeyFailure (..))
 import Lib.SSH.Public
     ( SSHPublicKey (..)
     , encodeSSHPublicKey
