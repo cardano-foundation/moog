@@ -15,6 +15,7 @@ module Lib.GitHub
     , writeToDirectory
     , exitOnException
     , githubStreamDirectoryContents
+    , githubGetAntiCLIVKey
     ) where
 
 import Control.Exception
@@ -244,6 +245,16 @@ githubGetCodeOwnersFile auth repository = do
                 . githubGetFile auth repository Nothing
                 $ fn
     runExceptT . asum $ tryFile <$> validCODEOWNERSFilenames
+
+githubGetAntiCLIVKey
+    :: Auth -> GithubUsername -> IO (Either GetGithubFileFailure T.Text)
+githubGetAntiCLIVKey auth (GithubUsername name) =
+    fmap T.strip <$> do
+        githubGetFile
+            auth
+            (GithubRepository name name)
+            Nothing
+            (FileName "anti-cli.vkey")
 
 data GetGithubFileFailure
     = GetGithubFileDirectoryNotFound

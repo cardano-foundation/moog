@@ -2,6 +2,7 @@ module Lib.Github.OracleValidationSpec
     ( userSpec
     , roleSpecs
     , existenceSpec
+    , vkeySpec
     )
 where
 
@@ -24,6 +25,7 @@ import GitHub (Auth)
 import Lib.GitHub
     ( CodeOwnersFailure (CodeOwnersFailure)
     , GetGithubFileFailure (..)
+    , githubGetAntiCLIVKey
     , githubGetCodeOwnersFile
     , githubRepositoryExists
     )
@@ -80,6 +82,15 @@ roleSpecs = do
                     , (FileName "docs/CODEOWNERS", GetGithubFileDirectoryNotFound)
                     ]
                 )
+
+vkeySpec :: SpecWith Auth
+vkeySpec = do
+    it "should download anti-cli.vkey for cfhal" $ \auth -> do
+        githubGetAntiCLIVKey
+            auth
+            (GithubUsername "cfhal")
+            `shouldReturn` Right
+                "vkey1n5wwq8zr3ts65e37yus206r4dzau3sc5ant6mxt304atnfudutrqwdzd5n"
 
 userSpec :: Spec
 userSpec = do

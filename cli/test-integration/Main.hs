@@ -5,6 +5,7 @@ import Lib.Github.OracleValidationSpec
     ( existenceSpec
     , roleSpecs
     , userSpec
+    , vkeySpec
     )
 import MPFS.APISpec (mpfsAPISpec)
 import System.Environment (lookupEnv)
@@ -17,6 +18,7 @@ main = hspec $ do
         existenceSpec
         roleSpecs
         mpfsAPISpec
+        vkeySpec
     userSpec
 
 tryGetPAT :: IO (Maybe Auth)
