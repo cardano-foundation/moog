@@ -70,6 +70,11 @@ import Cardano.Ledger.Keys
     , asWitness
     )
 import Cardano.Mnemonic (MkSomeMnemonic (mkSomeMnemonic))
+import Codec.Binary.Bech32
+    ( dataPartFromBytes
+    , humanReadablePartFromText
+    )
+import Codec.Binary.Bech32 qualified as Bech32
 import Control.Concurrent (threadDelay)
 import Control.Exception (Exception, SomeException, throwIO)
 import Control.Lens ((%~))
@@ -218,6 +223,14 @@ walletFromMnemonic encrypted mnemonics@(ClearText mnemonicsText) = do
             CryptoFailed err ->
                 error $ "Failed to create Ed25519 secret key: " ++ show err
             CryptoPassed sk -> sk
+        publicKey = case humanReadablePartFromText "vkey" of
+            Left err ->
+                error $ "Failed to create bech32 human readable part: " ++ show err
+            Right hrp ->
+                let data32 = dataPartFromBytes pubBytes32
+                in  case Bech32.encode hrp data32 of
+                        Left err -> error $ "Failed to encode bech32 public key: " ++ show err
+                        Right bech32PubKey -> T.unpack bech32PubKey
     pure
         $ Wallet
             { address = addr
@@ -230,6 +243,7 @@ walletFromMnemonic encrypted mnemonics@(ClearText mnemonicsText) = do
             , encrypted
             , mnemonics
             , privateKey
+            , publicKey
             }
 
 signTx :: XPrv -> UnsignedTx -> Either SignTxError SignedTx

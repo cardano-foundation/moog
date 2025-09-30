@@ -45,11 +45,12 @@ data WalletInfo = WalletInfo
     { address :: Address
     , owner :: Owner
     , encryptedInfo :: Bool
+    , publicKey :: String -- bech32-encoded public key
     }
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m WalletInfo where
-    toJSON WalletInfo{address, owner, encryptedInfo} =
+    toJSON WalletInfo{address, owner, encryptedInfo, publicKey} =
         object
             [ "address" .= address
             , "owner" .= owner
@@ -57,6 +58,7 @@ instance Monad m => ToJSON m WalletInfo where
                 .= if encryptedInfo
                     then JSString "yes"
                     else JSString "no"
+            , "publicKey" .= publicKey
             ]
 
 data WalletCommand a where
@@ -94,6 +96,7 @@ walletCmd (Info wallet) =
             { address = wallet.address
             , owner = wallet.owner
             , encryptedInfo = wallet.encrypted
+            , publicKey = wallet.publicKey
             }
 walletCmd (Create walletFile passphrase) = do
     w12 <- replicateM 12 $ element englishWords
@@ -106,6 +109,7 @@ walletCmd (Create walletFile passphrase) = do
                     { address = wallet.address
                     , owner = wallet.owner
                     , encryptedInfo = isJust passphrase
+                    , publicKey = wallet.publicKey
                     }
 walletCmd (Decrypt wallet walletFileDecr) =
     if encrypted wallet
@@ -116,6 +120,7 @@ walletCmd (Decrypt wallet walletFileDecr) =
                     { address = wallet.address
                     , owner = wallet.owner
                     , encryptedInfo = False
+                    , publicKey = wallet.publicKey
                     }
         else
             pure $ Left WalletAlreadyDecrypted
@@ -130,6 +135,7 @@ walletCmd (Encrypt wallet passphrase walletFileDecr) =
                     { address = wallet.address
                     , owner = wallet.owner
                     , encryptedInfo = True
+                    , publicKey = wallet.publicKey
                     }
 
 element :: [a] -> IO a
