@@ -162,7 +162,8 @@ testRunSelectionParser =
             "Get done test runs"
             ( fmap Box
                 $ TestRunDone
-                    <$> sshClientOption
+                    <$> optional walletOption
+                    <*> optional sshClientOption
                     <*> includedTestRuns
                     <*> whoseOption
             )
@@ -174,7 +175,8 @@ testRunSelectionParser =
         <|> fmap
             Box
             ( AnyTestRuns
-                <$> sshClientOption
+                <$> optional walletOption
+                <*> optional sshClientOption
                 <*> includedTestRuns
                 <*> whoseOption
             )

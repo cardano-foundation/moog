@@ -40,7 +40,6 @@ import OptEnvConf
     , reader
     , setting
     , str
-    , switch
     )
 import Oracle.Validate.Requests.RegisterRole
     ( RegisterRoleFailure
@@ -138,18 +137,12 @@ requesterCommandParser =
         ]
 
 sshClientOption
-    :: Parser (Maybe (SSHClient 'WithSelector))
+    :: Parser (SSHClient 'WithSelector)
 sshClientOption =
-    Nothing
-        <$ setting
-            [ help "opt for vkey user"
-            , long "vkey-user"
-            , switch ()
-            ]
-        <|> (\a b c -> Just $ SSHClient a b c)
-            <$> optional keySelectorOption
-            <*> keyFileOption
-            <*> keyPasswordOption
+    SSHClient
+        <$> optional keySelectorOption
+        <*> keyFileOption
+        <*> keyPasswordOption
 
 sshClientOptionWithoutSelector
     :: Parser (SSHClient 'WithoutSelector)
@@ -203,7 +196,7 @@ requestTestOptions =
     RequestTest
         <$> tokenIdOption
         <*> walletOption
-        <*> sshClientOption
+        <*> optional sshClientOption
         <*> ( TestRun
                 <$> platformOption
                 <*> repositoryOption

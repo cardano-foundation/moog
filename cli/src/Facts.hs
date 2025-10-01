@@ -13,6 +13,7 @@ import Control.Monad (filterM, when)
 import Core.Types.Basic (GithubUsername, TokenId)
 import Core.Types.Fact (Fact (..), keyHash, parseFacts)
 import Core.Types.VKey (DecodeVKeyError, decodeVKey)
+import Core.Types.Wallet (Wallet, walletKeyPair)
 import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Char8 qualified as B8
 import Data.Foldable (find)
@@ -50,7 +51,8 @@ data TestRunSelection a where
         -> All
         -> TestRunSelection [Fact TestRun (TestRunState 'RunningT)]
     TestRunDone
-        :: Maybe (SSHClient 'WithSelector)
+        :: Maybe Wallet
+        -> Maybe (SSHClient 'WithSelector)
         -> [TestRunId]
         -> All
         -> TestRunSelection [Fact TestRun (TestRunState 'DoneT)]
@@ -59,7 +61,8 @@ data TestRunSelection a where
         -> All
         -> TestRunSelection [Fact TestRun (TestRunState 'DoneT)]
     AnyTestRuns
-        :: Maybe (SSHClient 'WithSelector)
+        :: Maybe Wallet
+        -> Maybe (SSHClient 'WithSelector)
         -> [TestRunId]
         -> All
         -> TestRunSelection [Fact TestRun JSValue]
@@ -105,14 +108,14 @@ factsCmd
     -> FactsSelection a
     -> m a
 factsCmd mValidation mpfs tokenId selection = do
-    let mkDecrypt mDecrypt = case (,) <$> mDecrypt <*> mValidation of
-            Nothing -> pure id
-            Just (ssh, validation) -> do
-                users :: [RegisterUserKey] <-
-                    fmap factKey <$> retrieveAnyFacts @_ @() mpfs tokenId
-                mk <- decodePrivateSSHFile validation ssh
-                let decrypt = tryDecryption users mk
-                pure decrypt
+    let mkDecrypt mWallet mDecrypt = do
+            decryption <-
+                tryDecryption . fmap factKey
+                    <$> retrieveAnyFacts @_ @() mpfs tokenId
+            case (,) <$> mDecrypt <*> mValidation of
+                Nothing -> pure $ decryption $ mWallet <&> walletKeyPair
+                Just (ssh, validation) ->
+                    decryption <$> decodePrivateSSHFile validation ssh
     let
         testRunCommon
             :: FromJSON Maybe x => [TestRunId] -> All -> m [Fact TestRun x]
@@ -126,8 +129,8 @@ factsCmd mValidation mpfs tokenId selection = do
             testRunCommon ids whose
         core (TestRunFacts (TestRunRunning ids whose)) = do
             testRunCommon ids whose
-        core (TestRunFacts (TestRunDone mDecrypt ids whose)) = do
-            decrypt <- mkDecrypt mDecrypt
+        core (TestRunFacts (TestRunDone mWallet mDecrypt ids whose)) = do
+            decrypt <- mkDecrypt mWallet mDecrypt
             facts <-
                 testRunCommon ids whose <&> fmap decrypt
             pure $ filterOn facts factValue $ \case
@@ -139,8 +142,8 @@ factsCmd mValidation mpfs tokenId selection = do
             pure $ filterOn facts factValue $ \case
                 Rejected{} -> True
                 _ -> False
-        core (TestRunFacts (AnyTestRuns mDecrypt ids whose)) = do
-            decrypt <- mkDecrypt mDecrypt
+        core (TestRunFacts (AnyTestRuns mWallet mDecrypt ids whose)) = do
+            decrypt <- mkDecrypt mWallet mDecrypt
             testRunCommon ids whose <&> fmap (parseDecrypt decrypt)
         core ConfigFact = retrieveAnyFacts mpfs tokenId
         core WhiteListedFacts = retrieveAnyFacts mpfs tokenId
@@ -163,7 +166,7 @@ filterOn xs f p = filter (p . f) xs
 
 data URLDecryptionIssue
     = StateIsNotFinished
-    | SSHKeyDoesNotApply
+    | KeyDoesNotApply
     | SSHPublicKeyNotDecodable
     | VKeyNotDecodable DecodeVKeyError
     | URLNotBase64 String
@@ -197,17 +200,17 @@ decryptURL
     users
     testRun@TestRun{requester}
     (Finished old dur (URL enc))
-    KeyPair{privateKey, publicKey = sshPublicKey} = do
+    KeyPair{privateKey, publicKey = providedPublicKey} = do
         RegisterUserKey{githubIdentification} <-
             nothingLeft (UsersNotRegistered requester)
                 $ find ((== requester) . username) users
-        publicKey <- case githubIdentification of
+        testRunPublicKey <- case githubIdentification of
             IdentifyViaSSHKey ssh ->
                 nothingLeft SSHPublicKeyNotDecodable
                     $ decodeSSHPublicKey ssh
             IdentifyViaVKey vkey ->
                 left VKeyNotDecodable $ decodeVKey vkey
-        when (publicKey /= sshPublicKey) $ Left SSHKeyDoesNotApply
+        when (testRunPublicKey /= providedPublicKey) $ Left KeyDoesNotApply
         decodedURL <- left URLNotBase64 $ Base64.decode $ B8.pack enc
         nonce <-
             nothingLeft NonceNotCreatable

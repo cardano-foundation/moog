@@ -199,7 +199,7 @@ spec :: Spec
 spec = describe "User.Requester.Cli" $ do
     it "should do something" $ do
         let tokenId = TokenId "token"
-            command = RequestTest tokenId wallet sshClient testRun testDuration
+            command = RequestTest tokenId wallet (Just sshClient) testRun testDuration
 
         withContext
             mockMPFS{mpfsGetTokenFacts = const $ toJSON facts}
