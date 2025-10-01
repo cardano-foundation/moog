@@ -18,17 +18,34 @@ Be careful that there is no imperativity here, so i.e. you cannot unregister a u
 
 To register yourself as a user, you can use the `anti requester register-user` command.
 
-You must provide (using the incorrectly-named `pubkeyhash` flag) the actual (base64-encoded) ed15519 public key (without the ssh-ed25519 prefix and without the optional key-id). So, for example, if your GitHub username is `alice` and you have configured this public key in your GitHub account:
+It's required that you publish an ed25519 public key in your GitHub account.
 
+First collect your wallet `vkey`
 ```bash
-$ cat ~/.ssh/id_ed25519.pub
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIO773JHqlyLm5XzOjSe+Q5yFJyLFuMLL6+n63t4t7HR8 myname@myprovider.com
+export MYPK=$(anti wallet info --no-pretty | jq -r '.publicKey')
 ```
 
-then you should copy/paste the second field into the following command:
+Now make sure you already have a Github repository for your user under [your-profile-repo](https://github.com/your-username/your-username) and add an `anti-cli.vkey` file in the root of the repository containing your wallet public key (the `vkey` you just collected above).
 
 ```bash
-anti requester register-user --platform github --username alice --pubkeyhash AAAAC3NzaC1lZDI1NTE5AAAAIO773JHqlyLm5XzOjSe+Q5yFJyLFuMLL6+n63t4t7HR8
+export GITHUB_USERNAME=your-github-username
+```
+
+```bash
+set -e
+git clone git@github.com:${GITHUB_USERNAME}/${GITHUB_USERNAME}.git
+cd ${GITHUB_USERNAME}
+echo $MYPK > anti-cli.vkey
+git add anti-cli.vkey
+git commit -m "Add Antithesis wallet vkey"
+git push origin main
+cd ..
+rm -rf ${GITHUB_USERNAME}
+```
+
+Then register your user with the `anti requester register-user` command.
+```bash
+anti requester register-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
 ```
 
 As with all other requests, once submitted you have to wait for the oracle to merge your request into the Antithesis token.
@@ -50,6 +67,7 @@ Get the `outputRefId` of your request from pending requests command output and u
 ```bash
 anti retract -o 9ec36572e01bca9f7d32d791a5a6c529ef91c10d536f662735af26311b2c8766-0
 ```
+
 Currently the oracle is not able to justify a request rejection. But anti cli will apply the oracle validation before submitting it, so rejections will be caught before submitting the request.
 
 ### Unregistering a user public key
@@ -57,8 +75,16 @@ Currently the oracle is not able to justify a request rejection. But anti cli wi
 To unregister a user, you can use the `anti requester unregister-user` command.
 
 ```bash
-anti requester unregister-user --platform github --username alice --pubkeyhash AAAAC3NzaC1lZDI1NTE5AAAAIO773JHqlyLm5XzOjSe+Q5yFJyLFuMLL6+n63t4t7HR8
+anti requester unregister-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
 ```
+
+> Unregistering will not work if the user is correcly registered. To unregister you need to falsify the registration, i.e. remove the file `anti-cli.vkey` from your GitHub repository or change its content to a different key.
+
+## Unregistering the legacy SSH public key.
+
+In the past we supported SSH public keys for user registration. This is now deprecated and will be removed in the future. If you have an SSH public key registered, you can unregister it and register a new one with the wallet vkey. To do that, you have to unregister the SSH key first, then register the wallet vkey.
+
+> Because SSH support is deprecated, unregistering the SSH key does not require the key to be absent from GitHub, so you can unregister it even if it's still present in your GitHub account. This is to ease migration to vkey and can lead to surprises as anyone can unregister your user if you used SSH key registration.
 
 ### Registering a role
 
