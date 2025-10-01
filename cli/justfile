@@ -81,10 +81,9 @@ E2E match="":
     }
     trap down EXIT INT
 
-    export ANTI_WALLET_FILE=tmp/test.json
-    export ANTI_TEST_REQUESTER_WALLET=tmp/test.json
-    export ANTI_TEST_ORACLE_WALLET=tmp/test.json
-    export ANTI_TEST_AGENT_WALLET=tmp/test.json
+    export ANTI_TEST_REQUESTER_WALLET=tmp/requester.json # this must be cfhal wallet, get it in 1p at https://start.1password.com/open/i?a=TYQQQLKUDBAFVHQ4P7XKFCUVYM&v=fhipthmhnufti4q2kky6d7336u&i=jgle6xhz6b4pgma7aodrsebfgu&h=cardanofoundation.1password.com
+    export ANTI_TEST_ORACLE_WALLET=tmp/requester.json # or create your own wallet
+    export ANTI_TEST_AGENT_WALLET=tmp/requester.json # or create your own wallet
     export ANTI_SSH_FILE=test-E2E/fixtures/cfhal_ed25519
     export ANTI_WAIT=2
     while [[ "$(curl -s "localhost:$MPFS_PORT/tokens" | jq -r '.indexerStatus.ready')" != "true" ]]; do

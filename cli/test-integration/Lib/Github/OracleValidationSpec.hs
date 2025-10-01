@@ -93,12 +93,12 @@ vkeySpec = do
             auth
             (GithubUsername "cfhal")
             `shouldReturn` Right
-                "vkey1n5wwq8zr3ts65e37yus206r4dzau3sc5ant6mxt304atnfudutrqwdzd5n"
+                "vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh"
     it "should match anti-cli.vkey for cfhal" $ \auth -> do
         inspectVKey
             auth
             (GithubUsername "cfhal")
-            (VKey "vkey1n5wwq8zr3ts65e37yus206r4dzau3sc5ant6mxt304atnfudutrqwdzd5n")
+            (VKey "vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh")
             `shouldReturn` Nothing
     it "should mismatch anti-cli.vkey for cfhal" $ \auth -> do
         inspectVKey
@@ -108,7 +108,7 @@ vkeySpec = do
             `shouldReturn` Just
                 ( VKeyMismatch
                     ( VKey
-                        "vkey1n5wwq8zr3ts65e37yus206r4dzau3sc5ant6mxt304atnfudutrqwdzd5n"
+                        "vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh"
                     )
                 )
 
