@@ -11,7 +11,6 @@ module Core.Types.Basic
     , Owner (..)
     , Platform (..)
     , Port (..)
-    , PublicKeyHash (..)
     , GithubRepository (..)
     , RequestRefId (..)
     , TokenId (..)
@@ -124,9 +123,6 @@ instance (ReportSchemaErrors m) => FromJSON m Platform where
     fromJSON v = expected "Platform" (Just $ show v)
 
 instance Wrapped Platform
-
-newtype PublicKeyHash = PublicKeyHash String
-    deriving (Eq, Show)
 
 newtype Commit = Commit String
     deriving (Eq, Show, Generic)

@@ -1,15 +1,18 @@
+{-# LANGUAGE ViewPatterns #-}
+
 module Lib.SSH.Public
-    ( decodePublicKey
+    ( decodeSSHPublicKey
     , Verify
     , encodePublicKey
     , encodeSSHPublicKey
-    , SSHPublicKey (..)
-    , toPublicKeyHash
-    , fromPublicKeyHash
+    , SSHPublicKey
+    , unmakeSSHPublicKey
+    , makeSSHPublicKey
+    , unsafeSSHPublicKey
+    , renderSSHPublicKey
     ) where
 
 import Control.Monad (when)
-import Core.Types.Basic (PublicKeyHash (..))
 import Crypto.Error
     ( CryptoFailable (..)
     )
@@ -21,6 +24,7 @@ import Data.ByteString qualified as B
 import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Char8 qualified as BC
 import Data.ByteString.Lazy qualified as BL
+import Text.JSON.Canonical (ToJSON (..))
 
 parseEd25519Key :: Get BC.ByteString
 parseEd25519Key = do
@@ -40,47 +44,52 @@ renderEd25519Key key = do
 
 type Verify = Ed25519.Signature -> B.ByteString -> Bool
 
-decodePublicKey
-    :: PublicKeyHash -> Maybe (Verify, Ed25519.PublicKey)
-decodePublicKey (PublicKeyHash pk) =
+decodeSSHPublicKey :: SSHPublicKey -> Maybe Ed25519.PublicKey
+decodeSSHPublicKey (unmakeSSHPublicKey -> pk) =
     let
         base64Decoded = BL.fromStrict $ Base64.decodeLenient $ BC.pack pk
         keyBytes = runGet parseEd25519Key base64Decoded
     in
         case Ed25519.publicKey keyBytes of
-            CryptoPassed pubKey ->
-                Just
-                    ( flip (Ed25519.verify pubKey)
-                    , pubKey
-                    )
+            CryptoPassed pubKey -> Just pubKey
             CryptoFailed _ -> Nothing
 
 encodePublicKey
-    :: Ed25519.PublicKey -> PublicKeyHash
+    :: Ed25519.PublicKey -> String
 encodePublicKey key =
     let
         encoded = BL.toStrict $ runPut $ renderEd25519Key $ BA.convert key
     in
-        PublicKeyHash $ BC.unpack $ Base64.encode encoded
+        BC.unpack $ Base64.encode encoded
 
 newtype SSHPublicKey = SSHPublicKey String
     deriving (Show, Eq)
 
+instance Monad m => ToJSON m SSHPublicKey where
+    toJSON (SSHPublicKey s) = toJSON s
+
+makeSSHPublicKey :: String -> SSHPublicKey
+makeSSHPublicKey = SSHPublicKey . ("ssh-ed25519 " ++)
+
+unsafeSSHPublicKey :: String -> SSHPublicKey
+unsafeSSHPublicKey = SSHPublicKey
+
 encodeSSHPublicKey
     :: Ed25519.PublicKey -> SSHPublicKey
-encodeSSHPublicKey key =
-    let
-        PublicKeyHash encoded = encodePublicKey key
-    in
-        SSHPublicKey $ "ssh-ed25519 " <> encoded
+encodeSSHPublicKey key = makeSSHPublicKey $ encodePublicKey key
 
-toPublicKeyHash :: SSHPublicKey -> PublicKeyHash
-toPublicKeyHash (SSHPublicKey sshPk) =
-    let
-        expectedPrefix = "ssh-ed25519 " :: String
-    in
-        PublicKeyHash $ drop (length expectedPrefix) sshPk
+unmakeSSHPublicKey :: SSHPublicKey -> String
+unmakeSSHPublicKey (SSHPublicKey s) =
+    case stripPrefix "ssh-ed25519 " s of
+        Just rest -> rest
+        Nothing -> error "SSHPublicKey does not start with 'ssh-ed25519 '"
 
-fromPublicKeyHash :: PublicKeyHash -> SSHPublicKey
-fromPublicKeyHash (PublicKeyHash pk) =
-    SSHPublicKey $ "ssh-ed25519 " <> pk
+renderSSHPublicKey :: SSHPublicKey -> String
+renderSSHPublicKey (SSHPublicKey s) = s
+
+stripPrefix :: String -> String -> Maybe String
+stripPrefix [] ys = Just ys
+stripPrefix _ [] = Nothing
+stripPrefix (x : xs) (y : ys)
+    | x == y = stripPrefix xs ys
+    | otherwise = Nothing

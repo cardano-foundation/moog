@@ -16,7 +16,6 @@ import Core.Types.Basic
     , GithubUsername (..)
     , Owner (..)
     , Platform (..)
-    , PublicKeyHash (PublicKeyHash)
     , TokenId (..)
     )
 import Core.Types.Fact (JSFact, keyHash, toJSFact)
@@ -40,6 +39,7 @@ import Lib.SSH.Private
     , WithSelector (..)
     , mkKeyAPI
     )
+import Lib.SSH.Public (makeSSHPublicKey)
 import MPFS.API (MPFS (..))
 import MockMPFS (mockMPFS, withFacts)
 import Oracle.Config.Types (Config (..), ConfigKey (..))
@@ -64,7 +64,8 @@ import User.Requester.Cli
     , signKey
     )
 import User.Types
-    ( Phase (..)
+    ( GithubIdentification (IdentifyViaSSHKey)
+    , Phase (..)
     , RegisterRoleKey (..)
     , RegisterUserKey (..)
     , TestRun (..)
@@ -148,9 +149,10 @@ facts = runIdentity $ do
             ( RegisterUserKey
                 { platform = testPlatform
                 , username = GithubUsername "alice"
-                , pubkeyhash =
-                    PublicKeyHash
-                        "AAAAC3NzaC1lZDI1NTE5AAAAIMNl2+jewJ5dBlIaOXM9PrPFpykU0mmzzQAAK/QF10Iy"
+                , githubIdentification =
+                    IdentifyViaSSHKey
+                        $ makeSSHPublicKey
+                            "AAAAC3NzaC1lZDI1NTE5AAAAIMNl2+jewJ5dBlIaOXM9PrPFpykU0mmzzQAAK/QF10Iy"
                 }
             )
             ()

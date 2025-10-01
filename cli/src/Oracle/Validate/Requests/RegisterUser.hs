@@ -9,7 +9,6 @@ import Control.Monad (void, when)
 import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic
     ( Platform (..)
-    , PublicKeyHash (..)
     )
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..))
@@ -24,9 +23,9 @@ import Effects
     )
 import Effects.RegisterUser
     ( SSHPublicKeyFailure (..)
+    , VKeyFailure (..)
     )
 import Lib.JSON.Canonical.Extra (object, (.=))
-import Lib.SSH.Public (fromPublicKeyHash)
 import Oracle.Types (requestZooGetRegisterUserKey)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
 import Oracle.Validate.Types
@@ -40,21 +39,25 @@ import Oracle.Validate.Types
     )
 import Text.JSON.Canonical (ToJSON (..))
 import User.Types
-    ( RegisterUserKey (..)
+    ( GithubIdentification (..)
+    , RegisterUserKey (..)
     )
 
 data RegisterUserFailure
-    = PublicKeyValidationFailure SSHPublicKeyFailure
+    = SSHKeyValidationFailure SSHPublicKeyFailure
+    | VKeyValidationFailure VKeyFailure
     | RegisterUserPlatformNotSupported String
     | RegisterUserKeyFailure KeyFailure
     | RegisterUserKeyChangeAlreadyPending RegisterUserKey
-    | RegisterUserKeyAlreadyExists String
+    | RegisterUserKeyAlreadyExists GithubIdentification
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m RegisterUserFailure where
     toJSON = \case
-        PublicKeyValidationFailure reason ->
-            object ["publicKeyValidationFailure" .= reason]
+        SSHKeyValidationFailure reason ->
+            object ["sshKeyValidationFailure" .= reason]
+        VKeyValidationFailure reason ->
+            object ["vKeyValidationFailure" .= reason]
         RegisterUserPlatformNotSupported platform ->
             object ["registerUserPlatformNotSupported" .= platform]
         RegisterUserKeyFailure keyFailure ->
@@ -73,29 +76,39 @@ validateRegisterUser
 validateRegisterUser
     validation@Effects
         { mpfsGetFacts
-        , githubEffects = GithubEffects{githubUserPublicKeys}
+        , githubEffects = GithubEffects{githubUserPublicKeys, githubUserVKeys}
         }
     forRole
-    change@(Change (Key key@(RegisterUserKey{platform, username, pubkeyhash})) _) = do
-        when (forUser forRole)
-            $ keyAlreadyPendingFailure
-                validation
-                RegisterUserKeyChangeAlreadyPending
-                key
-                requestZooGetRegisterUserKey
-        mapFailure RegisterUserKeyFailure $ insertValidation validation change
-        users :: [Fact RegisterUserKey ()] <- lift mpfsGetFacts
-        let matchUsername (RegisterUserKey platform' username' _) =
-                platform' == platform && username' == username
-        case find (\(Fact k' _) -> matchUsername k') users of
-            Just (Fact (RegisterUserKey _ _ (PublicKeyHash pkHash)) _) ->
-                notValidated $ RegisterUserKeyAlreadyExists pkHash
-            Nothing -> pure ()
+    change@( Change
+                (Key key@(RegisterUserKey{platform, username, githubIdentification}))
+                _
+            ) =
         case platform of
             Platform "github" -> do
-                validationRes <-
-                    lift $ githubUserPublicKeys username $ fromPublicKeyHash pubkeyhash
-                mapFailure PublicKeyValidationFailure $ throwJusts validationRes
+                when (forUser forRole)
+                    $ keyAlreadyPendingFailure
+                        validation
+                        RegisterUserKeyChangeAlreadyPending
+                        key
+                        requestZooGetRegisterUserKey
+                mapFailure RegisterUserKeyFailure $ insertValidation validation change
+                users :: [Fact RegisterUserKey ()] <- lift mpfsGetFacts
+                let matchUsername (RegisterUserKey platform' username' _) =
+                        platform' == platform && username' == username
+                case find (\(Fact k' _) -> matchUsername k') users of
+                    Just (Fact (RegisterUserKey _ _ k) _) ->
+                        notValidated $ RegisterUserKeyAlreadyExists k
+                    Nothing -> do
+                        case githubIdentification of
+                            IdentifyViaSSHKey sshKey -> do
+                                validationRes <-
+                                    lift $ githubUserPublicKeys username sshKey
+                                mapFailure SSHKeyValidationFailure
+                                    $ throwJusts validationRes
+                            IdentifyViaVKey vKey -> do
+                                validationRes <- lift $ githubUserVKeys username vKey
+                                mapFailure VKeyValidationFailure
+                                    $ throwJusts validationRes
             Platform other -> notValidated $ RegisterUserPlatformNotSupported other
 
 data UnregisterUserFailure
@@ -129,26 +142,40 @@ validateUnregisterUser
     -> Change RegisterUserKey (OpD ())
     -> Validate UnregisterUserFailure m Validated
 validateUnregisterUser
-    validation@Effects{githubEffects = GithubEffects{githubUserPublicKeys}}
+    validation@Effects
+        { githubEffects = GithubEffects{githubUserPublicKeys, githubUserVKeys}
+        }
     forRole
-    change@(Change (Key key@(RegisterUserKey{platform, username, pubkeyhash})) _v) = do
-        when (forUser forRole)
-            $ keyAlreadyPendingFailure
-                validation
-                UnregisterUserKeyChangeAlreadyPending
-                key
-                requestZooGetRegisterUserKey
-        void
-            $ mapFailure UnregisterUserKeyFailure
-            $ deleteValidation validation change
+    change@( Change
+                (Key key@(RegisterUserKey{platform, username, githubIdentification}))
+                _v
+            ) =
         case platform of
             Platform "github" -> do
-                validationRes <-
-                    lift $ githubUserPublicKeys username $ fromPublicKeyHash pubkeyhash
-                case validationRes of
-                    Just NoEd25519KeyFound -> pure Validated
-                    Just NoEd25519KeyMatch -> pure Validated
-                    Just NoPublicKeyFound -> pure Validated
-                    Just (GithubError err) -> notValidated $ UnregisterUserKeyGithubError err
-                    Nothing -> notValidated UnregisterUserKeyIsPresent
+                when (forUser forRole)
+                    $ keyAlreadyPendingFailure
+                        validation
+                        UnregisterUserKeyChangeAlreadyPending
+                        key
+                        requestZooGetRegisterUserKey
+                void
+                    $ mapFailure UnregisterUserKeyFailure
+                    $ deleteValidation validation change
+                case githubIdentification of
+                    IdentifyViaVKey vkey -> do
+                        validationRes <- lift $ githubUserVKeys username vkey
+                        case validationRes of
+                            Just VKeyNotFound -> pure Validated
+                            Just VKeyMismatch{} -> pure Validated
+                            Just (VKeyGithubError err) -> notValidated $ UnregisterUserKeyGithubError $ show err
+                            Nothing -> notValidated UnregisterUserKeyIsPresent
+                    IdentifyViaSSHKey ssh -> do
+                        validationRes <-
+                            lift $ githubUserPublicKeys username ssh
+                        case validationRes of
+                            Just NoEd25519KeyFound -> pure Validated
+                            Just NoEd25519KeyMatch -> pure Validated
+                            Just NoPublicKeyFound -> pure Validated
+                            Just (GithubError err) -> notValidated $ UnregisterUserKeyGithubError err
+                            Nothing -> notValidated UnregisterUserKeyIsPresent
             Platform other -> notValidated $ UnregisterUserPlatformNotSupported other

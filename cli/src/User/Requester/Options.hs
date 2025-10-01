@@ -13,12 +13,13 @@ import Core.Options
     , downloadAssetsDirectoryOption
     , durationOption
     , platformOption
-    , pubkeyhashOption
     , repositoryOption
+    , sshPublicKeyHashParser
     , testDirectoryOption
     , tokenIdOption
     , tryOption
     , usernameOption
+    , vkeyOption
     , walletOption
     )
 import Core.Types.Tx (TxHash, WithTxHash)
@@ -26,7 +27,8 @@ import Lib.Box (Box (..))
 import Lib.Options.Secrets (secretsParser)
 import Lib.SSH.Private (SSHClient (..), WithSelector (..))
 import OptEnvConf
-    ( Parser
+    ( Alternative (..)
+    , Parser
     , command
     , commands
     , env
@@ -51,10 +53,16 @@ import Oracle.Validate.Requests.TestRun.Create (CreateTestRunFailure)
 import Oracle.Validate.Types (AValidationResult)
 import User.Requester.Cli (NewTestRunCreated, RequesterCommand (..))
 import User.Types
-    ( RegisterRoleKey (..)
+    ( GithubIdentification (..)
+    , RegisterRoleKey (..)
     , RegisterUserKey (..)
     , TestRun (..)
     )
+
+githubIdentificationOption :: Parser GithubIdentification
+githubIdentificationOption =
+    IdentifyViaSSHKey <$> sshPublicKeyHashParser
+        <|> IdentifyViaVKey <$> vkeyOption
 
 addPublicKeyOptions
     :: Parser
@@ -66,7 +74,7 @@ addPublicKeyOptions =
         <*> ( RegisterUserKey
                 <$> platformOption
                 <*> usernameOption
-                <*> pubkeyhashOption
+                <*> githubIdentificationOption
             )
 
 removePublicKeyOptions
@@ -79,7 +87,7 @@ removePublicKeyOptions =
         <*> ( RegisterUserKey
                 <$> platformOption
                 <*> usernameOption
-                <*> pubkeyhashOption
+                <*> githubIdentificationOption
             )
 
 addRoleOptions

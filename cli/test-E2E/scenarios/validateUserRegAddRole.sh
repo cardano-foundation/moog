@@ -79,7 +79,7 @@ expectedRegRes2=$(
     cat <<EOF
 {
   "validationFailed": {
-    "publicKeyValidationFailure": "The user does not have the specified Ed25519 public key exposed in Github."
+    "sshKeyValidationFailure": "The user does not have the specified Ed25519 public key exposed in Github."
   }
 }
 EOF

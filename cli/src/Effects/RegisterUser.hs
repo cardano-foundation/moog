@@ -23,7 +23,8 @@ import Lib.GitHub
     , githubGetAntiCLIVKey
     , githubUserPublicKeys
     )
-import Lib.SSH.Public (SSHPublicKey (..))
+import Lib.JSON.Canonical.Extra (object, (.=))
+import Lib.SSH.Public (SSHPublicKey, unsafeSSHPublicKey)
 import Text.JSON.Canonical (ToJSON (..))
 
 data SSHPublicKeyFailure
@@ -59,15 +60,14 @@ expectedPrefix = "ssh-ed25519 "
 
 analyzeKeys
     :: SSHPublicKey
-    -> [SSHPublicKey]
+    -> [Text]
     -> Maybe SSHPublicKeyFailure
 analyzeKeys pubkeyToValidate resp
     | null resp = Just NoPublicKeyFound
     | hasNotTheKey resp = Just NoEd25519KeyMatch
     | otherwise = Nothing
   where
-    hasNotTheKey =
-        L.notElem pubkeyToValidate
+    hasNotTheKey = L.notElem pubkeyToValidate . fmap (unsafeSSHPublicKey . T.unpack)
 
 analyzePublicKeyResponse
     :: SSHPublicKey
@@ -75,9 +75,7 @@ analyzePublicKeyResponse
     -> Maybe SSHPublicKeyFailure
 analyzePublicKeyResponse pubkeyToValidate = \case
     Left err -> Just $ GithubError $ show err
-    Right resp ->
-        analyzeKeys pubkeyToValidate
-            $ SSHPublicKey . T.unpack <$> resp
+    Right resp -> analyzeKeys pubkeyToValidate resp
 
 inspectPublicKeyTemplate
     :: GithubUsername
@@ -100,10 +98,25 @@ inspectPublicKey auth username pubKeyExpected =
         $ githubUserPublicKeys auth
 
 data VKeyFailure
-    = VKeyMismatch VKey
+    = VKeyNotFound
+    | VKeyMismatch VKey
     | VKeyGithubError GetGithubFileFailure
     deriving (Eq, Show)
 
+instance Monad m => ToJSON m VKeyFailure where
+    toJSON = \case
+        VKeyNotFound ->
+            object
+                [ "vKeyNotFound"
+                    .= ("The user does not have a VKey exposed in Github." :: String)
+                ]
+        VKeyMismatch (VKey vKey) ->
+            object ["vKeyMismatch" .= ("The VKey does not match: " <> vKey)]
+        VKeyGithubError err ->
+            object
+                [ "vKeyGithubError"
+                    .= ("The following github error was encountered: " <> show err)
+                ]
 inspectVKey
     :: Auth
     -> GithubUsername

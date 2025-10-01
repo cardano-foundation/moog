@@ -13,9 +13,9 @@ import Core.Types.Basic
     , GithubRepository (GithubRepository, organization, project)
     , GithubUsername (GithubUsername)
     , Platform (Platform)
-    , PublicKeyHash (..)
     , Try (..)
     )
+import Lib.SSH.Public (makeSSHPublicKey)
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Canonical (roundTrip)
 import Test.QuickCheck
@@ -29,7 +29,8 @@ import Test.QuickCheck
     )
 import Test.QuickCheck.Crypton (ed25519Gen)
 import User.Types
-    ( RegisterUserKey (..)
+    ( GithubIdentification (IdentifyViaSSHKey)
+    , RegisterUserKey (..)
     , TestRun (..)
     , TestRunRejection (..)
     , TestRunState (..)
@@ -91,8 +92,9 @@ spec = do
                     RegisterUserKey
                         { platform = Platform "github"
                         , username = GithubUsername "tester"
-                        , pubkeyhash =
-                            PublicKeyHash
-                                "AAAAC3NzaC1lZDI1NTE5AAAAIO773JHqlyLm5XzOjSe+Q5yFJyLFuMLL6+n63t4t7HR8"
+                        , githubIdentification =
+                            IdentifyViaSSHKey
+                                $ makeSSHPublicKey
+                                    "AAAAC3NzaC1lZDI1NTE5AAAAIO773JHqlyLm5XzOjSe+Q5yFJyLFuMLL6+n63t4t7HR8"
                         }
             roundTrip registerPubKey

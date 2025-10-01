@@ -20,6 +20,8 @@ import Core.Types.Basic
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..), Operation (..))
+import Core.Types.VKey (decodeVKey)
+import Crypto.PubKey.Ed25519 (PublicKey)
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.ByteString.Lazy qualified as BL
 import Data.Maybe (mapMaybe)
@@ -32,7 +34,7 @@ import Effects
     )
 import Lib.GitHub (GithubResponseError, GithubResponseStatusCodeError)
 import Lib.JSON.Canonical.Extra (object, stringJSON, (.=))
-import Lib.SSH.Public (decodePublicKey)
+import Lib.SSH.Public (decodeSSHPublicKey)
 import Oracle.Types (requestZooGetTestRunKey)
 import Oracle.Validate.DownloadAssets
     ( AssetValidationFailure
@@ -57,7 +59,8 @@ import Text.JSON.Canonical
     )
 import User.Agent.Types (WhiteListKey (..))
 import User.Types
-    ( Phase (PendingT)
+    ( GithubIdentification (..)
+    , Phase (PendingT)
     , RegisterRoleKey (..)
     , RegisterUserKey (..)
     , TestRun (..)
@@ -259,16 +262,24 @@ checkSignature
         let
             userKeys =
                 mapMaybe
-                    (decodePublicKey . pubkeyhash)
+                    (decodeKey . githubIdentification)
                     . filter (\(RegisterUserKey _ u _) -> u == requester testRun)
                     $ factKey <$> registeredUsers
             load = BL.toStrict $ renderCanonicalJSON testRunJ
         if null userKeys
             then return $ Just UserHasNoRegisteredSSHKeys
             else
-                if any ((\verify -> verify signature load) . fst) userKeys
+                if any (\pk -> Ed25519.verify pk load signature) userKeys
                     then return Nothing
                     else return $ Just NoRegisteredKeyVerifiesTheSignature
+
+decodeKey
+    :: GithubIdentification
+    -> Maybe PublicKey
+decodeKey (IdentifyViaSSHKey sshKey) = decodeSSHPublicKey sshKey
+decodeKey (IdentifyViaVKey vKey) = case decodeVKey vKey of
+    Left _ -> Nothing
+    Right pk -> Just pk
 
 validateCreateTestRunCore
     :: Monad m

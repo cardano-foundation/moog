@@ -53,7 +53,7 @@ import Data.ByteString.Lazy qualified as BL
 import Data.Map.Strict qualified as Map
 import Data.Word (Word8)
 import Lib.JSON.Canonical.Extra (object, (.=))
-import Lib.SSH.Public (SSHPublicKey (..), encodeSSHPublicKey)
+import Lib.SSH.Public (SSHPublicKey, encodeSSHPublicKey)
 import Text.JSON.Canonical (ToJSON (..))
 
 data WithSelector = WithSelector | WithoutSelector
@@ -101,7 +101,7 @@ sshKeyPair SSHClient{sshKeySelector, sshKeyFile, sshKeyPassphrase} = do
 
 data Selection = Selection
     { selectorName :: String
-    , selectorKey :: String
+    , selectorKey :: SSHPublicKey
     }
     deriving (Show, Eq)
 
@@ -118,7 +118,7 @@ sshKeySelectors SSHClient{sshKeyFile, sshKeyPassphrase} = do
     let ks = decodePrivateKeyFile (BC.pack sshKeyPassphrase) content
     let f (KeyPair k _, comment) = Selection (BC.unpack comment) render
           where
-            SSHPublicKey render = encodeSSHPublicKey k
+            render = encodeSSHPublicKey k
     pure $ fmap f ks
 
 data KeyPair

@@ -4,6 +4,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module User.Types
     ( TestRun (..)
@@ -18,13 +19,15 @@ module User.Types
     , Phase (..)
     , URL (..)
     , RegisterUserKey (..)
+    , GithubIdentification (..)
     , RegisterRoleKey (..)
     , roleOfATestRun
     , AgentValidation (..)
+    , getIdentificationPublicKey
     )
 where
 
-import Control.Applicative (Alternative)
+import Control.Applicative (Alternative, (<|>))
 import Control.Lens (makeLensesFor)
 import Control.Monad (guard)
 import Core.Types.Basic
@@ -34,14 +37,16 @@ import Core.Types.Basic
     , GithubRepository (..)
     , GithubUsername (..)
     , Platform (..)
-    , PublicKeyHash (..)
     , Try (..)
     )
+import Core.Types.VKey (decodeVKey)
 import Crypto.Error (CryptoFailable (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.ByteArray qualified as BA
 import Data.CaseInsensitive (CI (..), mk)
 import Data.Map.Strict qualified as Map
+import Data.Text qualified as T
+import Effects.RegisterUser (VKey (..))
 import Lib.JSON.Canonical.Extra
     ( byteStringFromJSON
     , byteStringToJSON
@@ -55,6 +60,12 @@ import Lib.JSON.Canonical.Extra
     , stringJSON
     , (.:)
     , (.=)
+    )
+import Lib.SSH.Public
+    ( SSHPublicKey
+    , decodeSSHPublicKey
+    , makeSSHPublicKey
+    , unmakeSSHPublicKey
     )
 import Text.JSON.Canonical
     ( FromJSON (..)
@@ -292,10 +303,28 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState RunningT) where
             "an object representing an accepted phase"
             other
 
+data GithubIdentification
+    = IdentifyViaSSHKey SSHPublicKey
+    | IdentifyViaVKey VKey
+    deriving (Eq, Show)
+
+getIdentificationPublicKey
+    :: GithubIdentification -> Maybe Ed25519.PublicKey
+getIdentificationPublicKey (IdentifyViaSSHKey sshKey) = decodeSSHPublicKey sshKey
+getIdentificationPublicKey (IdentifyViaVKey vKey) = case decodeVKey vKey of
+    Left _ -> Nothing
+    Right pk -> Just pk
+
+instance Monad m => ToJSON m GithubIdentification where
+    toJSON (IdentifyViaSSHKey (unmakeSSHPublicKey -> sshPk)) =
+        object ["identifyViaSSHKey" .= sshPk]
+    toJSON (IdentifyViaVKey (VKey vKey)) =
+        object ["identifyViaVKey" .= vKey]
+
 data RegisterUserKey = RegisterUserKey
     { platform :: Platform
     , username :: GithubUsername
-    , pubkeyhash :: PublicKeyHash
+    , githubIdentification :: GithubIdentification
     }
     deriving (Eq, Show)
 
@@ -304,14 +333,32 @@ instance (Monad m) => ToJSON m RegisterUserKey where
         ( RegisterUserKey
                 (Platform platform)
                 (GithubUsername user)
-                (PublicKeyHash pubkeyhash)
+                (IdentifyViaSSHKey sshPk)
             ) =
             toJSON
                 $ Map.fromList
                     [ ("type", JSString $ toJSString "register-user")
                     , ("platform" :: String, JSString $ toJSString platform)
                     , ("user", JSString $ toJSString $ foldedCase user)
-                    , ("publickeyhash", JSString $ toJSString pubkeyhash)
+                    ,
+                        ( "publickeyhash"
+                        , JSString
+                            $ toJSString
+                            $ unmakeSSHPublicKey sshPk
+                        )
+                    ]
+    toJSON
+        ( RegisterUserKey
+                (Platform platform)
+                (GithubUsername user)
+                (IdentifyViaVKey (VKey vkey))
+            ) =
+            toJSON
+                $ Map.fromList
+                    [ ("type", JSString $ toJSString "register-user")
+                    , ("platform" :: String, JSString $ toJSString platform)
+                    , ("user", JSString $ toJSString $ foldedCase user)
+                    , ("vkey", JSString $ toJSString $ T.unpack vkey)
                     ]
 
 instance
@@ -324,12 +371,15 @@ instance
         guard $ requestType == JSString "register-user"
         platform <- getStringField "platform" mapping
         user <- getStringField "user" mapping
-        pubkeyhash <- getStringField "publickeyhash" mapping
+        githubIdentification <-
+            IdentifyViaSSHKey . makeSSHPublicKey
+                <$> getStringField "publickeyhash" mapping
+                <|> IdentifyViaVKey . VKey . T.pack <$> getStringField "vkey" mapping
         pure
             $ RegisterUserKey
                 { platform = Platform platform
                 , username = GithubUsername $ mk user
-                , pubkeyhash = PublicKeyHash pubkeyhash
+                , githubIdentification = githubIdentification
                 }
     fromJSON r =
         expectedButGotValue

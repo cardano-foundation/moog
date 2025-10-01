@@ -14,6 +14,7 @@ import Lib.SSH.Private
     , sshKeyPair
     , sshKeySelectors
     )
+import Lib.SSH.Public (makeSSHPublicKey)
 import Test.Hspec (Spec, beforeAll, describe, it, shouldBe)
 import Test.QuickCheck
     ( Testable (property)
@@ -66,6 +67,7 @@ spec = do
                 `shouldBe` [ Selection
                                 { selectorName = "test_user"
                                 , selectorKey =
-                                    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIITaA+1gRPR3BMWGwF5ppDvQDyjqJ1VJNCQTlErA9ot"
+                                    makeSSHPublicKey
+                                        "AAAAC3NzaC1lZDI1NTE5AAAAIIITaA+1gRPR3BMWGwF5ppDvQDyjqJ1VJNCQTlErA9ot"
                                 }
                            ]

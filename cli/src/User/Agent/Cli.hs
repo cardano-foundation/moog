@@ -56,7 +56,6 @@ import Data.List (find)
 import Effects (Effects)
 import Lib.CryptoBox qualified as CB
 import Lib.JSON.Canonical.Extra (blakeHashOfJSON, object, (.=))
-import Lib.SSH.Public (decodePublicKey)
 import MPFS.API
     ( MPFS (..)
     , RequestDeleteBody (..)
@@ -124,6 +123,7 @@ import User.Types
     , TestRunRejection
     , TestRunState (..)
     , URL (..)
+    , getIdentificationPublicKey
     )
 
 type ValidateWithContext m a =
@@ -606,9 +606,9 @@ encryptForRequester tokenId key urlText = do
         liftMaybe (ReportFailureUserKeyNotFound user)
             $ asum
             $ fmap match users
-    (_, pk) <-
+    pk <-
         liftMaybe (ReportFailureUserKeyUnparsable user)
-            $ decodePublicKey userKey
+            $ getIdentificationPublicKey userKey
     nonce <-
         liftMaybe ReportFailureNonceCreationFailed
             $ CB.mkNonce

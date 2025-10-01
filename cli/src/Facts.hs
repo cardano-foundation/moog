@@ -12,6 +12,7 @@ import Control.Arrow (left)
 import Control.Monad (filterM, when)
 import Core.Types.Basic (GithubUsername, TokenId)
 import Core.Types.Fact (Fact (..), keyHash, parseFacts)
+import Core.Types.VKey (DecodeVKeyError, decodeVKey)
 import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Char8 qualified as B8
 import Data.Foldable (find)
@@ -22,13 +23,14 @@ import Lib.CryptoBox (decryptOnly)
 import Lib.CryptoBox qualified as CB
 import Lib.JSON.Canonical.Extra (blakeHashOfJSON)
 import Lib.SSH.Private (KeyPair (..), SSHClient, WithSelector (..))
-import Lib.SSH.Public (decodePublicKey)
+import Lib.SSH.Public (decodeSSHPublicKey)
 import MPFS.API (MPFS, mpfsGetTokenFacts)
 import Oracle.Config.Types (Config, ConfigKey)
 import Text.JSON.Canonical (FromJSON (..), JSValue, ToJSON (..))
 import User.Agent.Types (TestRunId (..), WhiteListKey)
 import User.Types
-    ( Phase (..)
+    ( GithubIdentification (..)
+    , Phase (..)
     , RegisterRoleKey
     , RegisterUserKey (..)
     , TestRun (..)
@@ -162,7 +164,8 @@ filterOn xs f p = filter (p . f) xs
 data URLDecryptionIssue
     = StateIsNotFinished
     | SSHKeyDoesNotApply
-    | PublicKeyNotDecodable
+    | SSHPublicKeyNotDecodable
+    | VKeyNotDecodable DecodeVKeyError
     | URLNotBase64 String
     | NonceNotCreatable
     | KeyConversionsFailed String
@@ -195,11 +198,15 @@ decryptURL
     testRun@TestRun{requester}
     (Finished old dur (URL enc))
     KeyPair{privateKey, publicKey = sshPublicKey} = do
-        RegisterUserKey{pubkeyhash} <-
+        RegisterUserKey{githubIdentification} <-
             nothingLeft (UsersNotRegistered requester)
                 $ find ((== requester) . username) users
-        (_, publicKey) <-
-            nothingLeft PublicKeyNotDecodable $ decodePublicKey pubkeyhash
+        publicKey <- case githubIdentification of
+            IdentifyViaSSHKey ssh ->
+                nothingLeft SSHPublicKeyNotDecodable
+                    $ decodeSSHPublicKey ssh
+            IdentifyViaVKey vkey ->
+                left VKeyNotDecodable $ decodeVKey vkey
         when (publicKey /= sshPublicKey) $ Left SSHKeyDoesNotApply
         decodedURL <- left URLNotBase64 $ Base64.decode $ B8.pack enc
         nonce <-

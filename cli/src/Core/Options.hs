@@ -6,7 +6,8 @@ module Core.Options
     , commitOption
     , testDirectoryOption
     , usernameOption
-    , pubkeyhashOption
+    , sshPublicKeyHashParser
+    , vkeyOption
     , outputReferenceParser
     , durationOption
     , tryOption
@@ -24,7 +25,6 @@ import Core.Types.Basic
     , GithubRepository (..)
     , GithubUsername (..)
     , Platform (..)
-    , PublicKeyHash (..)
     , RequestRefId (..)
     , TokenId (..)
     , Try (..)
@@ -35,6 +35,8 @@ import Core.Types.Wallet
     )
 import Data.CaseInsensitive (mk)
 import Data.Text qualified as T
+import Effects.RegisterUser (VKey (..))
+import Lib.SSH.Public (SSHPublicKey, makeSSHPublicKey)
 import OptEnvConf
     ( Parser
     , auto
@@ -130,14 +132,25 @@ usernameOption =
             , option
             ]
 
-pubkeyhashOption :: Parser PublicKeyHash
-pubkeyhashOption =
-    PublicKeyHash
+sshPublicKeyHashParser :: Parser SSHPublicKey
+sshPublicKeyHashParser =
+    makeSSHPublicKey
         <$> strOption
             [ long "pubkeyhash"
             , short 'k'
             , metavar "PUBKEYHASH"
             , help "A public key hash for the user"
+            , option
+            ]
+
+vkeyOption :: Parser VKey
+vkeyOption =
+    VKey
+        <$> strOption
+            [ long "vkey"
+            , short 'v'
+            , metavar "VKEY"
+            , help "A bech32 Ed25519 verification key"
             , option
             ]
 

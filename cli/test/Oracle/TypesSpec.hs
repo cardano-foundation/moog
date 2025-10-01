@@ -6,6 +6,7 @@
 
 module Oracle.TypesSpec
     ( spec
+    , genGithubIdentification
     )
 where
 
@@ -13,7 +14,6 @@ import Core.Types.Basic
     ( GithubUsername (GithubUsername)
     , Owner (..)
     , Platform (Platform)
-    , PublicKeyHash (..)
     , RequestRefId (RequestRefId)
     )
 import Core.Types.Change (Change (..), Key (..))
@@ -21,7 +21,15 @@ import Core.Types.Operation (Operation (..))
 import Core.Types.Tx (Root (..))
 import Data.CaseInsensitive (mk)
 import Data.Functor.Identity (Identity (..))
+import Data.Text qualified as T
+import Effects.RegisterUser (VKey (..))
+import Lib.SSH.Public (SSHPublicKey, makeSSHPublicKey)
 import Oracle.Types
+    ( Request (Request)
+    , RequestZoo (RegisterUserRequest, UnregisterUserRequest)
+    , Token (Token)
+    , TokenState (TokenState)
+    )
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Canonical (roundTrip)
 import Test.QuickCheck
@@ -32,9 +40,7 @@ import Test.QuickCheck
     , listOf
     )
 import Test.QuickCheck.Gen (oneof)
-import User.Types
-    ( RegisterUserKey (..)
-    )
+import User.Types (GithubIdentification (..), RegisterUserKey (..))
 
 genChange
     :: Applicative f => f k -> f (Operation op) -> f (Change k op)
@@ -52,12 +58,27 @@ genPlatform = elements [Platform "linux", Platform "windows", Platform "macos"]
 genUsername :: Gen GithubUsername
 genUsername = GithubUsername . mk <$> listOf (elements ['a' .. 'z'])
 
-genPublicKeyHash :: Gen PublicKeyHash
-genPublicKeyHash = PublicKeyHash <$> listOf (elements $ ['a' .. 'f'] ++ ['0' .. '9'])
+genSSHPublicKey :: Gen SSHPublicKey
+genSSHPublicKey =
+    makeSSHPublicKey
+        <$> listOf (elements $ ['a' .. 'f'] ++ ['0' .. '9'])
+
+genVKey :: Gen VKey
+genVKey = VKey . T.pack <$> listOf (elements $ ['a' .. 'f'] ++ ['0' .. '9'])
+
+genGithubIdentification :: Gen GithubIdentification
+genGithubIdentification =
+    oneof
+        [ IdentifyViaSSHKey <$> genSSHPublicKey
+        , IdentifyViaVKey <$> genVKey
+        ]
 
 genRegisterUserKey :: Gen RegisterUserKey
 genRegisterUserKey = do
-    RegisterUserKey <$> genPlatform <*> genUsername <*> genPublicKeyHash
+    RegisterUserKey
+        <$> genPlatform
+        <*> genUsername
+        <*> genGithubIdentification
 
 genRequestZoo :: Gen RequestZoo
 genRequestZoo =

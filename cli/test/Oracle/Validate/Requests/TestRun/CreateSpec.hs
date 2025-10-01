@@ -1,5 +1,8 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedRecordDot #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use return" #-}
 
 module Oracle.Validate.Requests.TestRun.CreateSpec (spec)
 where
@@ -17,14 +20,17 @@ import Core.Types.Basic
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (JSFact, toJSFact)
 import Core.Types.Operation (Operation (..))
-import Lib.SSH.Public (encodePublicKey)
+import Lib.SSH.Public (encodeSSHPublicKey)
 import MockMPFS (mockMPFS, withFacts, withRequests)
 import Oracle.Types (Request (..), RequestZoo (..))
 import Oracle.Validate.DownloadAssets
     ( AssetValidationFailure (..)
     , SourceDirFailure (..)
     )
-import Oracle.Validate.Requests.RegisterUserSpec (genForRole)
+import Oracle.Validate.Requests.RegisterUserSpec
+    ( genForRole
+    , unsafeEncodeVKey
+    )
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
     )
@@ -91,7 +97,8 @@ import Test.QuickCheck.EGen
     )
 import User.Agent.Types (WhiteListKey (..))
 import User.Types
-    ( RegisterRoleKey (..)
+    ( GithubIdentification (..)
+    , RegisterRoleKey (..)
     , TestRun (..)
     , TestRunRejection (..)
     , TestRunState (..)
@@ -130,7 +137,13 @@ spec = do
                             d >= testConfig.minDuration
                                 && d <= testConfig.maxDuration
             (sign, pk) <- genBlind ed25519Gen
-            user <- jsFactUser testRun $ encodePublicKey pk
+            identification <-
+                gen
+                    $ elements
+                        [ IdentifyViaSSHKey $ encodeSSHPublicKey pk
+                        , IdentifyViaVKey $ unsafeEncodeVKey pk
+                        ]
+            user <- jsFactUser testRun identification
             role <- jsFactRole testRun
             whiteListRepo <-
                 toJSFact

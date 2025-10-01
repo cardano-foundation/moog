@@ -45,7 +45,6 @@ import Core.Types.Basic
     , GithubRepository (..)
     , GithubUsername (GithubUsername)
     , Platform (Platform)
-    , PublicKeyHash
     , TokenId
     , Try (Try)
     , organizationL
@@ -61,6 +60,7 @@ import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.CaseInsensitive (CI (..), mk)
 import Data.List qualified as L
 import Data.Text (Text)
+import Data.Text qualified as T
 import Effects
     ( Effects (..)
     , GithubEffects (..)
@@ -83,7 +83,10 @@ import Lib.GitHub
     ( GetGithubFileFailure (..)
     )
 import Lib.SSH.Private (SSHClient (..), mkKeyAPI)
-import Lib.SSH.Public (SSHPublicKey)
+import Lib.SSH.Public
+    ( SSHPublicKey
+    , renderSSHPublicKey
+    )
 import MPFS.API (MPFS)
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
@@ -104,7 +107,8 @@ import Text.JSON.Canonical
     , renderCanonicalJSON
     )
 import User.Types
-    ( RegisterRoleKey (..)
+    ( GithubIdentification (..)
+    , RegisterRoleKey (..)
     , RegisterUserKey (..)
     , TestRun (..)
     , commitIdL
@@ -125,21 +129,20 @@ jsFactRole testRun =
             }
         ()
 
-jsFactUser :: (Monad m) => TestRun -> PublicKeyHash -> m JSFact
-jsFactUser testRun pubkeyhash =
+jsFactUser :: (Monad m) => TestRun -> GithubIdentification -> m JSFact
+jsFactUser testRun githubIdentification =
     toJSFact
         RegisterUserKey
             { platform = testRun.platform
             , username = testRun.requester
-            , pubkeyhash
+            , githubIdentification
             }
         ()
 
 data MockValidation = MockValidation
     { mockCommits :: [(GithubRepository, Commit)]
     , mockDirectories :: [(GithubRepository, Commit, Directory)]
-    , mockSSHKeys :: [(GithubUsername, SSHPublicKey)]
-    , mockVKeys :: [(GithubUsername, VKey)]
+    , mockIdentifications :: [(GithubUsername, GithubIdentification)]
     , mockRepoRoles :: [(GithubUsername, GithubRepository)]
     , mockReposExists :: [GithubRepository]
     , mockAssets :: [((GithubRepository, Maybe Commit, FileName), Text)]
@@ -150,6 +153,18 @@ data MockValidation = MockValidation
 aToken :: Maybe TokenId
 aToken = Just $ error "TokenId not needed for tests"
 
+partitionIdentifications
+    :: [(GithubUsername, GithubIdentification)]
+    -> ( [(GithubUsername, SSHPublicKey)]
+       , [(GithubUsername, VKey)]
+       )
+partitionIdentifications = foldr go ([], [])
+  where
+    go (username, IdentifyViaSSHKey pubkey) (sshKeys, vKeys) =
+        ((username, pubkey) : sshKeys, vKeys)
+    go (username, IdentifyViaVKey vkey) (sshKeys, vKeys) =
+        (sshKeys, (username, vkey) : vKeys)
+
 mkGithubEffects
     :: Monad m
     => MockValidation
@@ -158,8 +173,7 @@ mkGithubEffects
     MockValidation
         { mockCommits
         , mockDirectories
-        , mockSSHKeys
-        , mockVKeys
+        , mockIdentifications
         , mockRepoRoles
         , mockReposExists
         , mockAssets
@@ -172,19 +186,19 @@ mkGithubEffects
             , githubUserPublicKeys = \username publicKey ->
                 pure
                     $ analyzeKeys publicKey
-                    $ map snd
+                    $ map (T.pack . renderSSHPublicKey . snd)
                     $ filter
                         ((== username) . fst)
-                        mockSSHKeys
+                    $ fst
+                    $ partitionIdentifications mockIdentifications
             , githubUserVKeys = \username vkey ->
                 pure
                     $ case lookup
                         username
-                        mockVKeys of
-                        Nothing ->
-                            Just
-                                $ VKeyGithubError
-                                    (GetGithubFileOtherFailure "" "no vkey")
+                        $ snd
+                        $ partitionIdentifications
+                            mockIdentifications of
+                        Nothing -> Just VKeyNotFound
                         Just actualVKey -> analyzeVKeyResponse vkey (Right actualVKey)
             , githubRepositoryExists = \repo ->
                 if repo `elem` mockReposExists
@@ -314,8 +328,7 @@ noValidation =
     MockValidation
         { mockCommits = []
         , mockDirectories = []
-        , mockSSHKeys = []
-        , mockVKeys = []
+        , mockIdentifications = []
         , mockRepoRoles = []
         , mockReposExists = []
         , mockAssets = []

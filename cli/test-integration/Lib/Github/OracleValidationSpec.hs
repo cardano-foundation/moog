@@ -31,7 +31,7 @@ import Lib.GitHub
     , githubGetCodeOwnersFile
     , githubRepositoryExists
     )
-import Lib.SSH.Public (SSHPublicKey (..))
+import Lib.SSH.Public (makeSSHPublicKey)
 import Test.Hspec
     ( Spec
     , SpecWith
@@ -118,7 +118,7 @@ userSpec = do
         $ do
             let emptyPubKeyOfUser _ = pure $ Right []
                 user = GithubUsername "user1"
-                pubkey = SSHPublicKey "ssh-ed25519 "
+                pubkey = makeSSHPublicKey ""
             inspectPublicKeyTemplate
                 user
                 pubkey
@@ -130,7 +130,7 @@ userSpec = do
             let respKey = "ssh-rsa AAAAAAAA"
                 nonEd25519PubKeyOfUser _ = pure $ Right [respKey]
                 user = GithubUsername "user1"
-                pubkey = SSHPublicKey "ssh-ed25519 "
+                pubkey = makeSSHPublicKey ""
             inspectPublicKeyTemplate
                 user
                 pubkey
@@ -142,7 +142,7 @@ userSpec = do
             let respKey = "ssh-ed25519 AAAAAAAA"
                 noExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey]
                 user = GithubUsername "user1"
-                pubkey = SSHPublicKey "ssh-ed25519 XAAAAAAY"
+                pubkey = makeSSHPublicKey "XAAAAAAY"
             inspectPublicKeyTemplate
                 user
                 pubkey
@@ -154,7 +154,7 @@ userSpec = do
             let respKey = "ssh-ed25519 XAAAAAAY"
                 okExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey]
                 user = GithubUsername "user1"
-                pubkey = SSHPublicKey "ssh-ed25519 XAAAAAAY"
+                pubkey = makeSSHPublicKey "XAAAAAAY"
             inspectPublicKeyTemplate
                 user
                 pubkey
@@ -168,7 +168,7 @@ userSpec = do
                 respKey3 = "ssh-rsa XXXXXXXXXXXXXXXXXXXXXXx"
                 okExpectedEd25519PubKeyOfUser _ = pure $ Right [respKey1, respKey2, respKey3]
                 user = GithubUsername "user1"
-                pubkey = SSHPublicKey "ssh-ed25519 XAAAAAAY"
+                pubkey = makeSSHPublicKey "XAAAAAAY"
             inspectPublicKeyTemplate
                 user
                 pubkey
