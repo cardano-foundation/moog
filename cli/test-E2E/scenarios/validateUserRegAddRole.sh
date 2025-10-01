@@ -30,7 +30,7 @@ trap 'tokenEnd' EXIT INT TERM
 resultReg1=$(anti requester register-user \
     --platform github \
     --username cfhal \
-    --pubkeyhash AAAAC3NzaC1lZDI1NTE5AAAAILjwzNvy87HbzYV2lsW3UjVoxtpq4Nrj84kjo3puarCH)
+    --vkey vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh)
 
 outputRegRef1=$(getOutputRef "$resultReg1")
 
@@ -70,7 +70,7 @@ log "Trying to create registration request with invalid public key"
 resultReg2=$(anti requester register-user \
     --platform github \
     --username cfhal \
-    --pubkeyhash AAAAC3NzaC1lZDI1NTE5AAAAILjwzNvy87HbzYV2lsW3UjVoxtpq4Nrj84djo3puarCH)
+    --vkey vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrg)
 
 outputRegRes2=$(echo $resultReg2 | jq)
 log "resultReg2: $resultReg2"
@@ -79,7 +79,9 @@ expectedRegRes2=$(
     cat <<EOF
 {
   "validationFailed": {
-    "sshKeyValidationFailure": "The user does not have the specified Ed25519 public key exposed in Github."
+    "vKeyValidationFailure": {
+      "vKeyMismatch": "The VKey does not match: vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh"
+    }
   }
 }
 EOF
@@ -247,7 +249,7 @@ fi
 resultUnReg1=$(anti requester unregister-user \
     --platform github \
     --username cfhal \
-    --pubkeyhash AAAAC3NzaC1lZDI1NTE5AAAAILjwzNvy87HbzYV2lsW3UjVoxtpq4Nrj84kjo3puarCH)
+    --vkey vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh)
 
 outputUnRegRef1=$(getOutputRef "$resultUnReg1")
 

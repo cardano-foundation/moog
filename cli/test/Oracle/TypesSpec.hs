@@ -23,7 +23,6 @@ import Data.CaseInsensitive (mk)
 import Data.Functor.Identity (Identity (..))
 import Data.Text qualified as T
 import Effects.RegisterUser (VKey (..))
-import Lib.SSH.Public (SSHPublicKey, makeSSHPublicKey)
 import Oracle.Types
     ( Request (Request)
     , RequestZoo (RegisterUserRequest, UnregisterUserRequest)
@@ -58,20 +57,12 @@ genPlatform = elements [Platform "linux", Platform "windows", Platform "macos"]
 genUsername :: Gen GithubUsername
 genUsername = GithubUsername . mk <$> listOf (elements ['a' .. 'z'])
 
-genSSHPublicKey :: Gen SSHPublicKey
-genSSHPublicKey =
-    makeSSHPublicKey
-        <$> listOf (elements $ ['a' .. 'f'] ++ ['0' .. '9'])
-
 genVKey :: Gen VKey
 genVKey = VKey . T.pack <$> listOf (elements $ ['a' .. 'f'] ++ ['0' .. '9'])
 
 genGithubIdentification :: Gen GithubIdentification
 genGithubIdentification =
-    oneof
-        [ IdentifyViaSSHKey <$> genSSHPublicKey
-        , IdentifyViaVKey <$> genVKey
-        ]
+    IdentifyViaVKey <$> genVKey
 
 genRegisterUserKey :: Gen RegisterUserKey
 genRegisterUserKey = do

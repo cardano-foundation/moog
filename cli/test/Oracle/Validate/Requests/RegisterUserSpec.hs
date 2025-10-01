@@ -23,12 +23,8 @@ import Data.CaseInsensitive (mk)
 import Data.Char (isAscii)
 import Effects (KeyFailure (..))
 import Effects.RegisterUser
-    ( SSHPublicKeyFailure (..)
-    , VKey (..)
+    ( VKey (..)
     , VKeyFailure (..)
-    )
-import Lib.SSH.Public
-    ( encodeSSHPublicKey
     )
 import MockMPFS (mockMPFS, withFacts, withRequests)
 import Oracle.Types (Request (..), RequestZoo (..))
@@ -82,12 +78,9 @@ genValidDBElement = do
     (_sign, pk) <- genBlind ed25519Gen
     fmap (user,)
         $ gen
-        $ oneof
-            [ pure
-                $ IdentifyViaSSHKey
-                $ encodeSSHPublicKey pk
-            , pure $ IdentifyViaVKey $ unsafeEncodeVKey pk
-            ]
+        $ pure
+        $ IdentifyViaVKey
+        $ unsafeEncodeVKey pk
 
 registerUserChange
     :: Platform
@@ -274,8 +267,8 @@ spec = do
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user pk
                     failure = case pk of
-                        IdentifyViaSSHKey _ -> SSHKeyValidationFailure NoPublicKeyFound
                         IdentifyViaVKey _ -> VKeyValidationFailure VKeyNotFound
+                        _ -> error "Expected IdentifyViaVKey"
                 pure $ runValidate test `shouldReturn` ValidationFailure failure
         it
             "fail to validate a registration if there is different ssh-ed25519 public key for a user"
@@ -290,10 +283,9 @@ spec = do
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user pk2
                     failure = case (pk1, pk2) of
-                        (IdentifyViaSSHKey _, IdentifyViaSSHKey _) -> SSHKeyValidationFailure NoEd25519KeyMatch
                         (IdentifyViaVKey k1, IdentifyViaVKey _k2) -> VKeyValidationFailure $ VKeyMismatch k1
                         (IdentifyViaSSHKey _, IdentifyViaVKey _) -> VKeyValidationFailure VKeyNotFound
-                        (IdentifyViaVKey _, IdentifyViaSSHKey _) -> SSHKeyValidationFailure NoPublicKeyFound
+                        _ -> error "Expected IdentifyViaVKey"
                 pure
                     $ when (pk1 /= pk2)
                     $ runValidate test

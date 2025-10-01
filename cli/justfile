@@ -39,6 +39,7 @@ build:
 integration match="":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
+    export ANTI_MPFS_HOST="https://mpfs.plutimus.com"
     if [[ '{{ match }}' == "" ]]; then
       cabal test anti-integration-test \
           --test-show-details=direct
@@ -81,6 +82,7 @@ E2E match="":
     }
     trap down EXIT INT
 
+    export ANTI_WALLET_FILE=tmp/requester.json
     export ANTI_TEST_REQUESTER_WALLET=tmp/requester.json # this must be cfhal wallet, get it in 1p at https://start.1password.com/open/i?a=TYQQQLKUDBAFVHQ4P7XKFCUVYM&v=fhipthmhnufti4q2kky6d7336u&i=jgle6xhz6b4pgma7aodrsebfgu&h=cardanofoundation.1password.com
     export ANTI_TEST_ORACLE_WALLET=tmp/requester.json # or create your own wallet
     export ANTI_TEST_AGENT_WALLET=tmp/requester.json # or create your own wallet

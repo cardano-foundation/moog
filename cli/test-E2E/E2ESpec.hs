@@ -35,8 +35,6 @@ e2eSpec = do
         describe "End-to-End Tests" $ do
             it "should run the real world scenario (VKey user)" $ do
                 runScenario "realWorldVKey.sh"
-            it "should run the real world scenario (SSH user)" $ do
-                runScenario "realWorldSSH.sh"
             it "should retract a request" $ do
                 runScenario "retractions.sh"
             it "should validate a user registration and his role" $ do
