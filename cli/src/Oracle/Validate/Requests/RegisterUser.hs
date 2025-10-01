@@ -22,8 +22,7 @@ import Effects
     , insertValidation
     )
 import Effects.RegisterUser
-    ( SSHPublicKeyFailure (..)
-    , VKeyFailure (..)
+    ( VKeyFailure (..)
     )
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Oracle.Types (requestZooGetRegisterUserKey)
@@ -44,7 +43,7 @@ import User.Types
     )
 
 data RegisterUserFailure
-    = SSHKeyValidationFailure SSHPublicKeyFailure
+    = SSHKeyRegistrationDeprecated
     | VKeyValidationFailure VKeyFailure
     | RegisterUserPlatformNotSupported String
     | RegisterUserKeyFailure KeyFailure
@@ -54,8 +53,13 @@ data RegisterUserFailure
 
 instance Monad m => ToJSON m RegisterUserFailure where
     toJSON = \case
-        SSHKeyValidationFailure reason ->
-            object ["sshKeyValidationFailure" .= reason]
+        SSHKeyRegistrationDeprecated ->
+            object
+                [ "sshKeyRegistrationDeprecated"
+                    .= ( "SSH key registration is deprecated and no longer supported. Please use wallet vkey registration."
+                            :: String
+                       )
+                ]
         VKeyValidationFailure reason ->
             object ["vKeyValidationFailure" .= reason]
         RegisterUserPlatformNotSupported platform ->
@@ -76,7 +80,7 @@ validateRegisterUser
 validateRegisterUser
     validation@Effects
         { mpfsGetFacts
-        , githubEffects = GithubEffects{githubUserPublicKeys, githubUserVKeys}
+        , githubEffects = GithubEffects{githubUserVKeys}
         }
     forRole
     change@( Change
@@ -100,11 +104,8 @@ validateRegisterUser
                         notValidated $ RegisterUserKeyAlreadyExists k
                     Nothing -> do
                         case githubIdentification of
-                            IdentifyViaSSHKey sshKey -> do
-                                validationRes <-
-                                    lift $ githubUserPublicKeys username sshKey
-                                mapFailure SSHKeyValidationFailure
-                                    $ throwJusts validationRes
+                            IdentifyViaSSHKey _sshKey ->
+                                notValidated SSHKeyRegistrationDeprecated
                             IdentifyViaVKey vKey -> do
                                 validationRes <- lift $ githubUserVKeys username vKey
                                 mapFailure VKeyValidationFailure
@@ -143,7 +144,7 @@ validateUnregisterUser
     -> Validate UnregisterUserFailure m Validated
 validateUnregisterUser
     validation@Effects
-        { githubEffects = GithubEffects{githubUserPublicKeys, githubUserVKeys}
+        { githubEffects = GithubEffects{githubUserVKeys}
         }
     forRole
     change@( Change
@@ -169,13 +170,5 @@ validateUnregisterUser
                             Just VKeyMismatch{} -> pure Validated
                             Just (VKeyGithubError err) -> notValidated $ UnregisterUserKeyGithubError $ show err
                             Nothing -> notValidated UnregisterUserKeyIsPresent
-                    IdentifyViaSSHKey ssh -> do
-                        validationRes <-
-                            lift $ githubUserPublicKeys username ssh
-                        case validationRes of
-                            Just NoEd25519KeyFound -> pure Validated
-                            Just NoEd25519KeyMatch -> pure Validated
-                            Just NoPublicKeyFound -> pure Validated
-                            Just (GithubError err) -> notValidated $ UnregisterUserKeyGithubError err
-                            Nothing -> notValidated UnregisterUserKeyIsPresent
+                    IdentifyViaSSHKey _ssh -> pure Validated -- Open up the possibility to unregister even if the key is still present to ease migration to vkey
             Platform other -> notValidated $ UnregisterUserPlatformNotSupported other
