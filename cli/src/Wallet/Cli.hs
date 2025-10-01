@@ -11,7 +11,9 @@ import Core.Types.Basic (Address, Owner)
 import Core.Types.Mnemonics
     ( Mnemonics (..)
     )
+import Core.Types.VKey (VKey (..), encodeVKey)
 import Core.Types.Wallet (Wallet (..))
+import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.Maybe (isJust)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -88,6 +90,11 @@ failIfWalletExists check result = do
         then return $ Left WalletPresent
         else return $ Right result
 
+mkWalletVKey :: Wallet -> String
+mkWalletVKey Wallet{privateKey} = case encodeVKey $ Ed25519.toPublic privateKey of
+    Left err -> error $ "Failed to encode wallet public key: " ++ show err
+    Right (VKey vkey) -> T.unpack vkey
+
 walletCmd :: WalletCommand a -> IO a
 walletCmd (Info wallet) =
     pure
@@ -96,7 +103,7 @@ walletCmd (Info wallet) =
             { address = wallet.address
             , owner = wallet.owner
             , encryptedInfo = wallet.encrypted
-            , publicKey = wallet.publicKey
+            , publicKey = mkWalletVKey wallet
             }
 walletCmd (Create walletFile passphrase) = do
     w12 <- replicateM 12 $ element englishWords
@@ -109,7 +116,7 @@ walletCmd (Create walletFile passphrase) = do
                     { address = wallet.address
                     , owner = wallet.owner
                     , encryptedInfo = isJust passphrase
-                    , publicKey = wallet.publicKey
+                    , publicKey = mkWalletVKey wallet
                     }
 walletCmd (Decrypt wallet walletFileDecr) =
     if encrypted wallet
@@ -120,7 +127,7 @@ walletCmd (Decrypt wallet walletFileDecr) =
                     { address = wallet.address
                     , owner = wallet.owner
                     , encryptedInfo = False
-                    , publicKey = wallet.publicKey
+                    , publicKey = mkWalletVKey wallet
                     }
         else
             pure $ Left WalletAlreadyDecrypted
@@ -135,7 +142,7 @@ walletCmd (Encrypt wallet passphrase walletFileDecr) =
                     { address = wallet.address
                     , owner = wallet.owner
                     , encryptedInfo = True
-                    , publicKey = wallet.publicKey
+                    , publicKey = mkWalletVKey wallet
                     }
 
 element :: [a] -> IO a

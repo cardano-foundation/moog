@@ -18,24 +18,21 @@ data Wallet = Wallet
     , encrypted :: Bool
     , mnemonics :: Mnemonics 'DecryptedS
     , privateKey :: Ed25519.SecretKey
-    , publicKey :: String -- bech32-encoded public key
     }
 
 walletKeyPair :: Wallet -> KeyPair
 walletKeyPair Wallet{privateKey} = mkKeyPair privateKey
 
 instance Show Wallet where
-    show (Wallet addr owner _ encrypted _ _ publicKey) =
+    show (Wallet addr owner _ encrypted _ _) =
         "Wallet { address: "
             ++ show addr
             ++ ", owner: "
             ++ show owner
             ++ ", encrypted: "
             ++ show encrypted
-            ++ ", publicKey: "
-            ++ publicKey
             ++ "}"
 
 instance Eq Wallet where
-    (Wallet addr1 owner1 _ _ _ _ _) == (Wallet addr2 owner2 _ _ _ _ _) =
+    (Wallet addr1 owner1 _ _ _ _) == (Wallet addr2 owner2 _ _ _ _) =
         addr1 == addr2 && owner1 == owner2
