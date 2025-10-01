@@ -1,4 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedRecordDot #-}
 
 module User.Requester.Cli
     ( requesterCmd
@@ -24,16 +25,18 @@ import Core.Types.Basic
     , TokenId
     )
 import Core.Types.Change (Change (..), Key (..), deleteKey, insertKey)
-import Core.Types.Fact (keyHash)
+import Core.Types.Fact (Fact (..), keyHash)
 import Core.Types.Operation (Operation (..))
 import Core.Types.Tx (TxHash, WithTxHash (..))
-import Core.Types.Wallet (Wallet)
+import Core.Types.Wallet (Wallet, walletKeyPair)
 import Crypto.PubKey.Ed25519 (Signature)
 import Data.ByteString.Lazy qualified as BL
+import Data.Foldable (find)
 import Data.Functor (($>))
 import Effects
     ( Effects (..)
     , GithubEffects (..)
+    , getFacts
     , hoistValidation
     )
 import Lib.GitHub (GetGithubFileFailure)
@@ -70,6 +73,7 @@ import Oracle.Validate.Types
     ( AValidationResult
     , ForRole (..)
     , liftMaybe
+    , notValidated
     , runValidate
     , throwLeft
     )
@@ -77,7 +81,8 @@ import Submitting (Submission (..))
 import Text.JSON.Canonical (JSValue, ToJSON (..), renderCanonicalJSON)
 import User.Agent.Cli (TestRunId (..))
 import User.Types
-    ( Phase (PendingT)
+    ( GithubIdentification (..)
+    , Phase (PendingT)
     , RegisterRoleKey (..)
     , RegisterUserKey (..)
     , TestRun (..)
@@ -108,7 +113,7 @@ data RequesterCommand a where
     RequestTest
         :: TokenId
         -> Wallet
-        -> SSHClient 'WithSelector
+        -> Maybe (SSHClient 'WithSelector)
         -> TestRun
         -> Duration
         -> RequesterCommand
@@ -141,11 +146,11 @@ requesterCmd command = do
             registerRole tokenId wallet request
         UnregisterRole tokenId wallet request ->
             unregisterRole tokenId wallet request
-        RequestTest tokenId wallet sshClient testRun duration ->
+        RequestTest tokenId wallet mSshClient testRun duration ->
             createCommand
                 tokenId
                 wallet
-                sshClient
+                mSshClient
                 testRun
                 duration
         GenerateAssets directory -> generateAssets directory
@@ -194,7 +199,7 @@ createCommand
     :: Monad m
     => TokenId
     -> Wallet
-    -> SSHClient 'WithSelector
+    -> Maybe (SSHClient 'WithSelector)
     -> TestRun
     -> Duration
     -> WithContext
@@ -206,7 +211,7 @@ createCommand
 createCommand
     tokenId
     wallet
-    sshClient
+    mSshClient
     testRun
     duration = do
         mconfig <- askConfig tokenId
@@ -214,13 +219,23 @@ createCommand
         Submission submit <- askSubmit wallet
         mpfs <- askMpfs
         lift $ runValidate $ do
+            users :: [Fact RegisterUserKey ()] <-
+                lift $ getFacts mpfs $ Just tokenId
+            user <- case find (\(Fact k _) -> k.username == requester testRun) users of
+                Just (Fact k _) -> pure $ githubIdentification k
+                Nothing -> notValidated CreateTestRequesterNotRegistered
+            (key, signature) <- case (mSshClient, user) of
+                (_, IdentifyViaVKey _) -> signKey (walletKeyPair wallet) testRun
+                (Nothing, IdentifyViaSSHKey _) ->
+                    notValidated CreateTestRunInvalidSSHKey
+                (Just sshClient, IdentifyViaSSHKey _) -> do
+                    sshKeyPair <-
+                        liftMaybe CreateTestRunInvalidSSHKey
+                            =<< decodePrivateSSHFile (hoistValidation validation) sshClient
+                    lift $ signKey sshKeyPair testRun
+            let newState = Pending duration signature
             Config{configTestRun} <-
                 liftMaybe CreateTestConfigNotAvailable mconfig
-            sshKeyPair <-
-                liftMaybe CreateTestRunInvalidSSHKey
-                    =<< decodePrivateSSHFile (hoistValidation validation) sshClient
-            (key, signature) <- lift $ signKey sshKeyPair testRun
-            let newState = Pending duration signature
             void
                 $ validateCreateTestRun configTestRun validation ForUser
                 $ Change (Key testRun) (Insert newState)

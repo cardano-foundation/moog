@@ -74,6 +74,7 @@ data CreateTestRunFailure
     | CreateTestConfigNotAvailable
     | CreateTestRunInvalidSSHKey
     | CreateTestRunKeyAlreadyPending TestRun
+    | CreateTestRequesterNotRegistered
     deriving (Eq, Show)
 
 instance Monad m => ToJSON m CreateTestRunFailure where
@@ -87,6 +88,8 @@ instance Monad m => ToJSON m CreateTestRunFailure where
         stringJSON "Invalid SSH key"
     toJSON (CreateTestRunKeyAlreadyPending testRun) =
         object ["createTestRunKeyAlreadyPending" .= testRun]
+    toJSON CreateTestRequesterNotRegistered =
+        stringJSON "Test requester is not registered"
 
 validateCreateTestRun
     :: Monad m
@@ -121,7 +124,7 @@ data TestRunRejection
     | UnacceptableTryIndex Try
     | UnacceptableRole RegisterRoleKey
     | NoRegisteredKeyVerifiesTheSignature
-    | UserHasNoRegisteredSSHKeys
+    | UserIsNotRegistered
     | GithubResponseError GithubResponseError
     | GithubResponseStatusCodeError GithubResponseStatusCodeError
     | RepositoryNotWhitelisted
@@ -162,7 +165,7 @@ instance Monad m => ToJSON m TestRunRejection where
     toJSON NoRegisteredKeyVerifiesTheSignature =
         stringJSON
             "there is no registered Ed25519 SSH key that can verify the signature"
-    toJSON UserHasNoRegisteredSSHKeys =
+    toJSON UserIsNotRegistered =
         stringJSON "user has no Ed25519 SSH key registered"
     toJSON (GithubResponseError err) =
         object ["githubResponseError" .= err]
@@ -267,7 +270,7 @@ checkSignature
                     $ factKey <$> registeredUsers
             load = BL.toStrict $ renderCanonicalJSON testRunJ
         if null userKeys
-            then return $ Just UserHasNoRegisteredSSHKeys
+            then return $ Just UserIsNotRegistered
             else
                 if any (\pk -> Ed25519.verify pk load signature) userKeys
                     then return Nothing

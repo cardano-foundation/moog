@@ -16,6 +16,7 @@ module Lib.SSH.Private
     , WithSelector (..)
     , SelectorField
     , Selection (..)
+    , mkKeyPair
     ) where
 
 import Control.Applicative (many, (<|>))
@@ -127,6 +128,9 @@ data KeyPair
     , privateKey :: Ed25519.SecretKey
     }
     deriving (Eq, Show)
+
+mkKeyPair :: Ed25519.SecretKey -> KeyPair
+mkKeyPair sk = KeyPair{publicKey = Ed25519.toPublic sk, privateKey = sk}
 
 decodePrivateKeyFile
     :: ByteString

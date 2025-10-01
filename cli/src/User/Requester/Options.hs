@@ -40,6 +40,7 @@ import OptEnvConf
     , reader
     , setting
     , str
+    , switch
     )
 import Oracle.Validate.Requests.RegisterRole
     ( RegisterRoleFailure
@@ -120,7 +121,9 @@ requesterCommandParser
     :: Parser (Box RequesterCommand)
 requesterCommandParser =
     commands
-        [ command "create-test" "Request an antithesis test run"
+        [ command
+            "create-test"
+            "Request an antithesis test run"
             $ Box <$> requestTestOptions
         , command "register-user" "Register a user public key"
             $ Box <$> addPublicKeyOptions
@@ -135,12 +138,18 @@ requesterCommandParser =
         ]
 
 sshClientOption
-    :: Parser (SSHClient 'WithSelector)
+    :: Parser (Maybe (SSHClient 'WithSelector))
 sshClientOption =
-    SSHClient
-        <$> optional keySelectorOption
-        <*> keyFileOption
-        <*> keyPasswordOption
+    Nothing
+        <$ setting
+            [ help "opt for vkey user"
+            , long "vkey-user"
+            , switch ()
+            ]
+        <|> (\a b c -> Just $ SSHClient a b c)
+            <$> optional keySelectorOption
+            <*> keyFileOption
+            <*> keyPasswordOption
 
 sshClientOptionWithoutSelector
     :: Parser (SSHClient 'WithoutSelector)
