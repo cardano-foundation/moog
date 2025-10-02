@@ -25,7 +25,7 @@ Then you can run the docker container
 
 ```bash
 version=$(nix eval .#version --raw)
-docker run cardano-foundation/anti-oracle:$version
+docker run ghcr.io/cardano-foundation/antithesis/anti-oracle:$version
 ```
 
 ## Running oracle commands manually

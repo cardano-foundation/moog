@@ -1,6 +1,6 @@
 services:
   anti-agent:
-    image: cardano-foundation/anti-agent:latest
+    image: ghcr.io/cardano-foundation/antithesis/anti-agent:latest
     secrets:
       - agent-wallet
       - secrets
@@ -14,13 +14,12 @@ services:
       - ANTI_WAIT=240
       - ANTI_ANTITHESIS_USER=cardano
       - DOCKER_CONFIG=/run/secrets/docker
-    restart:
-      always
+    restart: always
     privileged: true
     command: "--poll-interval 60 --days 1 --trust-all-requesters"
     volumes:
       - tmp:/tmp
-         # Mount CA certificates, curl seems not to find them when the pkgs.cacert is included in the image
+        # Mount CA certificates, curl seems not to find them when the pkgs.cacert is included in the image
       - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
       - /var/run/docker.sock:/var/run/docker.sock
 secrets:
@@ -33,12 +32,11 @@ secrets:
 
 volumes:
   tmp:
-
 ### Keys of the secrets.yaml file:
-  # agentEmail: # Email address where url links are received
-  # agentEmailPassword: # App password for the email account
-  # githubPAT: # GitHub Personal Access Token
-  # trustedRequesters:
-  #   - requester1
-  #   - requester2
-  # antithesisPassword: # Password for Antithesis registry and Docker image
+# agentEmail: # Email address where url links are received
+# agentEmailPassword: # App password for the email account
+# githubPAT: # GitHub Personal Access Token
+# trustedRequesters:
+#   - requester1
+#   - requester2
+# antithesisPassword: # Password for Antithesis registry and Docker image

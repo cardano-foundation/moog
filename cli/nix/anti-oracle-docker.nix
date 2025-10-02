@@ -7,7 +7,7 @@ let
       -C $out
   '';
 in pkgs.dockerTools.buildImage {
-  name = "cardano-foundation/anti-oracle";
+  name = "ghcr.io/cardano-foundation/antithesis/anti-oracle";
   tag = version;
   config = { EntryPoint = [ "./anti-oracle" ]; };
   copyToRoot = pkgs.buildEnv {

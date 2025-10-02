@@ -7,7 +7,7 @@ let
       -C $out
   '';
 in pkgs.dockerTools.buildImage {
-  name = "cardano-foundation/anti-agent";
+  name = "ghcr.io/cardano-foundation/antithesis/anti-agent";
   tag = version;
   config = { EntryPoint = [ "./anti-agent" ]; };
   copyToRoot = pkgs.buildEnv {

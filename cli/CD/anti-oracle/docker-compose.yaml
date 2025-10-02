@@ -1,6 +1,6 @@
 services:
   anti-oracle:
-    image: cardano-foundation/anti-oracle:latest
+    image: ghcr.io/cardano-foundation/antithesis/anti-oracle:latest
     secrets:
       - oracle-wallet
       - secrets
@@ -10,8 +10,7 @@ services:
       - ANTI_TOKEN_ID=21c523c3b4565f1fc1ad7e54e82ca976f60997d8e7e9946826813fabf341069b
       - ANTI_SECRETS_FILE=/run/secrets/secrets
       - ANTI_WAIT=240
-    restart:
-      always
+    restart: always
     volumes:
       - tmp:/tmp
 secrets:

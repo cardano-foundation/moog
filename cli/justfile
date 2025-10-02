@@ -153,8 +153,8 @@ build-anti-agent:
     nix build .#anti-agent-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
-    docker image tag cardano-foundation/anti-agent:"$version" \
-        cardano-foundation/anti-agent:latest
+    docker image tag ghcr.io/cardano-foundation/antithesis/anti-agent:"$version" \
+        ghcr.io/cardano-foundation/antithesis/anti-agent:latest
 
 start-anti-agent bg="false":
     #!/usr/bin/env bash
@@ -183,8 +183,8 @@ build-anti-oracle:
     nix build .#anti-oracle-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
-    docker image tag cardano-foundation/anti-oracle:"$version" \
-        cardano-foundation/anti-oracle:latest
+    docker image tag ghcr.io/cardano-foundation/antithesis/anti-oracle:"$version" \
+        ghcr.io/cardano-foundation/antithesis/anti-oracle:latest
 
 start-anti-oracle bg="false":
     #!/usr/bin/env bash
@@ -212,3 +212,14 @@ recreate-anti-services:
     #!/usr/bin/env bash
     just build-and-start-anti-agent true
     just build-and-start-anti-oracle true
+
+build-docker-images:
+    #!/usr/bin/env bash
+    just build-anti-agent
+    just build-anti-oracle
+    
+push-docker-images:
+    #!/usr/bin/env bash
+    version='latest'
+    docker push ghcr.io/cardano-foundation/antithesis/anti-agent:"$version"
+    docker push ghcr.io/cardano-foundation/antithesis/anti-oracle:"$version"
