@@ -7,6 +7,7 @@ module Oracle.Validate.DownloadAssets
     )
 where
 
+import Control.Applicative ((<|>))
 import Control.Monad (filterM)
 import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic (Directory (..))
@@ -32,6 +33,7 @@ import Oracle.Validate.Types
     , notValidated
     , throwFalse
     , throwJusts
+    , throwLeft
     )
 import System.Directory
     ( writable
@@ -52,6 +54,8 @@ data AssetValidationFailure
     | DownloadAssetsTargetDirNotFound
     | DownloadAssetsTargetDirNotWritable
     | DownloadAssetsGithubError GetGithubFileFailure
+    | DownloadAssetsDockerComposeConfigurationFailure String
+    | DownloadAssetsDockerComposeFileMissing
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m AssetValidationFailure where
@@ -69,6 +73,18 @@ instance Monad m => ToJSON m AssetValidationFailure where
                 .= ( "GitHub error when downloading directory: "
                         <> show failure
                    )
+            ]
+    toJSON (DownloadAssetsDockerComposeConfigurationFailure failure) =
+        object
+            [ "error"
+                .= ( "Docker Compose configuration error: "
+                        <> failure
+                   )
+            ]
+    toJSON DownloadAssetsDockerComposeFileMissing =
+        object
+            [ "error"
+                .= ("docker-compose.yml file is missing in the assets" :: String)
             ]
 
 data DownloadAssetsFailure
@@ -176,17 +192,30 @@ validateAssets
     -> Effects m
     -> TestRun
     -> Validate AssetValidationFailure m Validated
-validateAssets dir validation testRun = do
-    sourceDirValidation <-
-        lift $ checkSourceDirectory validation testRun
-    _ <-
-        mapFailure AssetValidationSourceFailure
-            $ throwJusts sourceDirValidation
-    targetDirValidation <-
-        directoryExists (hoistValidation validation) dir
-    permissions <-
-        liftMaybe DownloadAssetsTargetDirNotFound targetDirValidation
-    Validated <-
-        throwFalse (writable permissions) DownloadAssetsTargetDirNotWritable
-    downloadTry <- lift $ downloadAssetsDirectory validation testRun dir
-    mapFailure DownloadAssetsGithubError $ throwJusts downloadTry
+validateAssets
+    dir@(Directory directoryPath)
+    validation@Effects{fileExists, dockerComposeConfigure}
+    testRun = do
+        sourceDirValidation <-
+            lift $ checkSourceDirectory validation testRun
+        _ <-
+            mapFailure AssetValidationSourceFailure
+                $ throwJusts sourceDirValidation
+        targetDirValidation <-
+            directoryExists (hoistValidation validation) dir
+        permissions <-
+            liftMaybe DownloadAssetsTargetDirNotFound targetDirValidation
+        Validated <-
+            throwFalse (writable permissions) DownloadAssetsTargetDirNotWritable
+        downloadTry <- lift $ downloadAssetsDirectory validation testRun dir
+        dockerComposeFileExists <- do
+            yml <- lift $ fileExists (directoryPath <> "/docker-compose.yml")
+            yaml <- lift $ fileExists (directoryPath <> "/docker-compose.yaml")
+            pure $ yml <|> yaml
+        _ <-
+            liftMaybe
+                DownloadAssetsDockerComposeFileMissing
+                dockerComposeFileExists
+        config <- lift $ dockerComposeConfigure dir
+        throwLeft DownloadAssetsDockerComposeConfigurationFailure config
+        mapFailure DownloadAssetsGithubError $ throwJusts downloadTry

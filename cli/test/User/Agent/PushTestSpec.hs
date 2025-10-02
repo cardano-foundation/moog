@@ -11,6 +11,7 @@ import Core.Types.Basic
     , Platform (..)
     , Try (..)
     )
+import Docker (collectImagesFromAssets)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 import User.Agent.PushTest
     ( AntithesisAuth (..)
@@ -18,7 +19,6 @@ import User.Agent.PushTest
     , Registry (..)
     , Tag (..)
     , buildConfigImage
-    , collectImagesFromAssets
     , renderPostToAntithesis
     , renderTestRun
     )

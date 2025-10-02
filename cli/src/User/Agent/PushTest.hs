@@ -5,7 +5,6 @@ module User.Agent.PushTest
     , buildConfigImage
     , Registry (..)
     , pushTestToAntithesis
-    , collectImagesFromAssets
     , dockerfile
     , pushTestToAntithesisIO
     , PostTestRunRequest (..)
@@ -36,8 +35,9 @@ import Data.Aeson qualified as Aeson
 import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.Functor (($>), (<&>))
 import Data.Functor.Identity (Identity (..))
-import Data.List (intercalate, nub, sort)
+import Data.List (intercalate)
 import Data.String.QQ (s)
+import Docker (collectImagesFromAssets)
 import Lib.JSON.Canonical.Extra (object, withObject, (.:), (.=))
 import Lib.System (runSystemCommand)
 import Oracle.Validate.Types
@@ -185,16 +185,6 @@ instance ReportSchemaErrors m => FromJSON m TestRunWithId where
         trId <- v .: "testRunId"
         tr <- v .: "testRun"
         return $ TestRunWithId trId tr
-
-collectImagesFromAssets :: Directory -> IO (Either String [String])
-collectImagesFromAssets (Directory dirname) = do
-    output <-
-        runSystemCommand
-            [("INTERNAL_NETWORK", "true")]
-            "docker"
-            ["compose", "--project-directory", dirname, "config", "--images"]
-    let images = nub . sort . filter (not . null) . lines
-    return $ output <&> images
 
 getTestRun
     :: Monad m

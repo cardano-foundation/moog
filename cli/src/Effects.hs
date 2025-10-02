@@ -35,10 +35,12 @@ import Core.Types.Basic
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..), JSFact, parseFacts)
 import Core.Types.Operation (Op (..))
+import Data.Functor (($>), (<&>))
 import Data.Functor.Identity (Identity (..))
 import Data.Maybe (mapMaybe)
 import Data.Text (Text)
 import Data.Text.IO qualified as T
+import Docker (dockerCompose)
 import Effects.DownloadFile
     ( DownloadedFileFailure
     , inspectDownloadedFile
@@ -163,7 +165,9 @@ data Effects m = Effects
     , writeTextFile :: FilePath -> Text -> m ()
     , withCurrentDirectory :: forall a. FilePath -> m a -> m a
     , directoryExists :: Directory -> m (Maybe Permissions)
+    , fileExists :: FilePath -> m (Maybe Permissions)
     , decodePrivateSSHFile :: SSHClient 'WithSelector -> m (Maybe KeyPair)
+    , dockerComposeConfigure :: Directory -> m (Either String ())
     }
 
 hoistValidation
@@ -180,7 +184,9 @@ hoistValidation
         , withCurrentDirectory
         , writeTextFile
         , directoryExists
+        , fileExists
         , decodePrivateSSHFile
+        , dockerComposeConfigure
         } =
         Effects
             { mpfsGetFacts = f mpfsGetFacts
@@ -194,7 +200,9 @@ hoistValidation
                 $ \run -> withCurrentDirectory dir (run action)
             , writeTextFile = \path content -> f $ writeTextFile path content
             , directoryExists = f . directoryExists
+            , fileExists = f . fileExists
             , decodePrivateSSHFile = f . decodePrivateSSHFile
+            , dockerComposeConfigure = f . dockerComposeConfigure
             }
       where
         f = lift
@@ -265,7 +273,18 @@ mkEffects auth mpfs tk = do
             if exists
                 then Just <$> System.getPermissions path
                 else return Nothing
+        , fileExists = \path -> liftIO $ do
+            exists <- System.doesFileExist path
+            if exists
+                then Just <$> System.getPermissions path
+                else return Nothing
         , decodePrivateSSHFile = liftIO . SSH.sshKeyPair
+        , dockerComposeConfigure = \d ->
+            liftIO
+                $ dockerCompose
+                    d
+                    ["config"]
+                <&> ($> ())
         }
 
 data KeyFailure

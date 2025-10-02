@@ -146,7 +146,7 @@ data MockValidation = MockValidation
     , mockRepoRoles :: [(GithubUsername, GithubRepository)]
     , mockReposExists :: [GithubRepository]
     , mockAssets :: [((GithubRepository, Maybe Commit, FileName), Text)]
-    , mockPermissions :: [(Directory, Permissions)]
+    , mockPermissions :: [(FilePath, Permissions)]
     , mockSSHPrivateKey :: [(FilePath, ByteString)]
     }
 
@@ -237,11 +237,17 @@ mkEffects
             , mpfsGetTestRuns = getTestRuns mpfs aToken
             , mpfsGetTokenRequests = getTokenRequests mpfs aToken
             , githubEffects = mkGithubEffects mock
-            , directoryExists = \dir ->
+            , directoryExists = \(Directory dir) ->
                 pure
                     $ dir
                         `lookup` ( mockPermissions
-                                    <> [(Directory "tempdir", emptyPermissions{writable = True})]
+                                    <> [("tempdir", emptyPermissions{writable = True})]
+                                 )
+            , fileExists = \filePath ->
+                pure
+                    $ filePath
+                        `lookup` ( mockPermissions
+                                    <> [("tempdir/docker-compose.yml", emptyPermissions{writable = True})]
                                  )
             , writeTextFile = \_path _content -> pure ()
             , withCurrentDirectory = \_dir action -> action
@@ -250,6 +256,7 @@ mkEffects
                 case L.lookup sshKeyFile mockSSHPrivateKey of
                     Nothing -> pure Nothing
                     Just content -> pure $ mkKeyAPI sshKeyPassphrase content sshKeySelector
+            , dockerComposeConfigure = \_dir -> pure $ Right ()
             }
 
 testRunGen :: Gen TestRun
