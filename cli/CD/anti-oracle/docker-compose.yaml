@@ -1,6 +1,6 @@
 services:
   anti-oracle:
-    image: ghcr.io/cardano-foundation/antithesis/anti-oracle:latest
+    image: ghcr.io/cardano-foundation/antithesis/anti-oracle:${ANTI_VERSION:-latest}
     secrets:
       - oracle-wallet
       - secrets

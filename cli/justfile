@@ -148,13 +148,15 @@ stop-mpfs:
     #!/usr/bin/env bash
     docker compose -p "anti-testing" -f test-E2E/fixtures/docker-compose.yml down
 
-build-anti-agent:
+build-anti-agent tag='latest':
     #!/usr/bin/env bash
     nix build .#anti-agent-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
     docker image tag ghcr.io/cardano-foundation/antithesis/anti-agent:"$version" \
-        ghcr.io/cardano-foundation/antithesis/anti-agent:latest
+        "ghcr.io/cardano-foundation/antithesis/anti-agent:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/antithesis/anti-agent:"$version" \
+        "ghcr.io/cardano-foundation/antithesis/anti-agent:latest"
 
 start-anti-agent bg="false":
     #!/usr/bin/env bash
@@ -178,13 +180,15 @@ stop-anti-agent:
     #!/usr/bin/env bash
     docker compose -f CD/anti-agent/docker-compose.yaml down
 
-build-anti-oracle:
+build-anti-oracle tag='latest':
     #!/usr/bin/env bash
     nix build .#anti-oracle-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
     docker image tag ghcr.io/cardano-foundation/antithesis/anti-oracle:"$version" \
-        ghcr.io/cardano-foundation/antithesis/anti-oracle:latest
+        "ghcr.io/cardano-foundation/antithesis/anti-oracle:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/antithesis/anti-oracle:"$version" \
+        "ghcr.io/cardano-foundation/antithesis/anti-oracle:latest"
 
 start-anti-oracle bg="false":
     #!/usr/bin/env bash
@@ -213,13 +217,14 @@ recreate-anti-services:
     just build-and-start-anti-agent true
     just build-and-start-anti-oracle true
 
-build-docker-images:
+build-docker-images tag='latest':
     #!/usr/bin/env bash
-    just build-anti-agent
-    just build-anti-oracle
-    
-push-docker-images:
+    just build-anti-agent "{{ tag }}"
+    just build-anti-oracle "{{ tag }}"
+
+push-docker-images tag='latest':
     #!/usr/bin/env bash
-    version='latest'
-    docker push ghcr.io/cardano-foundation/antithesis/anti-agent:"$version"
-    docker push ghcr.io/cardano-foundation/antithesis/anti-oracle:"$version"
+    docker push "ghcr.io/cardano-foundation/antithesis/anti-agent:{{ tag }}"
+    docker push "ghcr.io/cardano-foundation/antithesis/anti-oracle:{{ tag }}"
+    docker push "ghcr.io/cardano-foundation/antithesis/anti-agent:latest"
+    docker push "ghcr.io/cardano-foundation/antithesis/anti-oracle:latest"

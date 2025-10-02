@@ -1,6 +1,6 @@
 services:
   anti-agent:
-    image: ghcr.io/cardano-foundation/antithesis/anti-agent:latest
+    image: ghcr.io/cardano-foundation/antithesis/anti-agent:${ANTI_VERSION:-latest}
     secrets:
       - agent-wallet
       - secrets
