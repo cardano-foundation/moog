@@ -153,7 +153,8 @@ build-anti-agent:
     nix build .#anti-agent-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
-    docker image tag cardano-foundation/anti-agent:"$version" cardano-foundation/anti-agent:latest
+    docker image tag cardano-foundation/anti-agent:"$version" \
+        cardano-foundation/anti-agent:latest
 
 start-anti-agent bg="false":
     #!/usr/bin/env bash
@@ -173,12 +174,20 @@ logs-anti-agent:
     #!/usr/bin/env bash
     docker compose -f CD/anti-agent/docker-compose.yaml logs -ft
 
-start-anti-oracle bg="false":
+stop-anti-agent:
     #!/usr/bin/env bash
-     nix build .#anti-oracle-docker-image
+    docker compose -f CD/anti-agent/docker-compose.yaml down
+
+build-anti-oracle:
+    #!/usr/bin/env bash
+    nix build .#anti-oracle-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
-    docker image tag cardano-foundation/anti-oracle:"$version" cardano-foundation/anti-oracle:latest
+    docker image tag cardano-foundation/anti-oracle:"$version" \
+        cardano-foundation/anti-oracle:latest
+
+start-anti-oracle bg="false":
+    #!/usr/bin/env bash
     # shellcheck disable=SC2050
     if [[ '{{ bg }}' == "true" ]]; then
         docker compose -f CD/anti-oracle/docker-compose.yaml up -d
@@ -186,6 +195,20 @@ start-anti-oracle bg="false":
         docker compose -f CD/anti-oracle/docker-compose.yaml up
     fi
 
+build-and-start-anti-oracle bg="false":
+    #!/usr/bin/env bash
+    just build-anti-oracle
+    just start-anti-oracle "{{ bg }}"
+
 logs-anti-oracle:
     #!/usr/bin/env bash
     docker compose -f CD/anti-oracle/docker-compose.yaml logs -ft
+
+stop-anti-oracle:
+    #!/usr/bin/env bash
+    docker compose -f CD/anti-oracle/docker-compose.yaml down
+
+recreate-anti-services:
+    #!/usr/bin/env bash
+    just build-and-start-anti-agent true
+    just build-and-start-anti-oracle true
