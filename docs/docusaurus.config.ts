@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Anti-CLI',
-  tagline: 'Cardano testing with Antithesis - "ch\'i\' non ti lascerò nel mondo basso."',
+  tagline: 'Cardano testing with Antithesis',
   favicon: 'img/cardano-ada-logo.svg',
 
   // Set the production url of your site here
