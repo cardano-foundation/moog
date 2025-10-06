@@ -15,32 +15,40 @@ const FeatureList: FeatureItem[] = [
     Svg: require('@site/static/img/antithesis-mark.svg').default,
     description: (
       <>
-            <a href="https://antithesis.com">Antithesis</a> is a <em>deterministic simulation testing</em> platform that helps find bugs
-        in distributed systems by exploring multiple possible execution paths. It provides
-        comprehensive testing for complex blockchain systems like Cardano.
+         <a href="https://antithesis.com">Antithesis</a> is a <em>deterministic simulation testing</em> platform that helps find bugs
+         in distributed systems by exploring multiple possible execution paths. It combines in a single integrated service:
+         <ul>
+           <li>a deterministic hypervisor able to run any kind of software compiled for a linux x86-64 machine,</li>
+           <li>a framework to define and test properties over fuzzed execution of the <em>system-under-test</em>,</li>
+           <li>a fault injection system aka. <em>chaos monkeys</em>,</li>
+           <li>sophisticated reporting and debugging tools allowing time travel to help troubleshoot bugs.</li>
+         </ul>
       </>
     ),
   },
   {
     title: 'Why use Anti-CLI?',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    Svg: require('@site/static/img/anticli.svg').default,
     description: (
-      <>
-        Anti-CLI streamlines the process of submitting Cardano tests to Antithesis.
-        It handles test orchestration, result collection, and provides a unified
-        interface for managing your testing workflow with minimal setup.
+        <>
+            <strong>Anti-CLI</strong> aims at streamlining the process of orchestrating Antithesis tests for the Cardano community, providing an easy-to-use interface to the Antithesis service.
+            Anti-CLI leverages the blockchain itself to track recording of users and projects, tests requests, and execution results thus providing auditability and traceability of the system usage.
+            It demonstrates how Cardano can be used as an infrastructure to support its own development and the work of the Cardano community.
       </>
     ),
   },
   {
     title: 'How it Works',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    Svg: require('@site/static/img/how-it-works.svg').default,
     description: (
       <>
-        Anti-CLI operates through three main roles: Oracle validates and manages tests,
-        Requester submits test configurations, and Agent executes tests and publishes
-        results. This distributed architecture ensures scalable and reliable testing.
-      </>
+            <ol>
+            <li><em>Users</em> register and submit test run requests through Anti-CLI, providing a <code>docker-compose</code> descriptor</li>
+            <li>Requests are stored as transactions and validated by an <em>Agent</em></li>
+            <li>The agent triggers a test run on <em>Antithesis</em> platform</li>
+            <li>Test run results are made available through a secure link to Users</li>
+        </ol>
+        </>
     ),
   },
 ];
