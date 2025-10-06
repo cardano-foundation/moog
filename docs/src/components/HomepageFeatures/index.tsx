@@ -15,8 +15,8 @@ const FeatureList: FeatureItem[] = [
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Antithesis is a deterministic simulation testing platform that helps find bugs 
-        in distributed systems by exploring all possible execution paths. It provides 
+        Antithesis is a deterministic simulation testing platform that helps find bugs
+        in distributed systems by exploring all possible execution paths. It provides
         comprehensive testing for complex blockchain systems like Cardano.
       </>
     ),
@@ -26,8 +26,8 @@ const FeatureList: FeatureItem[] = [
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Anti-CLI streamlines the process of submitting Cardano tests to Antithesis. 
-        It handles test orchestration, result collection, and provides a unified 
+        Anti-CLI streamlines the process of submitting Cardano tests to Antithesis.
+        It handles test orchestration, result collection, and provides a unified
         interface for managing your testing workflow with minimal setup.
       </>
     ),
@@ -37,8 +37,8 @@ const FeatureList: FeatureItem[] = [
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Anti-CLI operates through three main roles: Oracle validates and manages tests, 
-        Requester submits test configurations, and Agent executes tests and publishes 
+        Anti-CLI operates through three main roles: Oracle validates and manages tests,
+        Requester submits test configurations, and Agent executes tests and publishes
         results. This distributed architecture ensures scalable and reliable testing.
       </>
     ),
@@ -47,14 +47,16 @@ const FeatureList: FeatureItem[] = [
 
 function Feature({title, Svg, description}: FeatureItem) {
   return (
-    <div className={clsx('col col--4')}>
-      <div className="text--center">
-        <Svg className={styles.featureSvg} role="img" />
-      </div>
-      <div className="text--center padding-horiz--md">
-        <Heading as="h3">{title}</Heading>
-        <p>{description}</p>
-      </div>
+      <div className={clsx('col col--12 container')}>
+       <div className="row">
+         <div className="col col--3">
+            <img src="https://antithesis.com/images/illustrations/catch-bugs.png"></img>
+          </div>
+        <div className="col col--9 col--offset-3">
+          <Heading as="h3">{title}</Heading>
+          <p>{description}</p>
+        </div>
+       </div>
     </div>
   );
 }
