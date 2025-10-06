@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'CF/Antithesis',
-  tagline: "ch'i' non ti lascerò nel mondo basso.",
+  title: 'Anti-CLI',
+  tagline: 'Cardano testing with Antithesis - "ch\'i\' non ti lascerò nel mondo basso."',
   favicon: 'img/cardano-ada-logo.svg',
 
   // Set the production url of your site here
@@ -35,19 +35,18 @@ const config: Config = {
     [
       'classic',
       {
-          docs: false,
-          blog: {
-              routeBasePath: '/',
+        docs: {
+          sidebarPath: './sidebars.ts',
+          editUrl: 'https://github.com/cardano-foundation/antithesis/tree/main/docs/',
+        },
+        blog: {
+          routeBasePath: '/blog',
           showReadingTime: true,
           feedOptions: {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
-          // Useful options to enforce blogging best practices
+          editUrl: 'https://github.com/cardano-foundation/antithesis/tree/main/docs/',
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
@@ -62,9 +61,43 @@ const config: Config = {
   themeConfig: {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
+    navbar: {
+      title: 'Anti-CLI',
+      logo: {
+        alt: 'Cardano Logo',
+        src: 'img/cardano-ada-logo.svg',
+      },
+      items: [
+        {
+          type: 'docSidebar',
+          sidebarId: 'tutorialSidebar',
+          position: 'left',
+          label: 'Documentation',
+        },
+        {to: '/blog', label: 'Blog', position: 'left'},
+        {
+          href: 'https://github.com/cardano-foundation/antithesis',
+          label: 'GitHub',
+          position: 'right',
+        },
+      ],
+    },
     footer: {
       style: 'dark',
       links: [
+        {
+          title: 'Docs',
+          items: [
+            {
+              label: 'Getting Started',
+              to: '/docs/getting-started',
+            },
+            {
+              label: 'Antithesis Interface',
+              to: '/docs/antithesis-interface',
+            },
+          ],
+        },
         {
           title: 'Community',
           items: [
@@ -77,6 +110,10 @@ const config: Config = {
         {
           title: 'More',
           items: [
+            {
+              label: 'Blog',
+              to: '/blog',
+            },
             {
               label: 'GitHub',
               href: 'https://github.com/cardano-foundation/antithesis',

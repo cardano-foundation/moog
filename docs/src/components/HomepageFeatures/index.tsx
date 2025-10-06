@@ -11,32 +11,35 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'What is Antithesis?',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Antithesis is a deterministic simulation testing platform that helps find bugs 
+        in distributed systems by exploring all possible execution paths. It provides 
+        comprehensive testing for complex blockchain systems like Cardano.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'Why use Anti-CLI?',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Anti-CLI streamlines the process of submitting Cardano tests to Antithesis. 
+        It handles test orchestration, result collection, and provides a unified 
+        interface for managing your testing workflow with minimal setup.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'How it Works',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Anti-CLI operates through three main roles: Oracle validates and manages tests, 
+        Requester submits test configurations, and Agent executes tests and publishes 
+        results. This distributed architecture ensures scalable and reliable testing.
       </>
     ),
   },
