@@ -45,18 +45,36 @@ const FeatureList: FeatureItem[] = [
   },
 ];
 
-function Feature({title, Svg, description}: FeatureItem) {
+function Feature({title, Svg, description, imageLeft = true}: FeatureItem & {imageLeft?: boolean}) {
   return (
-      <div className={clsx('col col--12 container')}>
-       <div className="row">
-         <div className="col col--3">
-            <img src="https://antithesis.com/images/illustrations/catch-bugs.png"></img>
-          </div>
-        <div className="col col--9 col--offset-3">
-          <Heading as="h3">{title}</Heading>
-          <p>{description}</p>
-        </div>
-       </div>
+    <div className={clsx('col col--12')}>
+      <div className="row" style={{alignItems: 'center', marginBottom: '2rem'}}>
+        {imageLeft ? (
+          <>
+            <div className="col col--3">
+              <div className="text--center">
+                <Svg className={styles.featureSvg} role="img" />
+              </div>
+            </div>
+            <div className="col col--9">
+              <Heading as="h3">{title}</Heading>
+              <p>{description}</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="col col--9">
+              <Heading as="h3">{title}</Heading>
+              <p>{description}</p>
+            </div>
+            <div className="col col--3">
+              <div className="text--center">
+                <Svg className={styles.featureSvg} role="img" />
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -67,7 +85,7 @@ export default function HomepageFeatures(): ReactNode {
       <div className="container">
         <div className="row">
           {FeatureList.map((props, idx) => (
-            <Feature key={idx} {...props} />
+            <Feature key={idx} {...props} imageLeft={idx % 2 === 0} />
           ))}
         </div>
       </div>
