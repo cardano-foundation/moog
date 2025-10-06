@@ -68,7 +68,7 @@ anti requester register-role \
     --repository myghname/myghrepo
 ```
 
-When the oracle includes this new request on the token, the last step is for the requester to ask the agent to whitelist this repository. This would be the result of an informal discussion over on our [Discord][Discord] channel, or by sending an email to <hal@cardanofoundation.org>. When the agent has decided to whitelist the repository, they invoke:
+When the oracle includes this new request on the token, the last step is for the requester to ask the agent to whitelist this repository. This would be the result of an informal discussion over on our [Discord][Discord] channel, or by sending an email to [hal\@cardanofoundation.org][]. When the agent has decided to whitelist the repository, they invoke:
 
 ```
 anti agent white-list \
