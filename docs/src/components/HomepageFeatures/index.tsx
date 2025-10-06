@@ -12,11 +12,11 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: 'What is Antithesis?',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    Svg: require('@site/static/img/antithesis-mark.svg').default,
     description: (
       <>
-        Antithesis is a deterministic simulation testing platform that helps find bugs
-        in distributed systems by exploring all possible execution paths. It provides
+            <a href="https://antithesis.com">Antithesis</a> is a <em>deterministic simulation testing</em> platform that helps find bugs
+        in distributed systems by exploring multiple possible execution paths. It provides
         comprehensive testing for complex blockchain systems like Cardano.
       </>
     ),
