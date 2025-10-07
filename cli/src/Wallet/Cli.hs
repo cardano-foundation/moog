@@ -4,6 +4,7 @@ module Wallet.Cli
     ( walletCmd
     , WalletCommand (..)
     , WalletError (..)
+    , WalletInfo (..)
     ) where
 
 import Control.Monad (replicateM)

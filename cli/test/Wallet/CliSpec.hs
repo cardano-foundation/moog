@@ -11,10 +11,11 @@ import Data.Either (fromRight, isLeft, isRight)
 import Data.Text (Text)
 import Submitting (readWallet)
 import System.IO.Temp (withSystemTempDirectory)
-import Test.Hspec (Spec, describe, it, shouldReturn, shouldSatisfy)
+import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn, shouldSatisfy)
 import Wallet.Cli
-    ( WalletCommand (Create, Decrypt,Encrypt)
+    ( WalletCommand (Create, Decrypt, Encrypt, Info)
     , WalletError (WalletPresent, WalletAlreadyDecrypted)
+    , WalletInfo (..)
     , walletCmd
     )
 
@@ -93,3 +94,6 @@ spec = do
                 let decryptedWal = fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
                 let commandDecr = Decrypt decryptedWal walletDir
                 walletCmd commandDecr `shouldReturn` Left WalletAlreadyDecrypted
+                let commandInfo = Info decryptedWal
+                infoRes <- walletCmd commandInfo
+                encryptedInfo <$> infoRes `shouldBe` Right False
