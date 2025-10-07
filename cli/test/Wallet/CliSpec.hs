@@ -49,3 +49,7 @@ spec = do
             let mnemonicText = "culture island clump online fatigue curve fish mandate echo cradle cat arrange upset region"
                 decryptedWal = obtainDecryptedWallet mnemonicText
             decryptedWal `shouldSatisfy` isLeft
+        it "wallet cannot be created from invalid mnemonic - proper number of words, not all legal" $ do
+            let mnemonicText = "culture island clump online fatigue curve fish mandate echo cradle cat arrange upset regions"
+                decryptedWal = obtainDecryptedWallet mnemonicText
+            decryptedWal `shouldSatisfy` isLeft
