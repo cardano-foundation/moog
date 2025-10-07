@@ -7,8 +7,8 @@ shell: |
   docker build -t antithesis/site:${HEAD} -f docs/Dockerfile docs
 
   # export production site
-  [[ -d /var/www/public_html/antithesis.pankzsoft.net/ ]] || exit 1
+  [[ -d /var/www/antithesis.pankzsoft.net/public_html ]] || exit 1
 
-  mkdir /var/www/public_html/antithesis.pankzsoft.net/$HEAD
+  mkdir /var/www/antithesis.pankzsoft.net/public_html/$HEAD
 
-  docker run --rm -v /var/www/public_html/antithesis.pankzsoft.net/$HEAD:/data antithesis/site:${HEAD} cp -fr /app/build/* /data
+  docker run --rm -v /var/www/antithesis.pankzsoft.net/public_html/$HEAD:/data antithesis/site:${HEAD} cp -fr /app/build/* /data

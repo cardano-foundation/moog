@@ -30,7 +30,7 @@ docker run ghcr.io/cardano-foundation/antithesis/anti-oracle:$version
 
 ## Running oracle commands manually
 
-Alternatively, oracle commands can be run manually, using the `anti` CLI. See the [README.md](../README.md) for how to install it.
+Alternatively, oracle commands can be run manually, using the `anti` CLI. See the [Installation instructions](install.md) for how to install it.
 
 ## Creating the anti token (only once)
 

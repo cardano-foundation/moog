@@ -27,7 +27,7 @@ Thanks to GADTs the high level commands can just demandate the output type of th
 
 ## Parsing commands
 
-The parsing of the commands is done using the `opt-env-conf` library. See the [opt-env-conf documentation](https://hackage.haskell.org/package/opt-env-conf) for more details and the code decision [here](./code-design-decisions.md#opt-env-conf).
+The parsing of the commands is done using the `opt-env-conf` library. See the [opt-env-conf documentation](https://hackage.haskell.org/package/opt-env-conf) for more details.
 
 Command parsers for the same GADTs compose via the `Alternative` typeclass. This means that each command parser can be defined independently and then combined together to form the full command parser.
 

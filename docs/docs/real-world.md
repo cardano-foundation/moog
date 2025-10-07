@@ -1,6 +1,6 @@
 # Real-world scenario
 
-This manual describes a real-world scenario, involving an interaction between the three roles involved in using the system (requester, agent and oracle). It is based on an end-to-end test [bash script][realWorld].
+This manual describes a real-world scenario, involving an interaction between the three roles involved in using the system (requester, agent and oracle). It is based on an end-to-end test bash script.
 
 ## Pre-requisites
 
@@ -143,6 +143,5 @@ anti agent report-test -i "$references" \
 ```
 
 
-[README]: ../README.md
+[README]: install.md
 [Discord]: https://discord.gg/sVUnen7t
-[realWorld]: ../test-E2E/scenarios/realWorld.sh
