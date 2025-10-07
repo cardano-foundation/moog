@@ -11,7 +11,7 @@ shell: |
   # export production site
   [[ -d /var/www/antithesis.pankzsoft.net/public_html ]] || exit 1
 
-  mkdir /var/www/antithesis.pankzsoft.net/public_html/$HEAD
+  [[ -d /var/www/antithesis.pankzsoft.net/public_html/$HEAD ]] || mkdir /var/www/antithesis.pankzsoft.net/public_html/$HEAD
 
   podman run --rm -v /var/www/antithesis.pankzsoft.net/public_html/$HEAD:/data antithesis/site:${HEAD} \
      /bin/sh -c 'cp -fr /app/build/* /data'
