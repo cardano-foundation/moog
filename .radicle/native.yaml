@@ -4,11 +4,11 @@ shell: |
   HEAD=$(git rev-parse HEAD)
 
   # build image with production site
-  docker build -t antithesis/site:${HEAD} -f docs/Dockerfile docs
+  podman build -t antithesis/site:${HEAD} -f docs/Dockerfile docs
 
   # export production site
   [[ -d /var/www/antithesis.pankzsoft.net/public_html ]] || exit 1
 
   mkdir /var/www/antithesis.pankzsoft.net/public_html/$HEAD
 
-  docker run --rm -v /var/www/antithesis.pankzsoft.net/public_html/$HEAD:/data antithesis/site:${HEAD} cp -fr /app/build/* /data
+  podman run --rm -v /var/www/antithesis.pankzsoft.net/public_html/$HEAD:/data antithesis/site:${HEAD} cp -fr /app/build/* /data
