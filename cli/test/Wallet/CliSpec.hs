@@ -18,12 +18,22 @@ import Wallet.Cli
     , walletCmd
     )
 
+import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import qualified Submitting as Submitting
 
 tryObtainingDecryptedWallet :: Text -> Either Submitting.WalletError Wallet
 tryObtainingDecryptedWallet mnemonicText =
     let mnemonic = ClearText mnemonicText
     in readWallet (False, mnemonic)
+
+tryRetrieveCreatedWallet :: FilePath -> IO (Either Submitting.WalletError Wallet)
+tryRetrieveCreatedWallet filepath = do
+    mnemonicObj <- T.readFile filepath
+    let mnemonicText =
+            fst . T.breakOn "\"}" .
+            snd . T.breakOnEnd ":\"" . T.strip $ mnemonicObj
+    pure $ tryObtainingDecryptedWallet mnemonicText
 
 getDecryptedWalletForTesting :: Wallet
 getDecryptedWalletForTesting = do
@@ -70,5 +80,16 @@ spec = do
             withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
                 let walletDir = dir <> "/wallet"
                 let decryptedWal = getDecryptedWalletForTesting
+                let commandDecr = Decrypt decryptedWal walletDir
+                walletCmd commandDecr `shouldReturn` Left WalletAlreadyDecrypted
+        it "wallet can be encrypted when created previously in decrypted state" $ do
+            withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
+                let walletDir = dir <> "/wallet"
+                    commandCreate = Create walletDir (Nothing :: Maybe Text)
+                res <- walletCmd commandCreate
+                res `shouldSatisfy` isRight
+                decryptedWalE <- tryRetrieveCreatedWallet walletDir
+                decryptedWalE `shouldSatisfy` isRight
+                let decryptedWal = fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
                 let commandDecr = Decrypt decryptedWal walletDir
                 walletCmd commandDecr `shouldReturn` Left WalletAlreadyDecrypted
