@@ -97,7 +97,7 @@ spec = do
                 let commandInfo = Info decryptedWal
                 infoRes <- walletCmd commandInfo
                 encryptedInfo <$> infoRes `shouldBe` Right False
-        it "wallet can be encrypted when created previously in decrypted state" $ do
+        it "wallet cannot be encrypted when created previously in decrypted state if the same filepath is chosen" $ do
             withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
                 let walletDir = dir <> "/wallet"
                     commandCreate = Create walletDir (Nothing :: Maybe Text)
@@ -108,3 +108,15 @@ spec = do
                 let decryptedWal = fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
                 let commandEnc = Encrypt decryptedWal "password" walletDir
                 walletCmd commandEnc `shouldReturn` Left WalletPresent
+        it "wallet can be encrypted when created previously in decrypted state when other filepath is chosen" $ do
+            withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
+                let walletDir = dir <> "/wallet"
+                    commandCreate = Create walletDir (Nothing :: Maybe Text)
+                res <- walletCmd commandCreate
+                res `shouldSatisfy` isRight
+                decryptedWalE <- tryRetrieveCreatedWallet walletDir
+                decryptedWalE `shouldSatisfy` isRight
+                let decryptedWal = fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
+                    walletDirOther = dir <> "/wallet1"
+                encryptedWal <- walletCmd $  Encrypt decryptedWal "password" walletDirOther
+                encryptedWal `shouldSatisfy` isRight
