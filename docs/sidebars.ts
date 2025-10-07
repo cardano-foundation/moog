@@ -14,8 +14,8 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
  */
 const sidebars: SidebarsConfig = {
   tutorialSidebar: [
-    'install',
     'getting-started',
+    'install',
     {
       type: 'category',
       label: 'Core Concepts',
