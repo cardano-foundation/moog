@@ -3,9 +3,10 @@ module Wallet.CliSpec
     )
 where
 
+import Data.Either (isRight)
 import Data.Text (Text)
 import System.IO.Temp (withSystemTempDirectory)
-import Test.Hspec (Spec, describe, it, shouldReturn)
+import Test.Hspec (Spec, describe, it, shouldReturn, shouldSatisfy)
 import Wallet.Cli
     ( WalletCommand (Create)
     , WalletError (WalletPresent)
@@ -20,3 +21,9 @@ spec = describe "Wallet create" $ do
             writeFile wallet ""
             let command = Create wallet (Nothing :: Maybe Text)
             walletCmd command `shouldReturn` Left WalletPresent
+    it "succeeds if the wallet is not present" $ do
+        withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
+            let wallet = dir <> "/wallet"
+            let command = Create wallet (Nothing :: Maybe Text)
+            res <- walletCmd command
+            res `shouldSatisfy` isRight
