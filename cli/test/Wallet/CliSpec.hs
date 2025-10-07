@@ -20,10 +20,16 @@ import Wallet.Cli
 
 import qualified Submitting as Submitting
 
-obtainDecryptedWallet :: Text -> Either Submitting.WalletError Wallet
-obtainDecryptedWallet mnemonicText =
+tryObtainingDecryptedWallet :: Text -> Either Submitting.WalletError Wallet
+tryObtainingDecryptedWallet mnemonicText =
     let mnemonic = ClearText mnemonicText
     in readWallet (False, mnemonic)
+
+getDecryptedWalletForTesting :: Wallet
+getDecryptedWalletForTesting = do
+    let mnemonicText = "culture island clump online fatigue curve fish during mandate echo cradle cat arrange upset region"
+        decryptedWalE = tryObtainingDecryptedWallet mnemonicText
+    fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
 
 spec :: Spec
 spec = do
@@ -43,32 +49,26 @@ spec = do
     describe "wallet encrypt/decrypt" $ do
         it "wallet can be created from valid mnemonic" $ do
             let mnemonicText = "culture island clump online fatigue curve fish during mandate echo cradle cat arrange upset region"
-                decryptedWal = obtainDecryptedWallet mnemonicText
+                decryptedWal = tryObtainingDecryptedWallet mnemonicText
             decryptedWal `shouldSatisfy` isRight
         it "wallet cannot be created from invalid mnemonic - wrong number of words" $ do
             let mnemonicText = "culture island clump online fatigue curve fish mandate echo cradle cat arrange upset region"
-                decryptedWal = obtainDecryptedWallet mnemonicText
+                decryptedWal = tryObtainingDecryptedWallet mnemonicText
             decryptedWal `shouldSatisfy` isLeft
         it "wallet cannot be created from invalid mnemonic - proper number of words, not all legal" $ do
             let mnemonicText = "culture island clump online fatigue curve fish mandate echo cradle cat arrange upset regions"
-                decryptedWal = obtainDecryptedWallet mnemonicText
+                decryptedWal = tryObtainingDecryptedWallet mnemonicText
             decryptedWal `shouldSatisfy` isLeft
         it "wallet can be encrypted when in decrypted state" $ do
             withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
                 let walletDir = dir <> "/wallet"
-                let mnemonicText = "culture island clump online fatigue curve fish during mandate echo cradle cat arrange upset region"
-                    decryptedWalE = obtainDecryptedWallet mnemonicText
-                decryptedWalE `shouldSatisfy` isRight
-                let decryptedWal = fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
+                let decryptedWal = getDecryptedWalletForTesting
                 let commandEnc = Encrypt decryptedWal "password" walletDir
                 res <- walletCmd commandEnc
                 res `shouldSatisfy` isRight
         it "wallet cannot be decrypted when in decrypted state" $ do
             withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
                 let walletDir = dir <> "/wallet"
-                let mnemonicText = "culture island clump online fatigue curve fish during mandate echo cradle cat arrange upset region"
-                    decryptedWalE = obtainDecryptedWallet mnemonicText
-                decryptedWalE `shouldSatisfy` isRight
-                let decryptedWal = fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
+                let decryptedWal = getDecryptedWalletForTesting
                 let commandDecr = Decrypt decryptedWal walletDir
                 walletCmd commandDecr `shouldReturn` Left WalletAlreadyDecrypted
