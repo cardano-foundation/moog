@@ -29,14 +29,12 @@ import Words (englishWords)
 
 data WalletError
     = WalletPresent
-    | WalletMissing
     | WalletAlreadyDecrypted
     | WalletAlreadyEncrypted
     deriving (Show, Eq)
 
 instance Applicative m => ToJSON m WalletError where
     toJSON WalletPresent = pure $ JSString "Wallet is present"
-    toJSON WalletMissing = pure $ JSString "Wallet is missing"
     toJSON WalletAlreadyDecrypted = pure $ JSString "Wallet's file is already decrypted"
     toJSON WalletAlreadyEncrypted = pure $ JSString "Wallet's file is already encrypted"
 
