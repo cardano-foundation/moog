@@ -7,7 +7,7 @@ import Core.Types.Mnemonics
     ( Mnemonics (..)
     )
 import Core.Types.Wallet (Wallet)
-import Data.Either (isRight)
+import Data.Either (isLeft, isRight)
 import Data.Text (Text)
 import Submitting (readWallet)
 import System.IO.Temp (withSystemTempDirectory)
@@ -45,3 +45,7 @@ spec = do
             let mnemonicText = "culture island clump online fatigue curve fish during mandate echo cradle cat arrange upset region"
                 decryptedWal = obtainDecryptedWallet mnemonicText
             decryptedWal `shouldSatisfy` isRight
+        it "wallet cannot be created from invalid mnemonic - wrong number of words" $ do
+            let mnemonicText = "culture island clump online fatigue curve fish mandate echo cradle cat arrange upset region"
+                decryptedWal = obtainDecryptedWallet mnemonicText
+            decryptedWal `shouldSatisfy` isLeft
