@@ -10,10 +10,10 @@ const config: Config = {
   favicon: 'img/cardano-ada-logo.svg',
 
   // Set the production url of your site here
-  url: 'https://cardano-foundation.github.io/',
+  url: process.env.ANTITHESIS_SITE_URL ?? 'https://cardano-foundation.github.io/',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/antithesis',
+  baseUrl: process.env.ANTITHESIS_SITE_BASE_URL ?? '/antithesis',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.

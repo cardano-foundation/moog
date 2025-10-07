@@ -4,7 +4,9 @@ shell: |
   HEAD=$(git rev-parse HEAD)
 
   # build image with production site
-  podman build -t antithesis/site:${HEAD} -f docs/Dockerfile docs
+  podman build --build-arg ANTITHESIS_SITE_URL=https://antithesis.pankzsoft.net \
+               --build-arg ANTITHESIS_SITE_BASE_URL=/$HEAD \
+               -t antithesis/site:${HEAD} -f docs/Dockerfile docs
 
   # export production site
   [[ -d /var/www/antithesis.pankzsoft.net/public_html ]] || exit 1
@@ -13,3 +15,8 @@ shell: |
 
   podman run --rm -v /var/www/antithesis.pankzsoft.net/public_html/$HEAD:/data antithesis/site:${HEAD} \
      /bin/sh -c 'cp -fr /app/build/* /data'
+
+  # cleanup
+  podman rmi antithesis/site:${HEAD}
+
+  echo "Browse deployed website at https://antithesis.pankzsoft.net/$HEAD"
