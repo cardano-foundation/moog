@@ -7,14 +7,14 @@ import Core.Types.Mnemonics
     ( Mnemonics (..)
     )
 import Core.Types.Wallet (Wallet)
-import Data.Either (isLeft, isRight)
+import Data.Either (fromRight, isLeft, isRight)
 import Data.Text (Text)
 import Submitting (readWallet)
 import System.IO.Temp (withSystemTempDirectory)
 import Test.Hspec (Spec, describe, it, shouldReturn, shouldSatisfy)
 import Wallet.Cli
-    ( WalletCommand (Create, Encrypt)
-    , WalletError (WalletPresent)
+    ( WalletCommand (Create, Decrypt,Encrypt)
+    , WalletError (WalletPresent, WalletAlreadyDecrypted)
     , walletCmd
     )
 
@@ -53,3 +53,22 @@ spec = do
             let mnemonicText = "culture island clump online fatigue curve fish mandate echo cradle cat arrange upset regions"
                 decryptedWal = obtainDecryptedWallet mnemonicText
             decryptedWal `shouldSatisfy` isLeft
+        it "wallet can be encrypted when in decrypted state" $ do
+            withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
+                let walletDir = dir <> "/wallet"
+                let mnemonicText = "culture island clump online fatigue curve fish during mandate echo cradle cat arrange upset region"
+                    decryptedWalE = obtainDecryptedWallet mnemonicText
+                decryptedWalE `shouldSatisfy` isRight
+                let decryptedWal = fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
+                let commandEnc = Encrypt decryptedWal "password" walletDir
+                res <- walletCmd commandEnc
+                res `shouldSatisfy` isRight
+        it "wallet cannot be decrypted when in decrypted state" $ do
+            withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
+                let walletDir = dir <> "/wallet"
+                let mnemonicText = "culture island clump online fatigue curve fish during mandate echo cradle cat arrange upset region"
+                    decryptedWalE = obtainDecryptedWallet mnemonicText
+                decryptedWalE `shouldSatisfy` isRight
+                let decryptedWal = fromRight (error "after above check wallet is sure to be properly formed") decryptedWalE
+                let commandDecr = Decrypt decryptedWal walletDir
+                walletCmd commandDecr `shouldReturn` Left WalletAlreadyDecrypted
