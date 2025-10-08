@@ -1,5 +1,5 @@
-import {themes as prismThemes} from 'prism-react-renderer';
-import type {Config} from '@docusaurus/types';
+import { themes as prismThemes } from 'prism-react-renderer';
+import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
@@ -61,6 +61,9 @@ const config: Config = {
   themeConfig: {
     // Replace with your project's social card
     image: 'img/anti-cli-social-card.jpg',
+    metadata: [
+      { name: 'description', content: 'Antithesis deterministic simulation testing for Cardano' },
+    ],
     navbar: {
       title: 'Anti-CLI',
       logo: {
@@ -74,7 +77,7 @@ const config: Config = {
           position: 'left',
           label: 'Documentation',
         },
-        {to: '/blog', label: 'Blog', position: 'left'},
+        { to: '/blog', label: 'Blog', position: 'left' },
         {
           href: 'https://github.com/cardano-foundation/antithesis',
           label: 'GitHub',
