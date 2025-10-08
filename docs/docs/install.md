@@ -1,4 +1,4 @@
-# Installing Antithesis CLI
+# Getting Started
 
 ## Prerequisites
 
@@ -8,17 +8,19 @@ Running the CLI requires an MPFS backend. You can either run your own MPFS servi
 
 The CLI can run on Linux and MacOS.
 
-## Installation via tarballs
+## Installing Anti-CLI
+
+### Installation via tarballs
 
 You can download the latest tarball for your platform from the [releases page](https://github.com/cardano-foundation/antithesis/releases).
 
-## Installation via Nix
+### Installation via Nix
 
-### Nix cache
+#### Nix cache
 
 Be careful to be a trusted nix user so the caches indicated in the flake will kick in. Without them expect hours of compilation time.
 
-### Install as nix shell
+#### Install as nix shell
 
 To get the last version of the code, you can use the following command:
 
@@ -26,7 +28,7 @@ To get the last version of the code, you can use the following command:
 nix shell github:cardano-foundation/antithesis?dir=cli#anti
 ```
 
-### Building the tarballs
+#### Building the tarballs
 
 On linux, you can build a nix derivation with
 
