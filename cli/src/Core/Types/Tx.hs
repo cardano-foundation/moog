@@ -9,6 +9,7 @@ module Core.Types.Tx
     , UnsignedTx (..)
     , WithTxHash (..)
     , WithUnsignedTx (..)
+    , setWithTxHashValue
     ) where
 
 import Control.Exception (Exception)
@@ -147,6 +148,10 @@ data WithTxHash a = WithTxHash
     , value :: Maybe a
     }
     deriving (Show, Functor, Eq)
+
+setWithTxHashValue :: WithTxHash a -> b -> WithTxHash b
+setWithTxHashValue (WithTxHash txHash _) newValue =
+    WithTxHash txHash (Just newValue)
 
 instance (Monad m, ToJSON m a) => ToJSON m (WithTxHash a) where
     toJSON (WithTxHash (TxHash txHash) value) =

@@ -31,52 +31,70 @@ trap 'tokenEnd' EXIT INT TERM
 
 log "Push the oracle config on-chain"
 being_oracle
-anti oracle config set \
+result=$(anti oracle config set \
     --min-test-duration 1 \
     --max-test-duration 4 \
-    --agent-pkh "$ANTI_AGENT_PUBLIC_KEY_HASH"
+    --agent-pkh "$ANTI_AGENT_PUBLIC_KEY_HASH")
+
+echo "$result"
 
 log "Register 'cfhal' as a GitHub user"
 being_requester
-anti requester register-user \
+result=$(anti requester register-user \
     --platform github \
     --username cfhal \
-    --vkey vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh\
-    > /dev/null
+    --vkey vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh
+    )
+
+echo "$result"
+
+
 
 log "Include the user registration"
 include_requests
 
 log "Register cfhal as cardano-foundation/hal-fixture-sin repository antithesis test run requester"
 being_requester
-anti requester register-role \
+result=$(anti requester register-role \
     --platform github \
     --username cfhal \
-    --repository cardano-foundation/hal-fixture-sin \
-    > /dev/null
+    --repository cardano-foundation/hal-fixture-sin
+)
+echo "$result"
 
 log "Include the role registration"
 include_requests
 
 log "Whitelist the cardano-foundation/hal-fixture-sin repository"
 being_agent
-anti agent white-list \
+result=$(anti agent white-list \
     --platform github \
     --repository cardano-foundation/hal-fixture-sin
+)
+echo "$result"
 
 log "Include the repository whitelisting"
 include_requests
 
 log "Register a test run from cfhal to run an antithesis test on the cardano-foundation/hal-fixture-sin repository, first try"
 being_requester
-anti requester create-test \
+result=$(anti requester create-test \
     --platform github \
     --username cfhal \
     --repository cardano-foundation/hal-fixture-sin \
     --directory antithesis-test \
     --commit a7741a44dfddfe05822e1a49862ceea43ecd657d \
     --try 1 \
-    --duration 1
+    --duration 1)
+
+testRunId=$(echo "$result" | jq -r '.value.testRunId')
+
+# Validate that testRunId is exactly 64 characters long
+if [[ -z "$testRunId" || ${#testRunId} -ne 64 ]]; then
+    echo "Invalid testRunId length: ${#testRunId}" >&2
+    echo "$result"
+    exit 1
+fi
 
 log "Include the test run registration"
 include_requests

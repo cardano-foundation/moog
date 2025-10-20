@@ -7,9 +7,8 @@ where
 import Control.Monad.Trans.Class (lift)
 import Core.Context (WithContext, askMpfs, askSubmit)
 import Core.Types.Basic (Success (..), TokenId)
-import Core.Types.Tx (WithTxHash (..))
+import Core.Types.Tx (WithTxHash (..), setWithTxHashValue)
 import Core.Types.Wallet (Wallet)
-import Data.Functor (($>))
 import Facts (FactsSelection (..), factsCmd)
 import MPFS.API
     ( MPFS (mpfsRequestInsert, mpfsRequestUpdate)
@@ -35,10 +34,11 @@ configCmd (SetConfig tokenId wallet config) = do
     present <- lift $ factsCmd Nothing mpfs tokenId ConfigFact
     jkey <- toJSON ConfigKey
     jvalue <- toJSON config
+    let run = lift . fmap (`setWithTxHashValue` Success) . submit
     case present of
         [oldConfig] -> do
             oldValue <- toJSON oldConfig
-            lift $ fmap ($> Success) $ submit $ \address ->
+            run $ \address ->
                 mpfsRequestUpdate mpfs address tokenId
                     $ RequestUpdateBody
                         { key = jkey
@@ -46,6 +46,6 @@ configCmd (SetConfig tokenId wallet config) = do
                         , oldValue
                         }
         _ -> do
-            lift $ fmap ($> Success) $ submit $ \address ->
+            run $ \address ->
                 mpfsRequestInsert mpfs address tokenId
                     $ RequestInsertBody{key = jkey, value = jvalue}

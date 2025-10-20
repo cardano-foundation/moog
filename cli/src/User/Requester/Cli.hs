@@ -27,7 +27,7 @@ import Core.Types.Basic
 import Core.Types.Change (Change (..), Key (..), deleteKey, insertKey)
 import Core.Types.Fact (Fact (..), keyHash)
 import Core.Types.Operation (Operation (..))
-import Core.Types.Tx (TxHash, WithTxHash (..))
+import Core.Types.Tx (TxHash, WithTxHash (..), setWithTxHashValue)
 import Core.Types.Wallet (Wallet, walletKeyPair)
 import Crypto.PubKey.Ed25519 (Signature)
 import Data.ByteString.Lazy qualified as BL
@@ -245,11 +245,11 @@ createCommand
                     $ RequestInsertBody{key, value}
             hash <- keyHash testRun
             pure
-                $ wtx
-                    $> NewTestRunCreated
-                        { newTestRunState = newState
-                        , newTestRunId = TestRunId hash
-                        }
+                $ setWithTxHashValue wtx
+                $ NewTestRunCreated
+                    { newTestRunState = newState
+                    , newTestRunId = TestRunId hash
+                    }
 
 registerUser
     :: Monad m

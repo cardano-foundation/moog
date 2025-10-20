@@ -67,7 +67,7 @@ result=$(anti requester create-test \
     --username paolino \
     --try 1 \
     --duration 3)
-
+echo "$result"
 outputRef=$(getOutputRef "$result")
 log "Pending requests for the anti oracle token:"
 anti token | jq '.requests | .[]'

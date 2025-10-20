@@ -43,7 +43,7 @@ import Core.Types.Fact
     , parseFacts
     )
 import Core.Types.Operation (Op (..), Operation (..))
-import Core.Types.Tx (WithTxHash (..))
+import Core.Types.Tx (WithTxHash (..), setWithTxHashValue)
 import Core.Types.Wallet (Wallet (..))
 import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Char8 qualified as B8
@@ -421,7 +421,7 @@ whiteList tokenId wallet platform repo = do
             jkey <- toJSON key
             mpfsRequestInsert mpfs address tokenId
                 $ RequestInsertBody{key = jkey, value = JSNull}
-        pure $ wtx $> Success
+        pure $ setWithTxHashValue wtx Success
 
 blackList
     :: Monad m
@@ -451,7 +451,7 @@ blackList tokenId wallet platform repo = do
             jkey <- toJSON key
             mpfsRequestDelete mpfs address tokenId
                 $ RequestDeleteBody{key = jkey, value = JSNull}
-        pure $ wtx $> Success
+        pure $ setWithTxHashValue wtx Success
 
 queryCommand :: Monad m => TokenId -> WithContext m TestRunMap
 queryCommand tokenId = do
@@ -510,7 +510,7 @@ signAndSubmitAnUpdate validate tokenId wallet (Fact testRun oldState) newState =
         newValue <- toJSON newState
         mpfsRequestUpdate mpfs address tokenId
             $ RequestUpdateBody{key, oldValue, newValue}
-    pure $ wtx $> newState
+    pure $ setWithTxHashValue wtx newState
 
 reportTxCommand
     :: Monad m

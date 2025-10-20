@@ -72,6 +72,10 @@ data TestRunStatus phase where
         :: Fact TestRun (TestRunState RunningT) -> TestRunStatus RunningT
     StatusDone :: Fact TestRun (TestRunState DoneT) -> TestRunStatus DoneT
 
+deriving instance Show (TestRunStatus phase)
+
+deriving instance Eq (TestRunStatus phase)
+
 instance Monad m => ToJSON m (TestRunStatus phase) where
     toJSON (StatusPending fact) = toJSON fact
     toJSON (StatusRunning fact) = toJSON fact
@@ -82,6 +86,7 @@ data TestRunMap = TestRunMap
     , running :: [TestRunStatus RunningT]
     , done :: [TestRunStatus DoneT]
     }
+    deriving (Show, Eq)
 
 instance Monad m => ToJSON m TestRunMap where
     toJSON (TestRunMap p r d) =
