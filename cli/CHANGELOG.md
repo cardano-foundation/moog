@@ -1,5 +1,12 @@
 # Changelog for anti-cli
 
+### v0.3.2.0 - 2025-10-20
+#### Bug Fixes
+- Fixed oracle process image to contain the docker command
+- Removed json nulls as value in commands outputs
+
+---
+
 ### v0.3.1.0 - 2025-10-02
 #### Added
 - Validation of Docker Compose configuration after checking for the file's existence.
