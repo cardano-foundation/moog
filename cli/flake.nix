@@ -75,12 +75,12 @@
           anti-oracle-docker-image = import ./nix/anti-oracle-docker.nix {
             inherit pkgs;
             inherit version;
-            linux-package = linux-artifacts.packages.linux64.tarball;
+            inherit project;
           };
           anti-agent-docker-image = import ./nix/anti-agent-docker.nix {
             inherit pkgs;
             inherit version;
-            linux-package = linux-artifacts.packages.linux64.tarball;
+            inherit project;
           };
           docker.packages = {
             inherit anti-oracle-docker-image;
