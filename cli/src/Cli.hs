@@ -77,6 +77,9 @@ data Command a where
             (AValidationResult TokenInfoFailure (Token WithValidation))
     SSHSelectors :: SSHClient 'WithoutSelector -> Command [Selection]
 
+deriving instance Show (Token WithValidation)
+deriving instance Eq (Token WithValidation)
+
 data SetupError = TokenNotSpecified
     deriving (Show, Eq)
 

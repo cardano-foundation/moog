@@ -8,7 +8,8 @@ module Lib.Box
 
 import Text.JSON.Canonical (ToJSON)
 
-data Box f = forall a. (forall m. Monad m => ToJSON m a) => Box (f a)
+data Box f
+    = forall a. (Show a, Eq a, forall m. Monad m => ToJSON m a) => Box (f a)
 
 instance (forall a. Show (f a)) => Show (Box f) where
     show (Box x) = show x
