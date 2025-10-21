@@ -1,22 +1,36 @@
 shell: |
-  USER=$(id -un)
-  HOME=$(getent passwd "$USER" | cut -d: -f6)
   HEAD=$(git rev-parse HEAD)
 
+  # deploy 'main' branch at toplevel, otherwise use a subdirectory
+  if git branch --column=never --no-color --contains $HEAD | grep main | tr -d ' ' 2>&1 > /dev/null; then
+    TAG=main
+    BASE_URL=/
+    BASEDIR=/var/www/antithesis.pankzsoft.net/public_html/
+  else
+    TAG=$HEAD
+    BASE_URL=/$TAG
+    BASEDIR=/var/www/antithesis.pankzsoft.net/public_html/$TAG
+  fi
+
   # build image with production site
+  # image tag is either 'main' or commit SHA
   podman build --build-arg ANTITHESIS_SITE_URL=https://antithesis.pankzsoft.net \
-               --build-arg ANTITHESIS_SITE_BASE_URL=/$HEAD \
+               --build-arg ANTITHESIS_SITE_BASE_URL=$BASE_URL \
                -t antithesis/site:${HEAD} -f docs/Dockerfile docs
 
   # export production site
   [[ -d /var/www/antithesis.pankzsoft.net/public_html ]] || exit 1
 
-  [[ -d /var/www/antithesis.pankzsoft.net/public_html/$HEAD ]] || mkdir /var/www/antithesis.pankzsoft.net/public_html/$HEAD
+  [[ -d $BASEDIR ]] || mkdir $BASEDIR
 
-  podman run --rm -v /var/www/antithesis.pankzsoft.net/public_html/$HEAD:/data antithesis/site:${HEAD} \
+  podman run --rm -v $BASEDIR:/data antithesis/site:${TAG} \
      /bin/sh -c 'cp -fr /app/build/* /data'
 
   # cleanup
-  podman rmi antithesis/site:${HEAD}
+  podman rmi antithesis/site:${TAG}
 
-  echo "Browse deployed website at https://antithesis.pankzsoft.net/$HEAD"
+  if [[ $TAG == "main" ]]; then
+     echo "Browse deployed website at https://antithesis.pankzsoft.net/"
+  else
+     echo "Browse deployed website at https://antithesis.pankzsoft.net/$TAG"
+  fi
