@@ -16,18 +16,18 @@ shell: |
   # image tag is either 'main' or commit SHA
   podman build --build-arg ANTITHESIS_SITE_URL=https://antithesis.pankzsoft.net \
                --build-arg ANTITHESIS_SITE_BASE_URL=$BASE_URL \
-               -t antithesis/site:${TAG} -f docs/Dockerfile docs
+               -t antithesis/site:$TAG -f docs/Dockerfile docs
 
   # export production site
   [[ -d /var/www/antithesis.pankzsoft.net/public_html ]] || exit 1
 
   [[ -d $BASEDIR ]] || mkdir $BASEDIR
 
-  podman run --rm -v $BASEDIR:/data antithesis/site:${TAG} \
+  podman run --rm -v $BASEDIR:/data antithesis/site:$TAG \
      /bin/sh -c 'cp -fr /app/build/* /data'
 
   # cleanup
-  podman rmi antithesis/site:${TAG}
+  podman rmi antithesis/site:$TAG
 
   if [[ $TAG == "main" ]]; then
      echo "Browse deployed website at https://antithesis.pankzsoft.net/"
