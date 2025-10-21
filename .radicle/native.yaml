@@ -16,7 +16,7 @@ shell: |
   # image tag is either 'main' or commit SHA
   podman build --build-arg ANTITHESIS_SITE_URL=https://antithesis.pankzsoft.net \
                --build-arg ANTITHESIS_SITE_BASE_URL=$BASE_URL \
-               -t antithesis/site:${HEAD} -f docs/Dockerfile docs
+               -t antithesis/site:${TAG} -f docs/Dockerfile docs
 
   # export production site
   [[ -d /var/www/antithesis.pankzsoft.net/public_html ]] || exit 1
