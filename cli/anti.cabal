@@ -24,7 +24,7 @@ name:            anti
 version:            0.3.2.0
 
 -- A short (one-line) description of the package.
-synopsis:        A tool to drive Antithesis tests execution through PoP
+synopsis:        A tool to administer Antithesis tests execution through Cardano
 
 -- A longer description of the package.
 -- description:
