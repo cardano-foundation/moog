@@ -14,7 +14,7 @@
 
 ## Information
 
-This document describes the process of setting up a Cardano testnet from scratch. `cardano-node` can be compiled from source or downloaded as pre-compiled binary. The testnet will run inside of **Docker Containers** and will be controlled by **Docker Compose**.
+N.B. This document is currently for **internal use**. It describes the process of setting up a Cardano testnet from scratch. `cardano-node` can be compiled from source or downloaded as pre-compiled binary. The testnet will run inside of **Docker Containers** and will be controlled by **Docker Compose**.
 
 ## Installation
 
@@ -78,7 +78,7 @@ Docker and `make` are the only requirement to build and run your own testnets.
 - Build the `cardano-node`, `cardano-tracer`, `config` and `sidecar` container images
 
   ```
-  make build testnet=example_10.2.1
+  make build-shared testnet=example_10.2.1
   ```
 
 > [!IMPORTANT]
@@ -89,7 +89,7 @@ Docker and `make` are the only requirement to build and run your own testnets.
 - Build the `cardano-node`, `cardano-tracer`, `config` and `sidecar` container images for the Antithesis container registry
 
   ```
-  make build testnet=example_10.2.1 registry=us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository/
+  make build-shared testnet=example_10.2.1 registry=us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository/
   ```
 
 > [!IMPORTANT]

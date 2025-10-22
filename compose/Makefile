@@ -1,6 +1,6 @@
 SHELL:=/usr/bin/env bash
 
-.SILENT: build build-image build-config push push-image push-config up down query validate
+.SILENT: build-shared build-config push push-image push-config up down query validate
 
 description:="${testnet} run"
 duration:=60
@@ -29,14 +29,14 @@ help:
 	@echo
 	@echo "Examples:"
 	@printf "  \033[34mLocal run (execute in this order)\033[0m\n"
-	@echo "    make build testnet=example_10.2.1"
+	@echo "    make build-shared testnet=example_10.2.1"
 	@echo "    make up testnet=example_10.2.1"
 	@echo "    make query testnet=example_10.2.1"
 	@echo "    make validate testnet=example_10.2.1"
 	@echo "    make down testnet=example_10.2.1"
 	@echo
 	@printf "  \033[34mAntithesis run (execute in this order)\033[0m\n"
-	@echo "    make build testnet=example_10.2.1 "
+	@echo "    make build-shared testnet=example_10.2.1"
 	@echo "    make push testnet=example_10.2.1 "
 	@echo "    make anti testnet=example_10.2.1 password='password1234'"
 	@echo
