@@ -57,7 +57,7 @@ walletPassphraseCommon =
         <$> secretsParser
             "Enter the passphrase to decrypt the mnemonics"
             "The passphrase to decrypt the mnemonics"
-            "ANTI_WALLET_PASSPHRASE"
+            "MOOG_WALLET_PASSPHRASE"
             "PASSPHRASE"
             "ask-wallet-passphrase"
             "walletPassphrase"
@@ -65,7 +65,7 @@ walletPassphraseCommon =
 walletFileOption :: Parser FilePath
 walletFileOption =
     setting
-        [ env "ANTI_WALLET_FILE"
+        [ env "MOOG_WALLET_FILE"
         , metavar "FILEPATH"
         , help "The file path to the wallet secret mnemonics"
         , long "wallet"

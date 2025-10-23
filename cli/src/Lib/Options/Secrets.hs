@@ -43,7 +43,7 @@ secretsParser prompt helpString envString metaString longString jsonField =
     mapIO id
         $ setting
             [ help helpString
-            , env "ANTI_INTERACTIVE_SECRETS"
+            , env "MOOG_INTERACTIVE_SECRETS"
             , metavar "NONE"
             , reader (str @String $> queryConsole prompt)
             ]

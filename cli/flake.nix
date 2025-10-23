@@ -58,33 +58,33 @@
             inherit system;
             inherit (inputs) nixpkgs flake-utils haskellNix;
           };
-          project = import ./nix/anti-project.nix {
+          project = import ./nix/moog-project.nix {
             indexState = "2025-08-07T00:00:00Z";
             inherit CHaP;
             inherit pkgs;
             inherit cardano-cli;
           };
 
-          linux-artifacts = import ./nix/anti-linux-artifacts.nix {
+          linux-artifacts = import ./nix/moog-linux-artifacts.nix {
             inherit pkgs node-project version project;
           };
-          macos-artifacts = import ./nix/anti-macos-artifacts.nix {
+          macos-artifacts = import ./nix/moog-macos-artifacts.nix {
             inherit pkgs project node-project version;
             rewrite-libs = rewrite-libs.packages.default;
           };
-          anti-oracle-docker-image = import ./nix/anti-oracle-docker.nix {
+          moog-oracle-docker-image = import ./nix/moog-oracle-docker.nix {
             inherit pkgs;
             inherit version;
             inherit project;
           };
-          anti-agent-docker-image = import ./nix/anti-agent-docker.nix {
+          moog-agent-docker-image = import ./nix/moog-agent-docker.nix {
             inherit pkgs;
             inherit version;
             inherit project;
           };
           docker.packages = {
-            inherit anti-oracle-docker-image;
-            inherit anti-agent-docker-image;
+            inherit moog-oracle-docker-image;
+            inherit moog-agent-docker-image;
           };
           info.packages = { inherit version; };
           fullPackages = lib.mergeAttrsList [
@@ -97,7 +97,7 @@
 
         in {
 
-          packages = fullPackages // { default = project.packages.anti; };
+          packages = fullPackages // { default = project.packages.moog; };
           inherit (project) devShells;
         };
 

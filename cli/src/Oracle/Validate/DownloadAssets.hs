@@ -98,7 +98,7 @@ instance Monad m => ToJSON m DownloadAssetsFailure where
             [ "error"
                 .= ( "Requested test id : "
                         ++ show testid
-                        ++ " not found. Please refer to created ones using 'anti agent query'"
+                        ++ " not found. Please refer to created ones using 'moog agent query'"
                    )
             ]
     toJSON (DownloadAssetsValidationError failure) =

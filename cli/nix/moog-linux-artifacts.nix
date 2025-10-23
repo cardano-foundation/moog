@@ -1,16 +1,16 @@
 { pkgs, node-project, version, project, ... }:
 let
-  anti = project.musl64.anti.components.exes.anti;
-  anti-oracle = project.musl64.anti.components.exes.anti-oracle;
-  anti-agent = project.musl64.anti.components.exes.anti-agent;
+  moog = project.musl64.moog.components.exes.moog;
+  moog-oracle = project.musl64.moog.components.exes.moog-oracle;
+  moog-agent = project.musl64.moog.components.exes.moog-agent;
   tarball-derivation = pkgs.stdenv.mkDerivation rec {
-    pname = "anti";
+    pname = "moog";
     inherit version;
     unpackPhase = ''
       mkdir -p $out/unpacked
-      cp ${anti}/bin/anti $out/unpacked
-      cp ${anti-oracle}/bin/anti-oracle $out/unpacked
-      cp ${anti-agent}/bin/anti-agent $out/unpacked
+      cp ${moog}/bin/moog $out/unpacked
+      cp ${moog-oracle}/bin/moog-oracle $out/unpacked
+      cp ${moog-agent}/bin/moog-agent $out/unpacked
       chmod -R +w $out/unpacked/*
     '';
     installPhase = ''

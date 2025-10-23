@@ -63,7 +63,7 @@ import Oracle.Types (Token (..), requestZooGetTestRunKey)
 import Oracle.Validate.DownloadAssets (DownloadAssetsFailure)
 import Oracle.Validate.Requests.TestRun.Update (UpdateTestRunFailure)
 import Oracle.Validate.Types (AValidationResult (..))
-import Paths_anti (version)
+import Paths_moog (version)
 import System.IO.Temp (withSystemTempDirectory)
 import Text.JSON.Canonical
     ( FromJSON (..)
@@ -110,7 +110,7 @@ intro =
 
     To get bash cli completion use
 
-    > source <(anti-agent --bash-completion-script "$(which anti-agent)")
+    > source <(moog-agent --bash-completion-script "$(which moog-agent)")
 
     Fish and zsh completions are also available.
     |]

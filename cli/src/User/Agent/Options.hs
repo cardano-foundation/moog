@@ -105,7 +105,7 @@ agentEmailOption :: Parser EmailUser
 agentEmailOption =
     EmailUser
         <$> setting
-            [ env "ANTI_AGENT_EMAIL"
+            [ env "MOOG_AGENT_EMAIL"
             , metavar "EMAIL"
             , help "The agent email to access the results mailbox"
             , reader str
@@ -119,7 +119,7 @@ agentEmailPasswordOption =
         <$> secretsParser
             "Enter the agent email password to access the mailbox"
             "The agent email password to access the mailbox"
-            "ANTI_AGENT_EMAIL_PASSWORD"
+            "MOOG_AGENT_EMAIL_PASSWORD"
             "EMAIL_PASSWORD"
             "ask-agent-email-password"
             "agentEmailPassword"
@@ -178,7 +178,7 @@ slackOption =
             <$> secretsParser
                 "Enter the Slack webhook URL for notifications"
                 "The Slack webhook URL for notifications"
-                "ANTI_SLACK_WEBHOOK"
+                "MOOG_SLACK_WEBHOOK"
                 "SLACK_WEBHOOK"
                 "ask-slack-webhook"
                 "slackWebhook"
@@ -201,7 +201,7 @@ antithesisAuthOption =
         <*> secretsParser
             "Enter the password to access Antithesis"
             "The password to access Antithesis"
-            "ANTI_ANTITHESIS_PASSWORD"
+            "MOOG_ANTITHESIS_PASSWORD"
             "PASSWORD"
             "ask-antithesis-password"
             "antithesisPassword"
@@ -212,7 +212,7 @@ antithesisAuthOption =
 antithesisUserOption :: Parser String
 antithesisUserOption =
     setting
-        [ env "ANTI_ANTITHESIS_USER"
+        [ env "MOOG_ANTITHESIS_USER"
         , metavar "ANTITHESIS_USER"
         , help "The username of the Antithesis account"
         , reader str

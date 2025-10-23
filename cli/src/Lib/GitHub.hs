@@ -254,7 +254,7 @@ githubGetAntiCLIVKey auth (GithubUsername name) =
             auth
             (GithubRepository name name)
             Nothing
-            (FileName "anti-cli.vkey")
+            (FileName "moog.vkey")
 
 data GetGithubFileFailure
     = GetGithubFileDirectoryNotFound

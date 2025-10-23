@@ -37,14 +37,14 @@ if ! gh release view "$release" >/dev/null 2>&1; then
 fi
 
 version=$(nix eval .#version --raw)
-echo "Building anti artifacts version $version"
+echo "Building moog artifacts version $version"
 nix build ".#$platform.tarball"
 
-tarball=result/anti-$version-$platform.tar.gz
+tarball=result/moog-$version-$platform.tar.gz
 echo "Tarball path: $tarball"
 
 mktempdir=$(mktemp -d)
-releaseTarball="$mktempdir/anti-$release-$platform.tar.gz"
+releaseTarball="$mktempdir/moog-$release-$platform.tar.gz"
 
 cp -L "$tarball" "$releaseTarball"
 

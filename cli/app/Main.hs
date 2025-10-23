@@ -1,7 +1,7 @@
 module Main (main) where
 
 import App (Result (..))
-import App qualified as Anti
+import App qualified as Moog
 import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.Text.Lazy.IO qualified as T
 import Lib.JSON.Canonical.Extra (object, (.=))
@@ -10,7 +10,7 @@ import Text.Pretty.Simple (pString)
 
 main :: IO ()
 main = do
-    clientResult <- Anti.client
+    clientResult <- Moog.client
     case clientResult of
         Success pretty e -> do
             let value = renderCanonicalJSON e

@@ -147,16 +147,16 @@ loadEnvWallet envVar = do
                        \ > wallet create <filename>\n"
 
 loadRequesterWallet :: IO Wallet
-loadRequesterWallet = loadEnvWallet "ANTI_TEST_REQUESTER_WALLET"
+loadRequesterWallet = loadEnvWallet "MOOG_TEST_REQUESTER_WALLET"
 
 loadOracleWallet :: IO Wallet
-loadOracleWallet = loadEnvWallet "ANTI_TEST_ORACLE_WALLET"
+loadOracleWallet = loadEnvWallet "MOOG_TEST_ORACLE_WALLET"
 
 loadAgentWallet :: IO Wallet
-loadAgentWallet = loadEnvWallet "ANTI_TEST_AGENT_WALLET"
+loadAgentWallet = loadEnvWallet "MOOG_TEST_AGENT_WALLET"
 
 getHostFromEnv :: IO String
-getHostFromEnv = getEnv "ANTI_MPFS_HOST"
+getHostFromEnv = getEnv "MOOG_MPFS_HOST"
 
 newtype Call = Call {calling :: forall a. ClientM a -> IO a}
 

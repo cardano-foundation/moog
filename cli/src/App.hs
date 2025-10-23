@@ -14,7 +14,7 @@ import Network.HTTP.Client
     , RequestBody (..)
     )
 import Options (Options (..), parseArgs)
-import Paths_anti (version)
+import Paths_moog (version)
 import Text.JSON.Canonical (JSValue, ToJSON (..))
 
 data Result

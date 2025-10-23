@@ -1,8 +1,8 @@
-# Antithesis CLI
+# Moog
 
 ## Context
 
-This is a command line interface (CLI) to track accesses to expensive resources. In particular we are focusing on the Cardano Foundation controlled Antithesis instance. The only command relative to the specific instance  is the `anti agent run-test` command, which is used to run tests on the Antithesis platform. The rest of the commands are independent of the resource. This CLI uses MPFS as a backend meaning all data is stored on the Cardano blockchain. Currently MPFS is only supporting preprod.
+This is a command line interface (CLI) to track accesses to expensive resources. In particular we are focusing on the Cardano Foundation controlled Antithesis instance. The only command relative to the specific instance  is the `moog agent run-test` command, which is used to run tests on the Antithesis platform. The rest of the commands are independent of the resource. This CLI uses MPFS as a backend meaning all data is stored on the Cardano blockchain. Currently MPFS is only supporting preprod.
 The CLI should be used to book tests on the Antithesis platform. Currently it supports only projects on GitHub.
 
 ## Prerequisites
@@ -28,7 +28,7 @@ Be careful to be a trusted nix user so the caches indicated in the flake will ki
 To get the last version of the code, you can use the following command:
 
 ```bash
-nix shell github:cardano-foundation/antithesis?dir=cli#anti
+nix shell github:cardano-foundation/antithesis?dir=cli#moog
 ```
 
 ### Building the tarballs
@@ -49,14 +49,14 @@ nix build .#macos64.tarball
 
 ### Improving CLI
 
-You can enable bash completion for the `anti` command by adding the following line to your `.bashrc` or `.bash_profile` file:
+You can enable bash completion for the `moog` command by adding the following line to your `.bashrc` or `.bash_profile` file:
 ```bash
-source <(anti --bash-completion-script "$(which anti)")
+source <(moog --bash-completion-script "$(which moog)")
 ```
 
-You can have a pretty output (not valid JSON,  but easier to read) by passing `--pretty` switch or setting the `ANTI_PRETTY` environment variable to any value:
+You can have a pretty output (not valid JSON,  but easier to read) by passing `--pretty` switch or setting the `MOOG_PRETTY` environment variable to any value:
 ```bash
-export ANTI_PRETTY=1
+export MOOG_PRETTY=1
 ```
 
 For scripting purposes you can disable the pretty effect of the env-var by passing `--no-pretty` switch.
@@ -66,69 +66,69 @@ For scripting purposes you can disable the pretty effect of the env-var by passi
 #### MPFS host
 If you do not want to host your own MPFS service, you can use a public one at `https://mpfs.plutimus.com`.
 
-In any case set the `ANTI_MPFS_HOST` environment variable to point to the MPFS service you want to use.
+In any case set the `MOOG_MPFS_HOST` environment variable to point to the MPFS service you want to use.
 
 ```bash
-export ANTI_MPFS_HOST=https://mpfs.plutimus.com
+export MOOG_MPFS_HOST=https://mpfs.plutimus.com
 ```
 
 #### Your wallet
 
-Currently the anti CLI works only by reading a wallet file containing a mnemonic phrase.
+Currently the moog CLI works only by reading a wallet file containing a mnemonic phrase.
 
-The anti command will read the wallet file from the `ANTI_WALLET_FILE` environment variable.
+The moog command will read the wallet file from the `MOOG_WALLET_FILE` environment variable.
 
 ```bash
-export ANTI_WALLET_FILE=wallet.json
+export MOOG_WALLET_FILE=wallet.json
 ```
 
 Optionally you can provide a passphrase to encrypt the mnemonic phrase in the wallet file:
 
 > Setting a passphrase is highly recommended to protect your wallet
 
-A less secure way to provide the passphrase is to set the `ANTI_WALLET_PASSPHRASE` environment variable:
+A less secure way to provide the passphrase is to set the `MOOG_WALLET_PASSPHRASE` environment variable:
 
 ```bash
-read -s -p "Enter your wallet passphrase: " ANTI_WALLET_PASSPHRASE
-export ANTI_WALLET_PASSPHRASE
+read -s -p "Enter your wallet passphrase: " MOOG_WALLET_PASSPHRASE
+export MOOG_WALLET_PASSPHRASE
 ```
-You can create a wallet file with the `anti wallet create` command:
+You can create a wallet file with the `moog wallet create` command:
 
 ```bash
-anti wallet create
+moog wallet create
 ```
 
 A more secure way is to let the CLI prompt you for the passphrase when needed.
 
 ```bash
-anti wallet create --ask-wallet-passphrase
+moog wallet create --ask-wallet-passphrase
 ```
 
-If you set the `ANTI_INTERACTIVE_SECRETS` environment variable to any value, the CLI will prompt you for the passphrase every time it needs it.
+If you set the `MOOG_INTERACTIVE_SECRETS` environment variable to any value, the CLI will prompt you for the passphrase every time it needs it.
 
 ```bash
-export ANTI_INTERACTIVE_SECRETS=1
+export MOOG_INTERACTIVE_SECRETS=1
 ```
 
 You can review this wallet info anytime with
 
 ```bash
-anti wallet info
+moog wallet info
 ```
 
-You can encrypt the wallet's secret (if previously you chose to store it in unencrypted way, ie., you used `anti wallet create`) using
+You can encrypt the wallet's secret (if previously you chose to store it in unencrypted way, ie., you used `moog wallet create`) using
 
 ``` bash
-anti wallet encrypt path/to/encrypted/secret/file --ask-wallet-passphrase
+moog wallet encrypt path/to/encrypted/secret/file --ask-wallet-passphrase
 ```
 
-Also, you can decrypt previously encrypted wallet's secret (if previously you chose to store it in encrypted way, ie., you used `anti wallet create --ask-wallet-passphrase`) using
+Also, you can decrypt previously encrypted wallet's secret (if previously you chose to store it in encrypted way, ie., you used `moog wallet create --ask-wallet-passphrase`) using
 
 ``` bash
-anti wallet decrypt path/to/decrypted/secret/file
+moog wallet decrypt path/to/decrypted/secret/file
 ```
 
-For the both cases `ANTI_WALLET_FILE` is set as before.
+For the both cases `MOOG_WALLET_FILE` is set as before.
 
 >  Store a copy of your encrypted/plaintext wallet file in a password manager. Think twice before storing a plaintext wallet file. Store your passphrase in a password manager too. Currently we do not support hardware wallets like Ledger or Trezor.
 
@@ -137,20 +137,20 @@ For the both cases `ANTI_WALLET_FILE` is set as before.
 
 #### Antithesis token
 
-This is the unique token that identifies the Antithesis access interface. You need to refer to it setting the `ANTI_TOKEN_ID` environment variable.
+This is the unique token that identifies the Antithesis access interface. You need to refer to it setting the `MOOG_TOKEN_ID` environment variable.
 
 ```bash
-export ANTI_TOKEN_ID=21c523c3b4565f1fc1ad7e54e82ca976f60997d8e7e9946826813fabf341069b
+export MOOG_TOKEN_ID=21c523c3b4565f1fc1ad7e54e82ca976f60997d8e7e9946826813fabf341069b
 ```
 
-#### Set the timeout for the `anti` command
+#### Set the timeout for the `moog` command
 
 When submitting txs to the chain, it's quite convenient to wait for the transaction to be included in the chain, so that you can immediately use the result of the transaction.
 
-To do that, you can set the `ANTI_WAIT` environment variable to the number of seconds you want to wait for the transaction to be included in the chain.
+To do that, you can set the `MOOG_WAIT` environment variable to the number of seconds you want to wait for the transaction to be included in the chain.
 
 ```bash
-export ANTI_WAIT=120
+export MOOG_WAIT=120
 ```
 
 #### Configuring access to GitHub
@@ -162,7 +162,7 @@ In order to make this possible you must provide a GitHub Personal Access Token (
 Provide your GitHub PAT to the tool by setting an environment variable:
 
 ```bash
-export ANTI_GITHUB_PAT="github_pat_31A...<snipped>...xL"
+export MOOG_GITHUB_PAT="github_pat_31A...<snipped>...xL"
 ```
 
 ### Querying the token state
@@ -170,7 +170,7 @@ export ANTI_GITHUB_PAT="github_pat_31A...<snipped>...xL"
 You can query the state of the Antithesis token with the following command:
 
 ```bash
-anti token
+moog token
 ```
 
 This will show
@@ -184,7 +184,7 @@ This will show
 You can always query the Antithesis token and its facts
 
 ```bash
-anti facts
+moog facts
 ```
 
 Will query all facts
@@ -192,35 +192,35 @@ Will query all facts
 But you can also query specific facts, for example:
 
 ```bash
-anti facts users
+moog facts users
 ```
 will report the GitHub registered users.
 
 Or
 
 ```bash
-anti facts test-runs
+moog facts test-runs
 ```
 will report all the test runs.
 
 
 ```bash
-anti facts test-runs pending
+moog facts test-runs pending
 ```
 will report the pending test runs.
 
 You can also query facts for a specific test-run id:
 
 ```bash
-anti facts test-runs -i id1 -i id2 ..
+moog facts test-runs -i id1 -i id2 ..
 ```
 
 This is useful if you stored the test-run id when you created the test-run.
-Test-run ids are facts ids so you can also look them up via `anti facts`
+Test-run ids are facts ids so you can also look them up via `moog facts`
 
 Finally
 
 ```bash
-anti facts --help
+moog facts --help
 ```
 will show you all the available facts you can query.

@@ -1,18 +1,18 @@
 services:
-  anti-agent:
-    image: ghcr.io/cardano-foundation/antithesis/anti-agent:${ANTI_VERSION:-latest}
+  moog-agent:
+    image: ghcr.io/cardano-foundation/antithesis/moog-agent:${MOOG_VERSION:-latest}
     secrets:
       - agent-wallet
       - secrets
       - source: docker
         target: /run/secrets/docker/config.json
     environment:
-      - ANTI_MPFS_HOST=https://mpfs.plutimus.com
-      - ANTI_WALLET_FILE=/run/secrets/agent-wallet
-      - ANTI_TOKEN_ID=21c523c3b4565f1fc1ad7e54e82ca976f60997d8e7e9946826813fabf341069b
-      - ANTI_SECRETS_FILE=/run/secrets/secrets
-      - ANTI_WAIT=240
-      - ANTI_ANTITHESIS_USER=cardano
+      - MOOG_MPFS_HOST=https://mpfs.plutimus.com
+      - MOOG_WALLET_FILE=/run/secrets/agent-wallet
+      - MOOG_TOKEN_ID=21c523c3b4565f1fc1ad7e54e82ca976f60997d8e7e9946826813fabf341069b
+      - MOOG_SECRETS_FILE=/run/secrets/secrets
+      - MOOG_WAIT=240
+      - MOOG_ANTITHESIS_USER=cardano
       - DOCKER_CONFIG=/run/secrets/docker
     restart: always
     privileged: true
@@ -24,11 +24,11 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 secrets:
   agent-wallet:
-    file: /secrets/anti-agent/agent.json # Path to a file containing the wallet
+    file: /secrets/moog-agent/agent.json # Path to a file containing the wallet
   secrets:
-    file: /secrets/anti-agent/secrets.yaml # Path to a file containing the secrets
+    file: /secrets/moog-agent/secrets.yaml # Path to a file containing the secrets
   docker:
-    file: /secrets/anti-agent/docker/config.json # Path to a file containing Docker config (for private registries)
+    file: /secrets/moog-agent/docker/config.json # Path to a file containing Docker config (for private registries)
 
 volumes:
   tmp:

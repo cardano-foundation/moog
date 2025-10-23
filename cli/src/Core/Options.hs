@@ -65,7 +65,7 @@ platformOption =
             , metavar "PLATFORM"
             , help "The platform to use"
             , option
-            , env "ANTI_PLATFORM"
+            , env "MOOG_PLATFORM"
             , reader str
             ]
 
@@ -81,7 +81,7 @@ repositoryOption =
         [ long "repository"
         , short 'r'
         , metavar "ORGANIZATION/PROJECT"
-        , env "ANTI_REPOSITORY"
+        , env "MOOG_REPOSITORY"
         , help "The repository in the format 'organization/project'"
         , reader (maybeReader parseRepository)
         , option
@@ -126,7 +126,7 @@ usernameOption =
             [ long "username"
             , short 'u'
             , metavar "USERNAME"
-            , env "ANTI_REQUESTER"
+            , env "MOOG_REQUESTER"
             , reader str
             , help "A github username"
             , option
@@ -208,7 +208,7 @@ tokenIdOption :: Parser TokenId
 tokenIdOption =
     TokenId
         <$> setting
-            [ env "ANTI_TOKEN_ID"
+            [ env "MOOG_TOKEN_ID"
             , metavar "TOKEN_ID"
             , help "The token ID of the antithesis token"
             , reader str

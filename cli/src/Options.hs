@@ -83,7 +83,7 @@ githubAuthOption =
         <$> secretsParser
             "Enter your GitHub token"
             "The GitHub token"
-            "ANTI_GITHUB_PAT"
+            "MOOG_GITHUB_PAT"
             "GITHUB_PAT"
             "ask-github-pat"
             "githubPAT"
@@ -199,7 +199,7 @@ prettyOption :: Parser Bool
 prettyOption =
     ((&&) . not <$> noPrettyOption)
         <*> setting
-            [ env "ANTI_PRETTY"
+            [ env "MOOG_PRETTY"
             , help "Pretty print JSON output"
             , metavar "NONE"
             , long "pretty"
@@ -212,7 +212,7 @@ noPrettyOption :: Parser Bool
 noPrettyOption =
     setting
         [ help
-            "Do not pretty print JSON output (overrides --pretty / ANTI_PRETTY)"
+            "Do not pretty print JSON output (overrides --pretty / MOOG_PRETTY)"
         , long "no-pretty"
         , switch True
         , value False
@@ -225,20 +225,20 @@ optionsParser = (\c -> fmapBox $ Options c) <$> prettyOption <*> commandParser
 intro :: String
 intro =
     [s|
-    anti - A tool for managing Antithesis test runs on Cardano
+    moog - A tool for managing Antithesis test runs on Cardano
 
     This tool is used by all 3 roles in the Cardano to Antithesis interface.
     The roles are:
       - Requester: Requests test runs on Antithesis
       - Agent: Manage test runs on Antithesis
-      - Oracle: Manages the interface state database (see oracle-anti for an automated oracle process)
+      - Oracle: Manages the interface state database (see oracle-moog for an automated oracle process)
 
     Each role has a set of commands that can be used to manage their respective
     operations. Use the --help flag to see the available commands and options.
 
     To get bash cli completion use
 
-    > source <(anti --bash-completion-script "$(which anti)")
+    > source <(moog --bash-completion-script "$(which moog)")
 
     Fish and zsh completions are also available.
     |]
@@ -267,7 +267,7 @@ secretsFileOption =
             , help "The file path to a YAML file containing secrets"
             , reader str
             , option
-            , env "ANTI_SECRETS_FILE"
+            , env "MOOG_SECRETS_FILE"
             ]
   where
     parsePath = mapIO absolutize . checkEither (left show . parseSomeFile)

@@ -45,7 +45,7 @@ spec = do
                 (Directory "test/data")
                 (TestRunId "dummy")
                 `shouldReturn` Right
-                    (Tag "registry/cardano-anti-cli-config:dummy")
+                    (Tag "registry/cardano-moog-config:dummy")
     describe "renderPostToAntithesis" $ do
         it "should render the curl command for pushing to Antithesis" $ do
             Right images <-
@@ -89,5 +89,5 @@ spec = do
                            , "-H"
                            , "Content-Type: application/json"
                            , "-d"
-                           , "{\"params\":{\"antithesis.config_image\":\"registry/cardano-anti-cli-config:dummy\",\"antithesis.description\":\"{\\\"testRun\\\":{\\\"commitId\\\":\\\"abcdef1234567890\\\",\\\"directory\\\":\\\"tests\\\",\\\"platform\\\":\\\"github\\\",\\\"repository\\\":{\\\"organization\\\":\\\"cardano-foundation\\\",\\\"repo\\\":\\\"antithesis\\\"},\\\"requester\\\":\\\"alice\\\",\\\"try\\\":1,\\\"type\\\":\\\"test-run\\\"},\\\"testRunId\\\":\\\"test-run-001\\\"}\",\"antithesis.duration\":3600,\"antithesis.images\":\"ghcr.io/cardano-foundation/antithesis/configurator:latest;ghcr.io/cardano-foundation/antithesis/sidecar:latest;ghcr.io/cardano-foundation/antithesis/tracer-sidecar:latest;ghcr.io/cardano-foundation/antithesis/tracer:latest;ghcr.io/intersectmbo/cardano-node:latest\",\"antithesis.report.recipients\":\"hal@cardanofoundation.org\",\"antithesis.source\":\"dummy\"}}"
+                           , "{\"params\":{\"antithesis.config_image\":\"registry/cardano-moog-config:dummy\",\"antithesis.description\":\"{\\\"testRun\\\":{\\\"commitId\\\":\\\"abcdef1234567890\\\",\\\"directory\\\":\\\"tests\\\",\\\"platform\\\":\\\"github\\\",\\\"repository\\\":{\\\"organization\\\":\\\"cardano-foundation\\\",\\\"repo\\\":\\\"antithesis\\\"},\\\"requester\\\":\\\"alice\\\",\\\"try\\\":1,\\\"type\\\":\\\"test-run\\\"},\\\"testRunId\\\":\\\"test-run-001\\\"}\",\"antithesis.duration\":3600,\"antithesis.images\":\"ghcr.io/cardano-foundation/antithesis/configurator:latest;ghcr.io/cardano-foundation/antithesis/sidecar:latest;ghcr.io/cardano-foundation/antithesis/tracer-sidecar:latest;ghcr.io/cardano-foundation/antithesis/tracer:latest;ghcr.io/intersectmbo/cardano-node:latest\",\"antithesis.report.recipients\":\"hal@cardanofoundation.org\",\"antithesis.source\":\"dummy\"}}"
                            ]

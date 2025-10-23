@@ -40,7 +40,7 @@ import Oracle.Types
     , requestZooRefId
     )
 import Oracle.Validate.Types (AValidationResult (..), Validated (..))
-import Paths_anti (version)
+import Paths_moog (version)
 
 intro :: String
 intro =
@@ -58,7 +58,7 @@ intro =
 
     To get bash cli completion use
 
-    > source <(anti-oracle --bash-completion-script "$(which anti-oracle)")
+    > source <(moog-oracle --bash-completion-script "$(which moog-oracle)")
 
     Fish and zsh completions are also available.
     |]

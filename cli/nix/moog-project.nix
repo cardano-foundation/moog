@@ -33,7 +33,7 @@ let
 
     ];
     shellHook = ''
-      echo "Entering shell for anti CLI development"
+      echo "Entering shell for moog CLI development"
     '';
   };
 
@@ -45,11 +45,11 @@ let
       configureFlags = map (l: "--ghc-option=-optl=-L${l}/lib") (libs);
     };
   musl = { pkgs, ... }: {
-    packages.anti.components.exes.anti = (fullyStaticOptions { inherit pkgs; });
+    packages.moog.components.exes.moog = (fullyStaticOptions { inherit pkgs; });
     doHaddock = false;
   };
   mkProject = ctx@{ lib, pkgs, ... }: {
-    name = "anti";
+    name = "moog";
     src = ./..;
     compiler-nix-name = "ghc984";
     shell = shell { inherit pkgs; };
@@ -61,9 +61,9 @@ let
 in {
   devShells.default = project.shell;
   inherit project;
-  packages.anti = project.hsPkgs.anti.components.exes.anti;
-  packages.anti-oracle = project.hsPkgs.anti.components.exes.anti-oracle;
-  packages.anti-agent = project.hsPkgs.anti.components.exes.anti-agent;
+  packages.moog = project.hsPkgs.moog.components.exes.moog;
+  packages.moog-oracle = project.hsPkgs.moog.components.exes.moog-oracle;
+  packages.moog-agent = project.hsPkgs.moog.components.exes.moog-agent;
   packages.bech32 = project.hsPkgs.bech32.components.exes.bech32;
   packages.cardano-address =
     project.hsPkgs.cardano-addresses.components.exes.cardano-address;

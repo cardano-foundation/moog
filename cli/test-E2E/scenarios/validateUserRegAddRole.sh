@@ -5,29 +5,29 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/lib.sh"
 
-export ANTI_WAIT=180
+export MOOG_WAIT=180
 
-unset ANTI_TOKEN_ID
+unset MOOG_TOKEN_ID
 
-log "Using ANTI_MPFS_HOST: $ANTI_MPFS_HOST"
+log "Using MOOG_MPFS_HOST: $MOOG_MPFS_HOST"
 
-log "Creating an anti token..."
-result=$(anti oracle token boot)
+log "Creating an moog token..."
+result=$(moog oracle token boot)
 
 tokenId=$(echo "$result" | jq -r '.value')
-log "Anti token ID: $tokenId"
+log "Moog token ID: $tokenId"
 
-owner=$(anti wallet info | jq -r '.owner')
+owner=$(moog wallet info | jq -r '.owner')
 
-export ANTI_TOKEN_ID="$tokenId"
+export MOOG_TOKEN_ID="$tokenId"
 
 tokenEnd() {
-    log "Ending anti token $ANTI_TOKEN_ID..."
-    anti oracle token end >/dev/null || echo "Failed to end the token"
+    log "Ending moog token $MOOG_TOKEN_ID..."
+    moog oracle token end >/dev/null || echo "Failed to end the token"
 }
 trap 'tokenEnd' EXIT INT TERM
 
-resultReg1=$(anti requester register-user \
+resultReg1=$(moog requester register-user \
     --platform github \
     --username cfhal \
     --vkey vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh)
@@ -36,12 +36,12 @@ outputRegRef1=$(getOutputRef "$resultReg1")
 
 log "Created registration request with valid public key with output reference: $outputRegRef1"
 
-if [ -z "$ANTI_GITHUB_PAT" ]; then
-    log "Error: ANTI_GITHUB_PAT is not set. Please refer to \"https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens\#creating-a-fine-grained-personal-access-token\""
+if [ -z "$MOOG_GITHUB_PAT" ]; then
+    log "Error: MOOG_GITHUB_PAT is not set. Please refer to \"https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens\#creating-a-fine-grained-personal-access-token\""
     exit 1
 fi
 
-resultVal1=$(anti token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
+resultVal1=$(moog token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
 
 expectedVal1=$(
     cat <<EOF
@@ -67,7 +67,7 @@ fi
 
 log "Trying to create registration request with invalid public key"
 
-resultReg2=$(anti requester register-user \
+resultReg2=$(moog requester register-user \
     --platform github \
     --username cfhal \
     --vkey vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrg)
@@ -91,7 +91,7 @@ if [[ "$(echo "$outputRegRes2")" != "$(echo "$expectedRegRes2")" ]]; then
     emitMismatch 1 "incorrect request" "$outputRegRes2" "$expectedRegRes2"
 fi
 
-resultVal2=$(anti token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
+resultVal2=$(moog token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
 
 expectedVal2=$(
     cat <<EOF
@@ -110,7 +110,7 @@ fi
 
 log "Registering a role before token updating with user registration fact is possible"
 
-resultRole1=$(anti requester register-role \
+resultRole1=$(moog requester register-role \
     --platform github \
     --repository cardano-foundation/hal-fixture-sin \
     --username cfhal \
@@ -118,7 +118,7 @@ resultRole1=$(anti requester register-role \
 outputRoleRef1=$(getOutputRef "$resultRole1")
 
 log "Created role registration request with output reference: $outputRoleRef1"
-resultVal3=$(anti token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
+resultVal3=$(moog token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
 
 expectedVal3=$(
     cat <<EOF
@@ -140,7 +140,7 @@ if [[ "$(echo "$resultVal3" | jq -S 'sort_by(.reference)')" != "$(echo "$expecte
 fi
 
 log "Including the registration user as the fact in the updated token."
-anti oracle token update -o "$outputRegRef1" >/dev/null
+moog oracle token update -o "$outputRegRef1" >/dev/null
 
 printFacts
 
@@ -163,13 +163,13 @@ expectedGet1=$(
 EOF
 )
 
-resultGet1=$(anti token | jq '.requests')
+resultGet1=$(moog token | jq '.requests')
 
 if [[ "$(echo "$resultGet1" | jq -S 'sort_by(.request.outputRefId)')" != "$(echo "$expectedGet1" | jq -S 'sort_by(.request.outputRefId)')" ]]; then
     emitMismatch 4 "get token requests" "$resultGet1" "$expectedGet1"
 fi
 
-resultVal4=$(anti token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
+resultVal4=$(moog token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
 
 expectedVal4=$(
     cat <<EOF
@@ -187,7 +187,7 @@ if [[ "$(echo "$resultVal4" | jq -S 'sort_by(.reference)')" != "$(echo "$expecte
 fi
 
 log "Including the role request that passed validation in the token ..."
-anti oracle token update -o "$outputRoleRef1" >/dev/null
+moog oracle token update -o "$outputRoleRef1" >/dev/null
 
 printFacts
 
@@ -197,13 +197,13 @@ expectedGet2=$(
 EOF
 )
 
-resultGet2=$(anti token | jq '.requests')
+resultGet2=$(moog token | jq '.requests')
 
 if [[ "$(echo "$resultGet2" | jq -S 'sort_by(.request.outputRefId)')" != "$(echo "$expectedGet2" | jq -S 'sort_by(.request.outputRefId)')" ]]; then
     emitMismatch 6 "get token requests" "$resultGet2" "$expectedGet2"
 fi
 
-resultUnRole1=$(anti requester unregister-role \
+resultUnRole1=$(moog requester unregister-role \
     --platform github \
     --repository cardano-foundation/hal-fixture-sinn \
     --username cfhal \
@@ -234,7 +234,7 @@ if [[ "$(echo "$outputUnRoleRes1" | jq)" != "$(echo "$expectedUnRoleRes1" | jq)"
     emitMismatch 7 "incorrect request" "$outputUnRoleRes1" "$expectedUnRoleRes1"
 fi
 
-resultVal6=$(anti token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
+resultVal6=$(moog token | jq -r '.requests | [.[] | select(.validation == "validated") | {"reference": .request.outputRefId, "validation": .validation}]')
 
 expectedVal6=$(
     cat <<EOF
@@ -246,7 +246,7 @@ if [[ "$(echo "$resultVal6" | jq -S 'sort_by(.reference)')" != "$(echo "$expecte
     emitMismatch 8 "validation" "$resultVal6" "$expectedVal6"
 fi
 
-resultUnReg1=$(anti requester unregister-user \
+resultUnReg1=$(moog requester unregister-user \
     --platform github \
     --username cfhal \
     --vkey vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh)

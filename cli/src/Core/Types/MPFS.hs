@@ -35,14 +35,14 @@ newMPFSClient :: Parser (String, IfToWait)
 newMPFSClient = do
     host <-
         setting
-            [ env "ANTI_MPFS_HOST"
+            [ env "MOOG_MPFS_HOST"
             , metavar "HOST"
             , help "The host of the MPFS server"
             , reader str
             ]
     wait <-
         setting
-            [ env "ANTI_WAIT"
+            [ env "MOOG_WAIT"
             , metavar "WAIT"
             , help "Whether to wait for the transaction to be included in a block"
             , reader $ Wait <$> auto

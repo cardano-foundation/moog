@@ -10,7 +10,7 @@ main = hspec $ do
         e2eSpec
 
 tryGetPAT :: IO (Maybe Auth)
-tryGetPAT = fmap (OAuth . BC.pack) <$> lookupEnv "ANTI_GITHUB_PAT"
+tryGetPAT = fmap (OAuth . BC.pack) <$> lookupEnv "MOOG_GITHUB_PAT"
 
 getPAT :: IO Auth
 getPAT = do
@@ -19,6 +19,6 @@ getPAT = do
         Just pat -> return pat
         Nothing ->
             error
-                "Environment variable ANTI_GITHUB_PAT is not set. \
+                "Environment variable MOOG_GITHUB_PAT is not set. \
                 \ Please set it to some valid GitHub Personal Access Token with \
                 \ read access to public repositories."

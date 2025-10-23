@@ -1,4 +1,4 @@
-# Changelog for anti-cli
+# Changelog for moog-cli
 
 ### v0.3.2.0 - 2025-10-20
 #### Bug Fixes
@@ -12,7 +12,7 @@
 - Validation of Docker Compose configuration after checking for the file's existence.
 
 #### Bug Fixes
-- `anti --version` now correctly shows `0.3.1.0`.
+- `moog --version` now correctly shows `0.3.1.0`.
 
 ---
 
@@ -56,13 +56,13 @@
 
 ### v0.2.0.0 - 2025-09-05
 #### Added
-- `anti agent` executable to automate the agent role.
-- Wallet encryption/decryption for all roles, available at `anti wallet` command.
-- `anti agent push-test` command for the agent to start a test.
-- `anti agent report-results` now encrypts the URL with results using the requester's SSH public key.
-- `anti facts test-runs done` now decrypts the result URL when the requester SSH key is accessible.
-- `anti agent collect-email-results` command that scans the agent email via IMAP to collect results.
-- More filters in `anti facts test-runs` command: `--whose` and `--test-run-id`.
+- `moog agent` executable to automate the agent role.
+- Wallet encryption/decryption for all roles, available at `moog wallet` command.
+- `moog agent push-test` command for the agent to start a test.
+- `moog agent report-results` now encrypts the URL with results using the requester's SSH public key.
+- `moog facts test-runs done` now decrypts the result URL when the requester SSH key is accessible.
+- `moog agent collect-email-results` command that scans the agent email via IMAP to collect results.
+- More filters in `moog facts test-runs` command: `--whose` and `--test-run-id`.
 - Requesters can now provide any test assets, as long as they include a working `docker-compose.yml` file.
 
 #### Bugs
@@ -72,4 +72,4 @@
 
 ### v0.1.1.0 - 2025-08-25
 #### Added
-- `anti` executable.
+- `moog` executable.

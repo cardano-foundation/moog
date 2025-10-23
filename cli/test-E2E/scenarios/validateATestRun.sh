@@ -5,61 +5,61 @@ set -euo pipefail
 # shellcheck disable=SC1091
 source "$(dirname "$0")/lib.sh"
 
-export ANTI_WAIT=240
+export MOOG_WAIT=240
 
-unset ANTI_TOKEN_ID
+unset MOOG_TOKEN_ID
 
-log "Creating an anti token..."
-result=$(anti oracle token boot)
+log "Creating an moog token..."
+result=$(moog oracle token boot)
 
 tokenId=$(echo "$result" | jq -r '.value')
-log "Anti token ID: $tokenId"
+log "Moog token ID: $tokenId"
 
-export ANTI_TOKEN_ID="$tokenId"
+export MOOG_TOKEN_ID="$tokenId"
 
 tokenEnd() {
-    log "Ending anti token $ANTI_TOKEN_ID..."
-    anti oracle token end >/dev/null || echo "Failed to end the token"
+    log "Ending moog token $MOOG_TOKEN_ID..."
+    moog oracle token end >/dev/null || echo "Failed to end the token"
 }
 trap 'tokenEnd' EXIT INT TERM
 
 ##### Register a user
 log "Registering a user..."
-result=$(anti requester register-user \
+result=$(moog requester register-user \
     --platform github \
     --username paolino \
     --pubkeyhash AAAAC3NzaC1lZDI1NTE5AAAAIO773JHqlyLm5XzOjSe+Q5yFJyLFuMLL6+n63t4t7HR8 \
     )
 outputRef=$(getOutputRef "$result")
 
-log "Pending requests for the anti oracle token:"
-anti token | jq '.requests | .[]'
+log "Pending requests for the moog oracle token:"
+moog token | jq '.requests | .[]'
 
 
-log "Updating the anti oracle token with output reference $outputRef..."
-anti oracle token update -o "$outputRef" >/dev/null
+log "Updating the moog oracle token with output reference $outputRef..."
+moog oracle token update -o "$outputRef" >/dev/null
 
 printFacts
 
 ##### Register a role
 log "Registering a role..."
-result=$(anti requester register-role \
+result=$(moog requester register-role \
     --platform github \
     --repository cardano-foundation/antithesis \
     --username paolino \
     )
 outputRef=$(getOutputRef "$result")
 
-log "Pending requests for the anti oracle token:"
-anti token | jq '.requests | .[]'
+log "Pending requests for the moog oracle token:"
+moog token | jq '.requests | .[]'
 
-log "Updating the anti oracle token with output reference $outputRef..."
-anti oracle token update -o "$outputRef" >/dev/null
+log "Updating the moog oracle token with output reference $outputRef..."
+moog oracle token update -o "$outputRef" >/dev/null
 printFacts
 
 ##### Request a test-run
 log "Creating a test-run request..."
-result=$(anti requester create-test \
+result=$(moog requester create-test \
     --platform github \
     --repository cardano-foundation/antithesis \
     --directory compose \
@@ -69,10 +69,10 @@ result=$(anti requester create-test \
     --duration 3)
 echo "$result"
 outputRef=$(getOutputRef "$result")
-log "Pending requests for the anti oracle token:"
-anti token | jq '.requests | .[]'
+log "Pending requests for the moog oracle token:"
+moog token | jq '.requests | .[]'
 
-log "Updating the anti oracle token with output reference $outputRef..."
-anti oracle token update -o "$outputRef" >/dev/null
+log "Updating the moog oracle token with output reference $outputRef..."
+moog oracle token update -o "$outputRef" >/dev/null
 
 printFacts

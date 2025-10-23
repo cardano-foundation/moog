@@ -256,10 +256,10 @@ buildConfigImage
     :: Registry -> Directory -> TestRunId -> IO (Either String Tag)
 buildConfigImage (Registry registry) (Directory context) (TestRunId trId) =
     withSystemTempDirectory
-        "anti-cli-test"
+        "moog-test"
         $ \tmpDir -> do
             let dockerfilePath = tmpDir ++ "/Dockerfile"
-                imageName = "cardano-anti-cli-config"
+                imageName = "cardano-moog-config"
                 imageTag = take 10 trId
                 tag = registry ++ "/" ++ imageName ++ ":" ++ imageTag
             writeFile dockerfilePath dockerfile

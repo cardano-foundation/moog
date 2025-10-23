@@ -2,17 +2,17 @@
 
 let
   inherit (pkgs) lib;
-  anti = project.packages.anti;
-  anti-oracle = project.packages.anti-oracle;
+  moog = project.packages.moog;
+  moog-oracle = project.packages.moog-oracle;
   tarball-derivation = pkgs.stdenv.mkDerivation {
-    pname = "anti";
+    pname = "moog";
     inherit version;
     buildInputs = with pkgs.buildPackages; [ nix ];
     phases = [ "unpackPhase" "installPhase" ];
     unpackPhase = ''
       mkdir -p $out/unpacked
-      cp ${anti}/bin/anti $out/unpacked
-      cp ${anti-oracle}/bin/anti-oracle $out/unpacked
+      cp ${moog}/bin/moog $out/unpacked
+      cp ${moog-oracle}/bin/moog-oracle $out/unpacked
       ( cd $out/unpacked ;
         ${rewrite-libs}/bin/rewrite-libs . `ls -1 | grep -Fv .dylib`
         for a in *; do /usr/bin/codesign -f -s - $a; done

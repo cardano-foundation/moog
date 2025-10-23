@@ -9,7 +9,7 @@ format:
     for i in {1..3}; do
         fourmolu -i src app test test-E2E test-integration test-lib CI/rewrite-libs
     done
-    cabal-fmt -i anti.cabal CI/rewrite-libs/rewrite-libs.cabal
+    cabal-fmt -i moog.cabal CI/rewrite-libs/rewrite-libs.cabal
     nixfmt *.nix
     nixfmt nix/*.nix
     nixfmt CI/rewrite-libs/*.nix
@@ -23,10 +23,10 @@ unit match="":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
     if [[ '{{ match }}' == "" ]]; then
-      cabal test anti-unit-test \
+      cabal test moog-unit-test \
           --test-show-details=direct
     else
-      cabal test anti-unit-test\
+      cabal test moog-unit-test\
           --test-show-details=direct \
           --test-option=--match \
           --test-option="{{ match }}"
@@ -39,12 +39,12 @@ build:
 integration match="":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
-    export ANTI_MPFS_HOST="https://mpfs.plutimus.com"
+    export MOOG_MPFS_HOST="https://mpfs.plutimus.com"
     if [[ '{{ match }}' == "" ]]; then
-      cabal test anti-integration-test \
+      cabal test moog-integration-test \
           --test-show-details=direct
     else
-      cabal test anti-integration-test \
+      cabal test moog-integration-test \
           --test-show-details=direct \
           --test-option=--match \
           --test-option="{{ match }}"
@@ -52,12 +52,12 @@ integration match="":
 E2E match="":
     #!/usr/bin/env bash
     mkdir -p tmp/bin
-    if [ -z "${ANTI_GITHUB_PAT:-}" ]; then
-        echo "Please set ANTI_GITHUB_PAT environment variable, this is a valid GitHub personal access token with access to the public github API"
+    if [ -z "${MOOG_GITHUB_PAT:-}" ]; then
+        echo "Please set MOOG_GITHUB_PAT environment variable, this is a valid GitHub personal access token with access to the public github API"
         exit 1
     fi
-    if [ -z "${ANTI_SSH_PASSWORD:-}" ]; then
-        echo "Please set ANTI_SSH_PASSWORD environment variable, this is the passphrase for the cfhal encrypted SSH private key"
+    if [ -z "${MOOG_SSH_PASSWORD:-}" ]; then
+        echo "Please set MOOG_SSH_PASSWORD environment variable, this is the passphrase for the cfhal encrypted SSH private key"
         exit 1
     fi
     if ! test -f  tmp/test.json; then
@@ -67,11 +67,11 @@ E2E match="":
     cabal install --overwrite-policy=always --installdir=tmp >/dev/null
     export PATH="$PWD/tmp:$PATH"
     randomMPFSPort=$(shuf -i 1024-65636 -n 1)
-    export ANTI_MPFS_HOST="http://localhost:$randomMPFSPort"
+    export MOOG_MPFS_HOST="http://localhost:$randomMPFSPort"
     export MPFS_PORT="$randomMPFSPort"
     randomYaciAdminPort=$(shuf -i 1024-65536 -n 1)
     export YACI_ADMIN_PORT="$randomYaciAdminPort"
-    export ANTI_TEST_YACI_ADMIN="http://localhost:$YACI_ADMIN_PORT"
+    export MOOG_TEST_YACI_ADMIN="http://localhost:$YACI_ADMIN_PORT"
 
     # shellcheck disable=SC2002
     randomName=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
@@ -82,21 +82,21 @@ E2E match="":
     }
     trap down EXIT INT
 
-    export ANTI_WALLET_FILE=tmp/requester.json
-    export ANTI_TEST_REQUESTER_WALLET=tmp/requester.json # this must be cfhal wallet, get it in 1p at https://start.1password.com/open/i?a=TYQQQLKUDBAFVHQ4P7XKFCUVYM&v=fhipthmhnufti4q2kky6d7336u&i=jgle6xhz6b4pgma7aodrsebfgu&h=cardanofoundation.1password.com
-    export ANTI_TEST_ORACLE_WALLET=tmp/requester.json # or create your own wallet
-    export ANTI_TEST_AGENT_WALLET=tmp/requester.json # or create your own wallet
-    export ANTI_SSH_FILE=test-E2E/fixtures/cfhal_ed25519
-    export ANTI_WAIT=2
+    export MOOG_WALLET_FILE=tmp/requester.json
+    export MOOG_TEST_REQUESTER_WALLET=tmp/requester.json # this must be cfhal wallet, get it in 1p at https://start.1password.com/open/i?a=TYQQQLKUDBAFVHQ4P7XKFCUVYM&v=fhipthmhnufti4q2kky6d7336u&i=jgle6xhz6b4pgma7aodrsebfgu&h=cardanofoundation.1password.com
+    export MOOG_TEST_ORACLE_WALLET=tmp/requester.json # or create your own wallet
+    export MOOG_TEST_AGENT_WALLET=tmp/requester.json # or create your own wallet
+    export MOOG_SSH_FILE=test-E2E/fixtures/cfhal_ed25519
+    export MOOG_WAIT=2
     while [[ "$(curl -s "localhost:$MPFS_PORT/tokens" | jq -r '.indexerStatus.ready')" != "true" ]]; do
         echo "Waiting for indexer to be ready..."
         sleep 2
     done
-    address=$(anti wallet info | jq -r '.address')
+    address=$(moog wallet info | jq -r '.address')
     echo "Funding address: $address"
     topup(){
         curl -s -X 'POST' \
-            "$ANTI_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
+            "$MOOG_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
             -H 'accept: */*' \
             -H 'Content-Type: application/json' \
             -d '{
@@ -111,8 +111,8 @@ E2E match="":
         echo "Retrying topup..."
         sleep 2
     done
-    owner=$(anti wallet info | jq -r '.owner')
-    export ANTI_AGENT_PUBLIC_KEY_HASH=$owner
+    owner=$(moog wallet info | jq -r '.owner')
+    export MOOG_AGENT_PUBLIC_KEY_HASH=$owner
     echo "Starting E2E tests..."
     just E2E-tests "{{ match }}"
 
@@ -120,10 +120,10 @@ E2E-tests match="":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
     if [[ '{{ match }}' == "" ]]; then
-    cabal test anti-E2E-test \
+    cabal test moog-E2E-test \
         --test-show-details=direct
     else
-    cabal test anti-E2E-test \
+    cabal test moog-E2E-test \
         --test-show-details=direct \
         --test-option=--match \
         --test-option="{{ match }}"
@@ -136,95 +136,95 @@ CI:
     just unit
     just integration
     just E2E
-    cabal-fmt -c anti.cabal CI/rewrite-libs/rewrite-libs.cabal
+    cabal-fmt -c moog.cabal CI/rewrite-libs/rewrite-libs.cabal
     fourmolu -m check src app test CI/rewrite-libs
     hlint -c src app test CI/rewrite-libs
 
 start-mpfs:
     #!/usr/bin/env bash
-    docker compose -p "anti-testing" -f test-E2E/fixtures/docker-compose.yml up -d
+    docker compose -p "moog-testing" -f test-E2E/fixtures/docker-compose.yml up -d
 
 stop-mpfs:
     #!/usr/bin/env bash
-    docker compose -p "anti-testing" -f test-E2E/fixtures/docker-compose.yml down
+    docker compose -p "moog-testing" -f test-E2E/fixtures/docker-compose.yml down
 
-build-anti-agent tag='latest':
+build-moog-agent tag='latest':
     #!/usr/bin/env bash
-    nix build .#anti-agent-docker-image
+    nix build .#moog-agent-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
-    docker image tag ghcr.io/cardano-foundation/antithesis/anti-agent:"$version" \
-        "ghcr.io/cardano-foundation/antithesis/anti-agent:{{ tag }}"
-    docker image tag ghcr.io/cardano-foundation/antithesis/anti-agent:"$version" \
-        "ghcr.io/cardano-foundation/antithesis/anti-agent:latest"
+    docker image tag ghcr.io/cardano-foundation/antithesis/moog-agent:"$version" \
+        "ghcr.io/cardano-foundation/antithesis/moog-agent:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/antithesis/moog-agent:"$version" \
+        "ghcr.io/cardano-foundation/antithesis/moog-agent:latest"
 
-start-anti-agent bg="false":
+start-moog-agent bg="false":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
     if [[ '{{ bg }}' == "true" ]]; then
-        docker compose -f CD/anti-agent/docker-compose.yaml up -d
+        docker compose -f CD/moog-agent/docker-compose.yaml up -d
     else
-        docker compose -f CD/anti-agent/docker-compose.yaml up
+        docker compose -f CD/moog-agent/docker-compose.yaml up
     fi
 
-build-and-start-anti-agent bg="false":
+build-and-start-moog-agent bg="false":
     #!/usr/bin/env bash
-    just build-anti-agent
-    just start-anti-agent "{{ bg }}"
+    just build-moog-agent
+    just start-moog-agent "{{ bg }}"
 
-logs-anti-agent:
+logs-moog-agent:
     #!/usr/bin/env bash
-    docker compose -f CD/anti-agent/docker-compose.yaml logs -ft
+    docker compose -f CD/moog-agent/docker-compose.yaml logs -ft
 
-stop-anti-agent:
+stop-moog-agent:
     #!/usr/bin/env bash
-    docker compose -f CD/anti-agent/docker-compose.yaml down
+    docker compose -f CD/moog-agent/docker-compose.yaml down
 
-build-anti-oracle tag='latest':
+build-moog-oracle tag='latest':
     #!/usr/bin/env bash
-    nix build .#anti-oracle-docker-image
+    nix build .#moog-oracle-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
-    docker image tag ghcr.io/cardano-foundation/antithesis/anti-oracle:"$version" \
-        "ghcr.io/cardano-foundation/antithesis/anti-oracle:{{ tag }}"
-    docker image tag ghcr.io/cardano-foundation/antithesis/anti-oracle:"$version" \
-        "ghcr.io/cardano-foundation/antithesis/anti-oracle:latest"
+    docker image tag ghcr.io/cardano-foundation/antithesis/moog-oracle:"$version" \
+        "ghcr.io/cardano-foundation/antithesis/moog-oracle:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/antithesis/moog-oracle:"$version" \
+        "ghcr.io/cardano-foundation/antithesis/moog-oracle:latest"
 
-start-anti-oracle bg="false":
+start-moog-oracle bg="false":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
     if [[ '{{ bg }}' == "true" ]]; then
-        docker compose -f CD/anti-oracle/docker-compose.yaml up -d
+        docker compose -f CD/moog-oracle/docker-compose.yaml up -d
     else
-        docker compose -f CD/anti-oracle/docker-compose.yaml up
+        docker compose -f CD/moog-oracle/docker-compose.yaml up
     fi
 
-build-and-start-anti-oracle bg="false":
+build-and-start-moog-oracle bg="false":
     #!/usr/bin/env bash
-    just build-anti-oracle
-    just start-anti-oracle "{{ bg }}"
+    just build-moog-oracle
+    just start-moog-oracle "{{ bg }}"
 
-logs-anti-oracle:
+logs-moog-oracle:
     #!/usr/bin/env bash
-    docker compose -f CD/anti-oracle/docker-compose.yaml logs -ft
+    docker compose -f CD/moog-oracle/docker-compose.yaml logs -ft
 
-stop-anti-oracle:
+stop-moog-oracle:
     #!/usr/bin/env bash
-    docker compose -f CD/anti-oracle/docker-compose.yaml down
+    docker compose -f CD/moog-oracle/docker-compose.yaml down
 
-recreate-anti-services:
+recreate-moog-services:
     #!/usr/bin/env bash
-    just build-and-start-anti-agent true
-    just build-and-start-anti-oracle true
+    just build-and-start-moog-agent true
+    just build-and-start-moog-oracle true
 
 build-docker-images tag='latest':
     #!/usr/bin/env bash
-    just build-anti-agent "{{ tag }}"
-    just build-anti-oracle "{{ tag }}"
+    just build-moog-agent "{{ tag }}"
+    just build-moog-oracle "{{ tag }}"
 
 push-docker-images tag='latest':
     #!/usr/bin/env bash
-    docker push "ghcr.io/cardano-foundation/antithesis/anti-agent:{{ tag }}"
-    docker push "ghcr.io/cardano-foundation/antithesis/anti-oracle:{{ tag }}"
-    docker push "ghcr.io/cardano-foundation/antithesis/anti-agent:latest"
-    docker push "ghcr.io/cardano-foundation/antithesis/anti-oracle:latest"
+    docker push "ghcr.io/cardano-foundation/antithesis/moog-agent:{{ tag }}"
+    docker push "ghcr.io/cardano-foundation/antithesis/moog-oracle:{{ tag }}"
+    docker push "ghcr.io/cardano-foundation/antithesis/moog-agent:latest"
+    docker push "ghcr.io/cardano-foundation/antithesis/moog-oracle:latest"

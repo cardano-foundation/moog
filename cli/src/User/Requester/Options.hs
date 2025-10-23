@@ -154,7 +154,7 @@ sshClientOptionWithoutSelector =
 keySelectorOption :: Parser String
 keySelectorOption =
     setting
-        [ env "ANTI_SSH_KEY_SELECTOR"
+        [ env "MOOG_SSH_KEY_SELECTOR"
         , help
             "Which key selector to use from the SSH file, it will use the first one if not specified"
         , metavar "STRING"
@@ -166,7 +166,7 @@ keySelectorOption =
 keyFileOption :: Parser FilePath
 keyFileOption =
     setting
-        [ env "ANTI_SSH_FILE"
+        [ env "MOOG_SSH_FILE"
         , help "Path to the SSH private key file"
         , metavar "FILEPATH"
         , reader str
@@ -179,7 +179,7 @@ keyPasswordOption =
     secretsParser
         "Enter the passphrase for the SSH private key"
         "The passphrase for the SSH private key"
-        "ANTI_SSH_PASSWORD"
+        "MOOG_SSH_PASSWORD"
         "PASSWORD"
         "ask-ssh-password"
         "sshPassword"

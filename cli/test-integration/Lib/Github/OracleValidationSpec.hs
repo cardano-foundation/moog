@@ -88,19 +88,19 @@ roleSpecs = do
 
 vkeySpec :: SpecWith Auth
 vkeySpec = do
-    it "should download anti-cli.vkey for cfhal" $ \auth -> do
+    it "should download moog.vkey for cfhal" $ \auth -> do
         githubGetAntiCLIVKey
             auth
             (GithubUsername "cfhal")
             `shouldReturn` Right
                 "vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh"
-    it "should match anti-cli.vkey for cfhal" $ \auth -> do
+    it "should match moog.vkey for cfhal" $ \auth -> do
         inspectVKey
             auth
             (GithubUsername "cfhal")
             (VKey "vkey1lrqqrpr49593dv6jchcdlqpqj0y9rfpcaauscnhs74wc50z76aqsqqlrgh")
             `shouldReturn` Nothing
-    it "should mismatch anti-cli.vkey for cfhal" $ \auth -> do
+    it "should mismatch moog.vkey for cfhal" $ \auth -> do
         inspectVKey
             auth
             (GithubUsername "cfhal")
