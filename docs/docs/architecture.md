@@ -2,29 +2,6 @@
 
 This document provides an overview of the architecture of the Antithesis CLI tool, which is designed to administer Antithesis tests execution through Cardano.
 
-## Table of Contents
-
-- [Architecture Overview](#architecture-overview)
-  - [Table of Contents](#table-of-contents)
-  - [Decentralization model](#decentralization-model)
-  - [Systems](#systems)
-    - [GitHub Platform](#github-platform)
-      - [GitHub as identity provider](#github-as-identity-provider)
-      - [Github as Antithesis role management](#github-as-antithesis-role-management)
-      - [Github as test assets hosting](#github-as-test-assets-hosting)
-    - [Antithesis Platform](#antithesis-platform)
-    - [Cardano Blockchain](#cardano-blockchain)
-    - [MPFS Service instances.](#mpfs-service-instances)
-    - [Antithesis CLI Tool (and automations)](#antithesis-cli-tool-and-automations)
-  - [Roles](#roles)
-    - [Requester role](#requester-role)
-    - [Agent role](#agent-role)
-    - [Oracle role](#oracle-role)
-  - [MPFS derived concepts](#mpfs-derived-concepts)
-    - [State token](#state-token)
-    - [State change requests](#state-change-requests)
-    - [State updates](#state-updates)
-
 ## Decentralization model
 
 The Antithesis CLI tool operates within a decentralized framework, leveraging blockchain technology to ensure transparency, security, and immutability of test execution records.
@@ -33,7 +10,7 @@ First-class participation would imply access to a Cardano node. However, the sys
 
 To improve component reusability, the backend service has no knowledge of project-specific goals and is developed in a separate repository: [MPFS](https://github.com/cardano-foundation/MPFS).
 
-In a perfect setup, each actor should run both the CLI tool and the MPFS service locally. However, for practical reasons, we expect most users to run only the CLI tool while relying on remote shared instances of the MPFS service.
+In a perfect setup, each actor should run both the CLI tool and the MPFS service locally. However, for practical reasons, we expect most users to run only the CLI tool while relying on remote shared instances of the MPFS service. [Security considerations](security.md) should be taken into account when choosing between local or shared MPFS service instances.
 
 ## Systems
 
@@ -81,6 +58,13 @@ architecture-beta
 
 We use GitHub services to manage user identities, roles, and per-repository test assets hosting.
 
+```mermaid
+graph TD
+        A[GitHub Platform] -->|identifies a user via| B[a moog.vkey file in personal repo]
+        A -->|certifies a tester role in a repository via| C[a CODEOWNERS record in repository]
+        A -->|provides test definitions via| D[files in a directory of a registered repository]
+```
+
 #### GitHub as identity provider
 
 Any GitHub user can register themselves against the system state by deploying a file containing a Cardano public key in their personal GitHub repository.
@@ -100,11 +84,23 @@ Any GitHub repository that has been registered with the system (i.e., contains a
 
 ### Antithesis Platform
 
+```mermaid
+graph TD
+        A[Antithesis Platform] -->|runs tests via| B[Antithesis API]
+        A -->|provides test results via| C[email with test results]
+```
 Antithesis is the test execution platform that provides the infrastructure to run tests and collect results. Currently we use a POST API to create test runs and fetch results via email parsing. In the future the platform will provide a better API to manage test runs and fetch results.
 
 - Antithesis docs: [API](https://antithesis.com/docs/webhook/test_webhook/)
 
 ### Cardano Blockchain
+
+```mermaid
+graph TD
+        A[Cardano Blockchain] -->|certifies the moog state via| B[an unspent MPFS state token UTxO]
+        A -->|stores moog state| C[some spent MPFS request UTxOs]
+        A -->|provides moog state content security | D[the MPFS smart contract]
+```
 
 The blockchain will store data and certifications for
 - GitHub user and their associated Cardano public keys.
@@ -122,6 +118,13 @@ This choice enforce a strict protocol that ensures
 
 ### MPFS Service instances.
 
+```mermaid
+graph TD
+        A[MPFS Service] -->|provides moog state via| B[GET /facts]
+        A -->|produces unsigned transactions via| C[POST /transaction/<addr>/txtype]
+        A -->|submits signed transactions via| D[POST /transaction]
+```
+
 The MPFS Service is a backend system that all actors will use to interact with the blockchain in a way independent from the application logic.
 
 It exposes a REST API to be used by the CLI tool.
@@ -130,8 +133,17 @@ The system is capable of producing unsigned transactions for the system users, s
 
 We borrow many concepts and much terminology from the MPFS project. In particular the system state is referred to as **facts**.
 
-### Antithesis CLI Tool (and automations)
+### Moog CLI Tool (and automations)
 
+```mermaid
+graph TD
+        A[Moog CLI Tool] -->|interacts with| B[MPFS Service]
+        A -->|interacts with| C[GitHub Platform]
+        A -->|interacts with| D[Antithesis API]
+        A -->|serves as| E[Requester role]
+        A -->|serves as| F[Agent role]
+        A -->|serves as| G[Oracle role]
+```
 This is the command line interface that users will use to interact with the MPFS service and GitHub and manage their test executions on Antithesis.
 With it users can:
 - Browse the system state querying the MPFS service for facts (as any role).
@@ -145,6 +157,19 @@ The CLI tool, along with its built-in automation features for test execution and
 
 ### Requester role
 
+```mermaid
+graph LR
+        A[Requester role] -->|register as Github user via| UR[*]
+        UR -->|deployment of| B[a moog.vkey file in personal repo]
+        UR -->|submission of| C[a register-user request to MPFS service]
+        A -->|register as tester for a repo via| RR[*]
+        RR -->|deployment of| D[a CODEOWNERS record in the repository]
+        RR -->|submission of| E[a register-role request to MPFS service]
+        A -->|create test runs via| TR[*]
+        TR -->|deployment of| F[test definition files in a registered repository]
+        TR -->|submission of| G[a create-test request to MPFS service]
+```
+
 A GitHub user who initiates test execution requests on the Antithesis platform.
 
 The `requester` role involves no automation; users interact exclusively through the CLI tool to act as a requester.
@@ -155,12 +180,31 @@ The `requester` role is fully manual, requiring users to perform all actions thr
 
 ### Agent role
 
+```mermaid
+graph LR
+        A[Agent role] -->|accept test execution requests via| TR[*]
+        TR -->|submission of| B[a create-test request to MPFS service]
+        TR -->|POST to| C[Antithesis API]
+        A -->|collect test results via| RR[*]
+        RR -->|email parsing from| D[email with test results]
+        RR -->|submission of| E[a report-test request to MPFS service]
+
+```
+
 A user who interacts with both the Antithesis API and the MPFS service, responsible for automating the execution of tests on the Antithesis platform and collecting results, while also managing relevant state changes and validations.
 
 The `agent` role is partially automated and so an executable and docker image is provided to run it as a service; however, the agent must manually `whitelist` repositories using the CLI tool before the oracle can validate test execution requests from those repositories.
 
 ### Oracle role
 
+```mermaid
+graph LR
+        A[Oracle role] -->|include requests via| TR[*]
+        TR -->|validation| I[against with GitHub Platform]
+        TR -->|validation| J[of transaction signatures]
+        TR -->|validation| K[of moog state consistency]
+        TR -->|submission of| B[a state update transaction to MPFS service]
+```
 A trusted user that manages and maintains authority over the system state, validates requests from the other roles, and updates the state of the system on the blockchain.
 The `oracle` role is fully automated; an executable and Docker image are provided to run it as a service.
 
@@ -169,6 +213,14 @@ The `oracle` role is fully automated; an executable and Docker image are provide
 The use of MPFS imposes a strict protocol and terminology to describe the interactions between the different roles.
 
 ### State token
+
+```mermaid
+graph LR
+    A[State token] -->|holds the system state as| B[merkle root in UTxO datum]
+    A -->|is caged into| C[the MPFS script address]
+    A -->|holds the oracle identity as| D[oracle public key in UTxO datum]
+    A -->|is updateable by| F[the oracle role only]
+```
 
 The MPFS is a multi-project token centric system, meaning that each project's state and identity are managed through unique tokens on the Cardano blockchain.
 
@@ -182,6 +234,13 @@ Only the `oracle` role is allowed to update (consume) the state token and put ba
 
 ### State change requests
 
+```mermaid
+graph LR
+    A[State change request] -->|proposes changes to the system state as| B[deltas in UTxO datum]
+    A -->|targets a specific project via| C[project token asset id in UTxO datum]
+    A -->|is created by| D[requester or agent roles]
+    A -->|is consumed by| E[the oracle role only]
+```
 `requester` and `agent` roles are both seen as users from the MPFS perspective. They interact with the system by issuing state change requests.
 
 State change requests appears on chain as UTxO datums locked at the MPFS script address.

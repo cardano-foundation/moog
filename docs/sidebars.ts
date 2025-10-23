@@ -20,6 +20,7 @@ const sidebars: SidebarsConfig = {
       label: 'Core Concepts',
       items: [
         'antithesis-interface',
+        'architecture',
         'oracle-role',
         'requester-role',
         'antithesis-agent-role',
@@ -32,6 +33,7 @@ const sidebars: SidebarsConfig = {
         'code-design',
         'real-world',
         'secrets-management',
+        'security-considerations',
       ],
     },
   ],
