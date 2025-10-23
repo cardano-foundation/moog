@@ -5,7 +5,7 @@ SHELL:=/usr/bin/env bash
 description:="${testnet} run"
 duration:=60
 recipients:=antithesis@cardanofoundation.org
-registry:=ghcr.io/cardano-foundation/antithesis
+registry:=ghcr.io/cardano-foundation/moog
 testnet:=cardano_node_master
 url:=https://cardano.antithesis.com/api/v1/launch/cardano
 username:=cardano
@@ -47,23 +47,23 @@ help:
 
 build-shared:
 	docker build \
-	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/antithesis" \
+	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/moog" \
 		-f sidecar/Dockerfile \
 		-t ${registry}/sidecar:latest sidecar
 	docker build \
-	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/antithesis" \
+	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/moog" \
 		-f tracer/Dockerfile.compiled \
 		-t ${registry}/tracer:latest tracer
 	docker build \
-	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/antithesis" \
+	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/moog" \
 		-f tracer-sidecar/Dockerfile \
 		-t ${registry}/tracer-sidecar:latest tracer-sidecar
 	docker build \
-	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/antithesis" \
+	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/moog" \
 		-f configurator/Dockerfile \
 		-t ${registry}/configurator:latest configurator
 	docker build \
-	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/antithesis" \
+	    --label "org.opencontainers.image.source=https://github.com/cardano-foundation/moog" \
 		-f ../adversary/Dockerfile \
 		-t ${registry}/adversary:latest ../adversary
 
@@ -79,7 +79,7 @@ build-and-push-shared: build-shared
 
 build-config: TESTNET ## Build config container image
 	docker build \
-		--label "org.opencontainers.image.source=https://github.com/cardano-foundation/antithesis" \
+		--label "org.opencontainers.image.source=https://github.com/cardano-foundation/moog" \
 		-f config/Dockerfile \
 		-t ${registry}/config:latest testnets/${testnet}
 
