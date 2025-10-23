@@ -23,3 +23,4 @@ cli/.vscode
 cli/tmp
 cli/result
 .aider*
+docs/yarn.lock

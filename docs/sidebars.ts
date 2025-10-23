@@ -33,7 +33,7 @@ const sidebars: SidebarsConfig = {
         'code-design',
         'real-world',
         'secrets-management',
-        'security-considerations',
+        'security',
       ],
     },
   ],
