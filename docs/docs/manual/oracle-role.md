@@ -25,12 +25,12 @@ Then you can run the docker container
 
 ```bash
 version=$(nix eval .#version --raw)
-docker run ghcr.io/cardano-foundation/antithesis/anti-oracle:$version
+docker run ghcr.io/cardano-foundation/moog/anti-oracle:$version
 ```
 
 ## Running oracle commands manually
 
-Alternatively, oracle commands can be run manually, using the `anti` CLI. See the [Installation instructions](install.md) for how to install it.
+Alternatively, oracle commands can be run manually, using the `anti` CLI. See the [Installation instructions](installation.md) for how to install it.
 
 ## Creating the anti token (only once)
 

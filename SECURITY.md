@@ -30,7 +30,7 @@ Due to the peculiar nature of this project, we need to distinguish three differe
 If you discover a security vulnerability in the code or infrastructure of Antithesis, we encourage
 you to responsibly disclose it to us. To report a vulnerability,
 please use the [private reporting form on
-GitHub](https://github.com/cardano-foundation/antithesis/security/advisories/new)
+GitHub](https://github.com/cardano-foundation/moog/security/advisories/new)
 to draft a new _Security advisory_.
 
 Please include as much details as needed to clearly qualify the issue:
@@ -88,7 +88,7 @@ If you discover a security vulnerability in a component or protocol
 through the use of Antithesis code and infrastructure, we encourage you
 to responsibly disclose it to us. To report a vulnerability, please
 use the [private reporting form on
-GitHub](https://github.com/cardano-foundation/antithesis/security/advisories/new)
+GitHub](https://github.com/cardano-foundation/moog/security/advisories/new)
 to draft a new _Security advisory_.
 
 Please include as much details as needed to clearly qualify the issue:
@@ -141,10 +141,10 @@ report security vulnerabilities to us.
 ## Contact Information
 
 To report a security vulnerability, please use [GitHub
-form](https://github.com/cardano-foundation/antithesis/security/advisories/new).
+form](https://github.com/cardano-foundation/moog/security/advisories/new).
 
 ## Revision of Policy
 
 This Security Vulnerability Disclosure Policy may be updated or
 revised as necessary. Please check the latest version of this policy
-on the [Antithesis repository](https://github.com/cardano-foundation/antithesis/blob/master/SECURITY.md).
+on the [Antithesis repository](https://github.com/cardano-foundation/moog/blob/master/SECURITY.md).

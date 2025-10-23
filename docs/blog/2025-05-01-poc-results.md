@@ -53,7 +53,7 @@ Using Antithesis to test cardano-node required some initial effort to create the
 
 This enabled us to test relatively large clusters of up to 12 nodes while simulating extended time periods of several hours, enough to trigger various changes in the P2P controller. Throughout this process, we had to overcome various minor challenges integrating cardano-node in Antithesis, and it took us a couple of weeks to be able to run a meaningful test to completion.
 
-As examplified by the [example_10.2.1](https://github.com/cardano-foundation/antithesis/blob/07474674fc8a8bfbb8a56316939c5eee3e594a6e/compose/testnets/example_10.2.1/README.md#L1) directory, the configuration needed to run a cluster of Cardano nodes in AT will be defined as a [docker compose](https://docs.docker.com/compose/) file containing:
+As examplified by the [example_10.2.1](https://github.com/cardano-foundation/moog/blob/07474674fc8a8bfbb8a56316939c5eee3e594a6e/compose/testnets/example_10.2.1/README.md#L1) directory, the configuration needed to run a cluster of Cardano nodes in AT will be defined as a [docker compose](https://docs.docker.com/compose/) file containing:
 
 * A set of _n_ networked nodes pulled either from a public or dedicated repository. Each of those containers is typically built from either pre-built cardano-node binaries or a specific source tree, and runs a node along with a process that injects transaction at a regular interval,
 * A _sidecar_ container whose purpose is to monitor the rest of the cluster and notify the AT runner of the main events of interest, most importantly when the cluster is ready to be tested.
@@ -111,7 +111,7 @@ More concretely, in the short term we'll be focusing on:
 
 1. Better documentation on how to run new tests on the platform,
 2. Automating test executions and report sharing through GitHub actions,
-3. Enable logs based SDK using [cardano-tracer](https://github.com/cardano-foundation/antithesis/pull/5) to aggregate cardano-node logs,
+3. Enable logs based SDK using [cardano-tracer](https://github.com/cardano-foundation/moog/pull/5) to aggregate cardano-node logs,
 4. Express more interesting properties (Chain prefix, chain density, chain growth...) as composable scripts or executables to be included in test composer images,
 5. Collaborate with cardano-node, Amaru, and other node implementor teams interested in leveraging Antithesis.
 

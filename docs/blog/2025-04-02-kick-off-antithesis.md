@@ -45,7 +45,7 @@ The long-term goal of this project is therefore to collectively build and mainta
 
 In the short-term however, we need to experiment with the platform, understand what are its capabilities and limits, what it requires from the system-under-test in order to be the most effective, how powerful it is to find and troubleshoot bugs and security vulnerabilities, and more generally openly and candidly build a strong case for the governing bodies of the Cardano ecosystem to decide whether or not this investment shall be pursued.
 
-The phases and coarse-grained timeline of the project are documented in the [README](https://github.com/cardano-foundation/antithesis), and this blog post marks the beginning of the _Proof-of-Concept_ period during which will collaborate with Antithesis to assess the tool.
+The phases and coarse-grained timeline of the project are documented in the [README](https://github.com/cardano-foundation/moog), and this blog post marks the beginning of the _Proof-of-Concept_ period during which will collaborate with Antithesis to assess the tool.
 
 ## Why should you care?
 
@@ -57,5 +57,5 @@ Concretely, this means that we expect from _you_ as a Cardano enthusiast to help
 * Defining and designing [test](https://antithesis.com/docs/test_templates/) that explore "interesting" scenarios,
 * Stating and refining properties that need to old, in specific or generic cases,
 * Documenting the expected behaviour in such a way that can easily lead to test generations, for example under the umbrella of teh [Cardano Blueprint](https://github.com/cardano-scaling/cardano-blueprint) project,
-* Troubleshooting bugs and security vulnerabilities, following our [Security policy](https://github.com/cardano-foundation/antithesis/security/policy),
+* Troubleshooting bugs and security vulnerabilities, following our [Security policy](https://github.com/cardano-foundation/moog/security/policy),
 * ...

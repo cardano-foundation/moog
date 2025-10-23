@@ -143,5 +143,5 @@ anti agent report-test -i "$references" \
 ```
 
 
-[README]: install.md
+[README]: installation.md
 [Discord]: https://discord.gg/sVUnen7t

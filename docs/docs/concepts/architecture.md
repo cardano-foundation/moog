@@ -10,7 +10,7 @@ First-class participation would imply access to a Cardano node. However, the sys
 
 To improve component reusability, the backend service has no knowledge of project-specific goals and is developed in a separate repository: [MPFS](https://github.com/cardano-foundation/MPFS).
 
-In a perfect setup, each actor should run both the CLI tool and the MPFS service locally. However, for practical reasons, we expect most users to run only the CLI tool while relying on remote shared instances of the MPFS service. [Security considerations](security.md) should be taken into account when choosing between local or shared MPFS service instances.
+In a perfect setup, each actor should run both the CLI tool and the MPFS service locally. However, for practical reasons, we expect most users to run only the CLI tool while relying on remote shared instances of the MPFS service. [Security considerations](advanced/security.md) should be taken into account when choosing between local or shared MPFS service instances.
 
 ## Systems
 
@@ -74,13 +74,13 @@ Any GitHub user can register themselves against the system state by deploying a 
 #### Github as Antithesis role management
 
 To grant the Antithesis tester role, a GitHub repository must explicitly list GitHub users in its CODEOWNERS file; the system uses this mapping to determine which users are authorized as testers for that repository.
-- Example: [CODEOWNERS](https://github.com/cardano-foundation/antithesis/blob/main/CODEOWNERS)
+- Example: [CODEOWNERS](https://github.com/cardano-foundation/moog/blob/main/CODEOWNERS)
 
 #### Github as test assets hosting
 
 Any GitHub repository that has been registered with the system (i.e., contains a valid user public key and is whitelisted for test execution) can host a directory containing test definitions that meet the required format and standards. Currently only a runnable docker-compose.yaml is required.
 
-- Example: [test definition](https://github.com/cardano-foundation/antithesis/tree/main/compose/testnets/cardano_node_master)
+- Example: [test definition](https://github.com/cardano-foundation/moog/tree/main/compose/testnets/cardano_node_master)
 
 ### Antithesis Platform
 

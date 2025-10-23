@@ -14,7 +14,7 @@ anti agent white-list <platform> <repository>
 ```
 
 ATM only GitHub is supported as a platform.
-The format of the repository is `<owner>/<repository>`, e.g. `cardano-foundation/antithesis`.
+The format of the repository is `<owner>/<repository>`, e.g. `cardano-foundation/moog`.
 
 ### Black-list a repository
 

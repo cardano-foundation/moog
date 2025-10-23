@@ -1,4 +1,4 @@
-import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
+import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -13,30 +13,34 @@ import type {SidebarsConfig} from '@docusaurus/plugin-content-docs';
  Create as many sidebars as you want.
  */
 const sidebars: SidebarsConfig = {
-  tutorialSidebar: [
-    'install',
-    {
-      type: 'category',
-      label: 'Core Concepts',
-      items: [
-        'antithesis-interface',
-        'architecture',
-        'oracle-role',
-        'requester-role',
-        'antithesis-agent-role',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Advanced Topics',
-      items: [
-        'code-design',
-        'real-world',
-        'secrets-management',
-        'security',
-      ],
-    },
-  ],
+    tutorialSidebar: [
+        'installation',
+        {
+            type: 'category',
+            label: 'Operations',
+            items: [
+                'manual/any-role',
+                'manual/oracle-role',
+                'manual/requester-role',
+                'manual/agent-role'
+            ]
+        },
+        { type: 'category', label: 'Examples', items: ['examples/real-world'] },
+        {
+            type: 'category',
+            label: 'Core Concepts',
+            items: ['concepts/architecture', 'concepts/antithesis-interface']
+        },
+        {
+            type: 'category',
+            label: 'Advanced Topics',
+            items: [
+                'advanced/security',
+                'advanced/code-design',
+                'advanced/secrets-management'
+            ]
+        }
+    ]
 };
 
 export default sidebars;

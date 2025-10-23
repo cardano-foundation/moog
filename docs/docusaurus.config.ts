@@ -98,12 +98,8 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/install',
-            },
-            {
-              label: 'Antithesis Interface',
-              to: '/docs/antithesis-interface',
-            },
+              to: '/docs/installation',
+            }
           ],
         },
         {
