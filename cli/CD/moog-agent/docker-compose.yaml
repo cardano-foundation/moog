@@ -21,7 +21,7 @@ services:
       - tmp:/tmp
         # Mount CA certificates, curl seems not to find them when the pkgs.cacert is included in the image
       - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:rw
 secrets:
   agent-wallet:
     file: /secrets/moog-agent/agent.json # Path to a file containing the wallet

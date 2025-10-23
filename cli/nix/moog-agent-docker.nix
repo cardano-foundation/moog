@@ -5,6 +5,6 @@ pkgs.dockerTools.buildImage {
   config = { EntryPoint = [ "moog-agent" ]; };
   copyToRoot = pkgs.buildEnv {
     name = "image-root";
-    paths = [ project.packages.moog-agent pkgs.curl pkgs.coreutils pkgs.bash ];
+    paths = [ pkgs.docker project.packages.moog-agent pkgs.curl pkgs.coreutils pkgs.bash ];
   };
 }
