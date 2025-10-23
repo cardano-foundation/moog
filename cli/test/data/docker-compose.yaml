@@ -14,15 +14,14 @@ x-cardano-node: &cardano-node
       --port 3001
       --host-addr 0.0.0.0
       +RTS -N -A16m -qg -qb -RTS
-  restart:
-    always
+  restart: always
   depends_on:
-      configurator:
-        condition: service_completed_successfully
+    configurator:
+      condition: service_completed_successfully
 
 services:
   configurator:
-    image: ghcr.io/cardano-foundation/antithesis/configurator:latest
+    image: ghcr.io/cardano-foundation/moog/configurator:latest
     container_name: configurator
     volumes:
       - ./testnet.yaml:/testnet.yaml #  source of configurations
@@ -33,14 +32,14 @@ services:
       - p5-configs:/configs/5 # configs for p5
 
   tracer:
-    image: ghcr.io/cardano-foundation/antithesis/tracer:latest
+    image: ghcr.io/cardano-foundation/moog/tracer:latest
     hostname: tracer.example
     container_name: tracer
     volumes:
       - tracer:/opt/cardano-tracer
     command:
-       - "--config"
-       - "tracer-config.yaml"
+      - "--config"
+      - "tracer-config.yaml"
 
   p1:
     <<: *cardano-node
@@ -81,14 +80,14 @@ services:
       - tracer:/tracer
 
   sidecar:
-    image: ghcr.io/cardano-foundation/antithesis/sidecar:latest
+    image: ghcr.io/cardano-foundation/moog/sidecar:latest
     container_name: sidecar
     hostname: sidecar.example
     environment:
       POOLS: "5" # FIXME: could remove
 
   tracer-sidecar:
-    image: ghcr.io/cardano-foundation/antithesis/tracer-sidecar:latest
+    image: ghcr.io/cardano-foundation/moog/tracer-sidecar:latest
     container_name: tracer-sidecar
     hostname: tracer-sidecar.example
     environment:

@@ -1,6 +1,6 @@
 services:
   moog-agent:
-    image: ghcr.io/cardano-foundation/antithesis/moog-agent:${MOOG_VERSION:-latest}
+    image: ghcr.io/cardano-foundation/moog/moog-agent:${MOOG_VERSION:-latest}
     secrets:
       - agent-wallet
       - secrets

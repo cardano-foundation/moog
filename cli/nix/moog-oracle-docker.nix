@@ -1,6 +1,6 @@
 { project, pkgs, version, }:
 pkgs.dockerTools.buildImage {
-  name = "ghcr.io/cardano-foundation/antithesis/moog-oracle";
+  name = "ghcr.io/cardano-foundation/moog/moog-oracle";
   tag = version;
   config = { EntryPoint = [ "moog-oracle" ]; };
   copyToRoot = pkgs.buildEnv {

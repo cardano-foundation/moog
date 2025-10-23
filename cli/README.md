@@ -15,7 +15,7 @@ The CLI can run on Linux and MacOS.
 
 ## Installation via tarballs
 
-You can download the latest tarball for your platform from the [releases page](https://github.com/cardano-foundation/antithesis/releases).
+You can download the latest tarball for your platform from the [releases page](https://github.com/cardano-foundation/moog/releases).
 
 ## Installation via Nix
 
@@ -28,7 +28,7 @@ Be careful to be a trusted nix user so the caches indicated in the flake will ki
 To get the last version of the code, you can use the following command:
 
 ```bash
-nix shell github:cardano-foundation/antithesis?dir=cli#moog
+nix shell github:cardano-foundation/moog?dir=cli#moog
 ```
 
 ### Building the tarballs
@@ -36,7 +36,7 @@ nix shell github:cardano-foundation/antithesis?dir=cli#moog
 On linux, you can build a nix derivation with
 
 ```bash
-nix build github:cardano-foundation/antithesis?dir=cli#linux64.tarball
+nix build github:cardano-foundation/moog?dir=cli#linux64.tarball
 ```
 
 On macOS, you can build a nix derivation with

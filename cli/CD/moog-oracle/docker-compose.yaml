@@ -1,6 +1,6 @@
 services:
   moog-oracle:
-    image: ghcr.io/cardano-foundation/antithesis/moog-oracle:${MOOG_VERSION:-latest}
+    image: ghcr.io/cardano-foundation/moog/moog-oracle:${MOOG_VERSION:-latest}
     secrets:
       - oracle-wallet
       - secrets

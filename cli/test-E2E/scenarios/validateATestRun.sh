@@ -45,7 +45,7 @@ printFacts
 log "Registering a role..."
 result=$(moog requester register-role \
     --platform github \
-    --repository cardano-foundation/antithesis \
+    --repository cardano-foundation/moog \
     --username paolino \
     )
 outputRef=$(getOutputRef "$result")
@@ -61,7 +61,7 @@ printFacts
 log "Creating a test-run request..."
 result=$(moog requester create-test \
     --platform github \
-    --repository cardano-foundation/antithesis \
+    --repository cardano-foundation/moog \
     --directory compose \
     --commit d9fb8d2bcfa321497ae3a89244bf13513a9a9a14 \
     --username paolino \

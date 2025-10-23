@@ -153,10 +153,10 @@ build-moog-agent tag='latest':
     nix build .#moog-agent-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
-    docker image tag ghcr.io/cardano-foundation/antithesis/moog-agent:"$version" \
-        "ghcr.io/cardano-foundation/antithesis/moog-agent:{{ tag }}"
-    docker image tag ghcr.io/cardano-foundation/antithesis/moog-agent:"$version" \
-        "ghcr.io/cardano-foundation/antithesis/moog-agent:latest"
+    docker image tag ghcr.io/cardano-foundation/moog/moog-agent:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog-agent:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/moog/moog-agent:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog-agent:latest"
 
 start-moog-agent bg="false":
     #!/usr/bin/env bash
@@ -185,10 +185,10 @@ build-moog-oracle tag='latest':
     nix build .#moog-oracle-docker-image
     docker load < result
     version=$(nix eval --raw .#version)
-    docker image tag ghcr.io/cardano-foundation/antithesis/moog-oracle:"$version" \
-        "ghcr.io/cardano-foundation/antithesis/moog-oracle:{{ tag }}"
-    docker image tag ghcr.io/cardano-foundation/antithesis/moog-oracle:"$version" \
-        "ghcr.io/cardano-foundation/antithesis/moog-oracle:latest"
+    docker image tag ghcr.io/cardano-foundation/moog/moog-oracle:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog-oracle:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/moog/moog-oracle:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog-oracle:latest"
 
 start-moog-oracle bg="false":
     #!/usr/bin/env bash
@@ -224,7 +224,7 @@ build-docker-images tag='latest':
 
 push-docker-images tag='latest':
     #!/usr/bin/env bash
-    docker push "ghcr.io/cardano-foundation/antithesis/moog-agent:{{ tag }}"
-    docker push "ghcr.io/cardano-foundation/antithesis/moog-oracle:{{ tag }}"
-    docker push "ghcr.io/cardano-foundation/antithesis/moog-agent:latest"
-    docker push "ghcr.io/cardano-foundation/antithesis/moog-oracle:latest"
+    docker push "ghcr.io/cardano-foundation/moog/moog-agent:{{ tag }}"
+    docker push "ghcr.io/cardano-foundation/moog/moog-oracle:{{ tag }}"
+    docker push "ghcr.io/cardano-foundation/moog/moog-agent:latest"
+    docker push "ghcr.io/cardano-foundation/moog/moog-oracle:latest"

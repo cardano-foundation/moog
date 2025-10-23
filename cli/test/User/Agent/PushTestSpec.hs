@@ -32,10 +32,10 @@ spec = do
             -- Here you would write tests for the collectImagesFromAssets function
             collectImagesFromAssets (Directory "test/data")
                 `shouldReturn` Right
-                    [ "ghcr.io/cardano-foundation/antithesis/configurator:latest"
-                    , "ghcr.io/cardano-foundation/antithesis/sidecar:latest"
-                    , "ghcr.io/cardano-foundation/antithesis/tracer-sidecar:latest"
-                    , "ghcr.io/cardano-foundation/antithesis/tracer:latest"
+                    [ "ghcr.io/cardano-foundation/moog/configurator:latest"
+                    , "ghcr.io/cardano-foundation/moog/sidecar:latest"
+                    , "ghcr.io/cardano-foundation/moog/tracer-sidecar:latest"
+                    , "ghcr.io/cardano-foundation/moog/tracer:latest"
                     , "ghcr.io/intersectmbo/cardano-node:latest"
                     ]
     describe "buildConfigImage" $ do
@@ -89,5 +89,5 @@ spec = do
                            , "-H"
                            , "Content-Type: application/json"
                            , "-d"
-                           , "{\"params\":{\"antithesis.config_image\":\"registry/cardano-moog-config:dummy\",\"antithesis.description\":\"{\\\"testRun\\\":{\\\"commitId\\\":\\\"abcdef1234567890\\\",\\\"directory\\\":\\\"tests\\\",\\\"platform\\\":\\\"github\\\",\\\"repository\\\":{\\\"organization\\\":\\\"cardano-foundation\\\",\\\"repo\\\":\\\"antithesis\\\"},\\\"requester\\\":\\\"alice\\\",\\\"try\\\":1,\\\"type\\\":\\\"test-run\\\"},\\\"testRunId\\\":\\\"test-run-001\\\"}\",\"antithesis.duration\":3600,\"antithesis.images\":\"ghcr.io/cardano-foundation/antithesis/configurator:latest;ghcr.io/cardano-foundation/antithesis/sidecar:latest;ghcr.io/cardano-foundation/antithesis/tracer-sidecar:latest;ghcr.io/cardano-foundation/antithesis/tracer:latest;ghcr.io/intersectmbo/cardano-node:latest\",\"antithesis.report.recipients\":\"hal@cardanofoundation.org\",\"antithesis.source\":\"dummy\"}}"
+                           , "{\"params\":{\"antithesis.config_image\":\"registry/cardano-moog-config:dummy\",\"antithesis.description\":\"{\\\"testRun\\\":{\\\"commitId\\\":\\\"abcdef1234567890\\\",\\\"directory\\\":\\\"tests\\\",\\\"platform\\\":\\\"github\\\",\\\"repository\\\":{\\\"organization\\\":\\\"cardano-foundation\\\",\\\"repo\\\":\\\"antithesis\\\"},\\\"requester\\\":\\\"alice\\\",\\\"try\\\":1,\\\"type\\\":\\\"test-run\\\"},\\\"testRunId\\\":\\\"test-run-001\\\"}\",\"antithesis.duration\":3600,\"antithesis.images\":\"ghcr.io/cardano-foundation/moog/configurator:latest;ghcr.io/cardano-foundation/moog/sidecar:latest;ghcr.io/cardano-foundation/moog/tracer-sidecar:latest;ghcr.io/cardano-foundation/moog/tracer:latest;ghcr.io/intersectmbo/cardano-node:latest\",\"antithesis.report.recipients\":\"hal@cardanofoundation.org\",\"antithesis.source\":\"dummy\"}}"
                            ]
