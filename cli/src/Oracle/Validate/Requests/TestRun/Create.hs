@@ -297,7 +297,7 @@ validateCreateTestRunCore
     testRun
     (Pending duration signature) = do
         (withSystemTempDirectory $ hoistValidation validation)
-            "antithesis-test-run"
+            "moog-test-run"
             $ \tmpDir -> do
                 let liftValidate f = lift (f validation testRun) >>= throwJusts
                 Validated

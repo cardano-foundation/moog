@@ -287,7 +287,7 @@ agentProcess
                                 ++ " is pending from trusted requester "
                                 ++ show user
                                 ++ ", starting it."
-                        withSystemTempDirectory "antithesis-agent-" $ \directoryPath -> do
+                        withSystemTempDirectory "moog-agent-" $ \directoryPath -> do
                             let directory = Directory directoryPath
                             dres <- liftIO $ downloadAssets opts directory testId
                             case dres of

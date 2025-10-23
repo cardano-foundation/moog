@@ -170,7 +170,7 @@ generateAssets (Directory targetDirectory) = do
             r <-
                 lift
                     $ githubDownloadDirectory
-                        (GithubRepository "cardano-foundation" "antithesis")
+                        (GithubRepository "cardano-foundation" "moog")
                         Nothing
                         (Directory "compose/testnets/cardano_node_master")
                         (Directory targetDirectory)
