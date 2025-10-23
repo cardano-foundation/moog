@@ -1,4 +1,4 @@
-# Antithesis Interface
+# Moog protocol
 
 ## Context
   * `alice` is a user who wants to run tests in Antithesis for her cardano-node

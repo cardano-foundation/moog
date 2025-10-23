@@ -17,7 +17,7 @@ const sidebars: SidebarsConfig = {
         'installation',
         {
             type: 'category',
-            label: 'Operations',
+            label: 'User Manual',
             items: [
                 'manual/any-role',
                 'manual/oracle-role',

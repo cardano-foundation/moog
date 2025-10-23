@@ -1,4 +1,4 @@
-# Antithesis Agent Role
+# Agent role manual
 
 ## White-list repositories
 

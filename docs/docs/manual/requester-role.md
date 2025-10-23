@@ -1,4 +1,4 @@
-# Requester role
+# Requester role manual
 
 This is the role of the user who wants to run tests using the Antithesis platform.
 

@@ -1,4 +1,4 @@
-# Oracle role
+# Oracle role manual
 
 This is the role of the user that wants to run a service to control access to the Antithesis platform. There will be only one token and so there will be only one oracle service running at a time, but we document it here for completeness.
 
