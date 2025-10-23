@@ -5,20 +5,20 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'Anti-CLI',
+  title: 'Moog',
   tagline: 'Cardano testing with Antithesis',
   favicon: 'img/cardano-ada-logo.svg',
 
   // Set the production url of your site here
-  url: process.env.ANTITHESIS_SITE_URL ?? 'https://cardano-foundation.github.io/',
+  url: process.env.MOOG_SITE_URL ?? 'https://cardano-foundation.github.io/',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: process.env.ANTITHESIS_SITE_BASE_URL ?? '/antithesis',
+  baseUrl: process.env.MOOG_SITE_BASE_URL ?? '/moog',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'cardano-foundation', // Usually your GitHub org/user name.
-  projectName: 'antithesis', // Usually your repo name.
+  projectName: 'moog', // Usually your repo name.
 
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -42,7 +42,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/cardano-foundation/antithesis/tree/main/docs/',
+          editUrl: 'https://github.com/cardano-foundation/moog/tree/main/docs/',
         },
         blog: {
           routeBasePath: '/blog',
@@ -51,7 +51,7 @@ const config: Config = {
             type: ['rss', 'atom'],
             xslt: true,
           },
-          editUrl: 'https://github.com/cardano-foundation/antithesis/tree/main/docs/',
+          editUrl: 'https://github.com/cardano-foundation/moog/tree/main/docs/',
           onInlineTags: 'warn',
           onInlineAuthors: 'warn',
           onUntruncatedBlogPosts: 'warn',
@@ -70,7 +70,7 @@ const config: Config = {
       { name: 'description', content: 'Antithesis deterministic simulation testing for Cardano' },
     ],
     navbar: {
-      title: 'Anti-CLI',
+      title: 'Moog',
       logo: {
         alt: 'Cardano Logo',
         src: 'img/cardano-ada-logo.svg',
@@ -84,7 +84,7 @@ const config: Config = {
         },
         { to: '/blog', label: 'Blog', position: 'left' },
         {
-          href: 'https://github.com/cardano-foundation/antithesis',
+          href: 'https://github.com/cardano-foundation/moog',
           label: 'GitHub',
           position: 'right',
         },
@@ -124,7 +124,7 @@ const config: Config = {
             },
             {
               label: 'GitHub',
-              href: 'https://github.com/cardano-foundation/antithesis',
+              href: 'https://github.com/cardano-foundation/moog',
             },
           ],
         },

@@ -27,12 +27,12 @@ const FeatureList: FeatureItem[] = [
     ),
   },
   {
-    title: 'Why use Anti-CLI?',
+    title: 'Why use Moog?',
     Svg: require('@site/static/img/anticli.svg').default,
     description: (
         <>
-            <strong>Anti-CLI</strong> aims at streamlining the process of orchestrating Antithesis tests for the Cardano community, providing an easy-to-use interface to the Antithesis service.
-            Anti-CLI leverages the blockchain itself to track recording of users and projects, tests requests, and execution results thus providing auditability and traceability of the system usage.
+            <strong>Moog</strong> aims at streamlining the process of orchestrating Antithesis tests for the Cardano community, providing an easy-to-use interface to the Antithesis service.
+            Moog leverages the blockchain itself to track recording of users and projects, tests requests, and execution results thus providing auditability and traceability of the system usage.
             It demonstrates how Cardano can be used as an infrastructure to support its own development and the work of the Cardano community.
       </>
     ),
@@ -43,7 +43,7 @@ const FeatureList: FeatureItem[] = [
     description: (
       <>
             <ol>
-            <li><em>Users</em> register and submit test run requests through Anti-CLI, providing a <code>docker-compose</code> descriptor</li>
+            <li><em>Users</em> register and submit test run requests through Moog, providing a <code>docker-compose</code> descriptor</li>
             <li>Requests are stored as transactions and validated by an <em>Agent</em></li>
             <li>The agent triggers a test run on <em>Antithesis</em> platform</li>
             <li>Test run results are made available through a secure link to Users</li>

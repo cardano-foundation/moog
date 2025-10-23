@@ -62,7 +62,7 @@ available on the [Moog webiste][Moog].
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
-[Moog]: https://antithesis.pankzsoft.net/
+[Moog]: https://cardano-foundation.github.io/moog
 [Antithesis]: https://antithesis.com
 [HAL]: https://github.com/cardano-foundation/hal
 [CF]: https://github.com/cardano-foundation
