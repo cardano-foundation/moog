@@ -3,7 +3,7 @@ env:
   TESTNET: "cardano_node_master"
   REGISTRY: ghcr.io/cardano-foundation/moog
   EMAILS: 'antithesis@cardanofoundation.org'
-  DURATION: ${{ inputs.duration || 5 }}
+  DURATION: ${{ inputs.duration || 3 }}
 on:
   # can be dispatched manually
   workflow_dispatch:
@@ -16,7 +16,7 @@ on:
        duration:
         description: 'Test duration (in hours)'
         required: false
-        default: 5
+        default: 3
         type: number
   schedule:
     # run every 6 hours
