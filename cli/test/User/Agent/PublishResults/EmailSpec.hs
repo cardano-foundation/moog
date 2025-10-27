@@ -23,7 +23,14 @@ import Data.Time
     , parseTimeM
     , secondsToDiffTime
     )
-import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe)
+import Test.Hspec
+    ( Expectation
+    , Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    )
 import Test.Hspec.QuickCheck (prop)
 import Test.QuickCheck (Gen, choose, forAll, withMaxSuccess)
 import User.Agent.PublishResults.Email
@@ -35,16 +42,10 @@ import User.Agent.PublishResults.Email
     , utcTimeToClockTime
     )
 import User.Types
-    ( TestRun
-        ( TestRun
-        , commitId
-        , directory
-        , platform
-        , repository
-        , requester
-        , tryIndex
-        )
-    )
+    ( TestRun(TestRun, commitId, directory, platform, repository,
+              requester, tryIndex),
+      Outcome,
+      Outcome(..) )
 
 spec :: Spec
 spec = do
@@ -80,6 +81,7 @@ spec = do
                                         "%Y-%m-%d %H:%M:%S"
                                         "2025-09-05 17:27:03"
                             , link = T.strip expectedLink
+                            , outcome = OutcomeFailure
                             }
         it "rejects email with no date"
             $ case readEmail noDate of
@@ -125,7 +127,21 @@ spec = do
                             , link =
                                 T.strip
                                     [s|https://cardano.antithesis.com/report/nDSj3YOUtIvcco1HRmK7iz2w/YudEq2ITbl0xxDqYNgdrT2gHUMtQDXYkNtDMyRwT61A.html?auth=v2.public.eyJuYmYiOiIyMDI1LTA5LTEzVDExOjAyOjM2LjIwNzY1ODk2NFoiLCJzY29wZSI6eyJSZXBvcnRTY29wZVYxIjp7ImFzc2V0IjoiWXVkRXEySVRibDB4eERxWU5nZHJUMmdIVU10UURYWWtOdERNeVJ3VDYxQS5odG1sIiwicmVwb3J0X2lkIjoibkRTajNZT1V0SXZjY28xSFJtSzdpejJ3In19fUQUQv8zIXJj1FqNehObRCWcj22nLkUqxHJCTuO5FN4TK_xN4P9o8luQnFgbwPKH1eAmwrFtC7qMUzlp3kqpoQI|]
+                            , outcome = OutcomeFailure
                             }
+
+        describe "parses test outcomes" $ do
+            let shouldHaveOutcome :: B.ByteString -> Outcome -> Expectation
+                shouldHaveOutcome vector expectedOutcome = case readEmail vector of
+                    Left err -> expectationFailure $ "should parse: " <> show err
+                    Right r -> outcome r `shouldBe` expectedOutcome
+
+            it "goldenEmail" $ goldenEmail `shouldHaveOutcome` OutcomeFailure
+            it "quotedPrintableGood"
+                $ quotedPrintableGood `shouldHaveOutcome` OutcomeFailure
+            it "outcomeFailure" $ outcomeFailure `shouldHaveOutcome` OutcomeFailure
+            it "outcomeSuccess" $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
+            it "outcomeSuccess2" $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
 
 genTime :: Gen UTCTime
 genTime = do
@@ -244,4 +260,81 @@ QS5odG1sIiwicmVwb3J0X2lkIjoibkRTajNZT1V0SXZjY28xSFJtSzdpejJ3In19fUQUQv8zIXJ=
 j1FqNehObRCWcj22nLkUqxHJCTuO5FN4TK_xN4P9o8luQnFgbwPKH1eAmwrFtC7qMUzlp3kqpoQ=
 I#/run/8f54a382decd75c13766bcde08c5750a-37-4/finding/2f95173b159955ee457c5f=
 52cbb711791c742ef1">Look into 1 ongoing finding.</a>
+|]
+
+outcomeFailure :: B.ByteString
+outcomeFailure =
+    [s|
+From: "'Antithesis Reports' via list_antithesis_external" <antithesis@cardanofoundation.org>
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Date: Fri, 5 Sep 2025 17:27:03 +0000
+
+Run by cardano on 2025-10-27 01:44 UTC<br> Description: {"testRun":{"commit=
+Id":"18a35cf686fea3e6b67bf7d84b126c1b2526c9d4","directory":"compose/testnet=
+s/cardano_node_master","platform":"github","repository":{"organization":"ca=
+rdano-foundation","repo":"moog"},"requester":"cfhal","try":10,"type":"test-=
+run"},"testRunId":"baf7d411f6bced16a331f31d1d6ec56a36a00a3e25389620b53d1a54=
+794d3381"}<br><span style=3D"font-size:larger;font-weight:bold"><a href=3Dh=
+ttps://cardano.antithesis.com/report/bYjofuPSc6yGkQyNk6s9uhAk/28Kwr2xYcShTU=
+tty-ELrIdIfNrMAE3hjzMFASume36M.html?auth=3Dv2.public.eyJuYmYiOiIyMDI1LTEwLT=
+I3VDA0OjAyOjQ3LjU5OTU1NTk3MFoiLCJzY29wZSI6eyJSZXBvcnRTY29wZVYxIjp7ImFzc2V0I=
+joiMjhLd3IyeFljU2hUVXR0eS1FTHJJZElmTnJNQUUzaGp6TUZBU3VtZTM2TS5odG1sIiwicmVw=
+b3J0X2lkIjoiYllqb2Z1UFNjNnlHa1F5Tms2czl1aEFrIn19fSLp_NhNZ9c8tS_7O3N8xjL6L6G=
+i02jbILkugVDMKul0l5tO275-ET3ylbs7_uhKJjCbxoYpQ2zEbquhIgkrPgs>View report - =
+d2dd51d5455f4c10036c0c4c2fc38905-40-9</a></span><br>
+<h3><font style=3D"color:red">1 new</font>, 0 resolved, and 0 rare findings=
+ seen this run.<br>0 ongoing issues.</h3>
+    <a href=3D"https://cardano.antithesis.com/report/bYjofuPSc6yGkQyNk6s9uh=
+Ak/28Kwr2xYcShTUtty-ELrIdIfNrMAE3hjzMFASume36M.html?auth=3Dv2.public.eyJuYm=
+YiOiIyMDI1LTEwLTI3VDA0OjAyOjQ3LjU5OTU1NTk3MFoiLCJzY29wZSI6eyJSZXBvcnRTY29wZ=
+VYxIjp7ImFzc2V0IjoiMjhLd3IyeFljU2hUVXR0eS1FTHJJZElmTnJNQUUzaGp6TUZBU3VtZTM2=
+TS5odG1sIiwicmVwb3J0X2lkIjoiYllqb2Z1UFNjNnlHa1F5Tms2czl1aEFrIn19fSLp_NhNZ9c=
+8tS_7O3N8xjL6L6Gi02jbILkugVDMKul0l5tO275-ET3ylbs7_uhKJjCbxoYpQ2zEbquhIgkrPg=
+s#/run/d2dd51d5455f4c10036c0c4c2fc38905-40-9/finding/961d3c463f5ef7640df4b3=
+f30c6d7d9d2759b9c7">Look into 1 new finding.</a><ul><li><font style=3D"colo=
+r:red">[new]</font> Always: Commands finish with zero exit code =E2=86=92 c=
+onvergence/eventually_converged.sh</li></ul>
+   =20
+   =20
+   =20
+    |]
+
+outcomeSuccess :: B.ByteString
+outcomeSuccess =
+    [s|
+From: "'Antithesis Reports' via list_antithesis_external" <antithesis@cardanofoundation.org>
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Date: Fri, 5 Sep 2025 17:27:03 +0000
+
+Run by cardano on 2025-10-27 01:44 UTC<br> Description: {"testRun":{"commit=
+Id":"18a35cf686fea3e6b67bf7d84b126c1b2526c9d4","directory":"compose/testnet=
+s/cardano_node_master","platform":"github","repository":{"organization":"ca=
+rdano-foundation","repo":"moog"},"requester":"cfhal","try":10,"type":"test-=
+run"},"testRunId":"baf7d411f6bced16a331f31d1d6ec56a36a00a3e25389620b53d1a54=
+794d3381"}<br><span style=3D"font-size:larger;font-weight:bold"><a href=3Dh=
+ttps://cardano.antithesis.com/report/bYjofuPSc6yGkQyNk6s9uhAk/28Kwr2xYcShTU=
+tty-ELrIdIfNrMAE3hjzMFASume36M.html?auth=3Dv2.public.eyJuYmYiOiIyMDI1LTEwLT=
+I3VDA0OjAyOjQ3LjU5OTU1NTk3MFoiLCJzY29wZSI6eyJSZXBvcnRTY29wZVYxIjp7ImFzc2V0I=
+joiMjhLd3IyeFljU2hUVXR0eS1FTHJJZElmTnJNQUUzaGp6TUZBU3VtZTM2TS5odG1sIiwicmVw=
+b3J0X2lkIjoiYllqb2Z1UFNjNnlHa1F5Tms2czl1aEFrIn19fSLp_NhNZ9c8tS_7O3N8xjL6L6G=
+i02jbILkugVDMKul0l5tO275-ET3ylbs7_uhKJjCbxoYpQ2zEbquhIgkrPgs>View report - =
+d2dd51d5455f4c10036c0c4c2fc38905-40-9</a></span><br>
+<h3>No findings introduced this run.<br>0 ongoing issues.</h3>
+    <a href=3D"https://cardano.antithesis.com/report/bYjofuPSc6yGkQyNk6s9uh=
+Ak/28Kwr2xYcShTUtty-ELrIdIfNrMAE3hjzMFASume36M.html?auth=3Dv2.public.eyJuYm=
+YiOiIyMDI1LTEwLTI3VDA0OjAyOjQ3LjU5OTU1NTk3MFoiLCJzY29wZSI6eyJSZXBvcnRTY29wZ=
+VYxIjp7ImFzc2V0IjoiMjhLd3IyeFljU2hUVXR0eS1FTHJJZElmTnJNQUUzaGp6TUZBU3VtZTM2=
+TS5odG1sIiwicmVwb3J0X2lkIjoiYllqb2Z1UFNjNnlHa1F5Tms2czl1aEFrIn19fSLp_NhNZ9c=
+8tS_7O3N8xjL6L6Gi02jbILkugVDMKul0l5tO275-ET3ylbs7_uhKJjCbxoYpQ2zEbquhIgkrPg=
+s#/run/d2dd51d5455f4c10036c0c4c2fc38905-40-9/finding/961d3c463f5ef7640df4b3=
+f30c6d7d9d2759b9c7">Look into 1 new finding.</a><ul><li><font style=3D"colo=
+r:red">[new]</font> Always: Commands finish with zero exit code =E2=86=92 c=
+onvergence/eventually_converged.sh</li></ul>
+   =20
+   =20
+   =20
 |]

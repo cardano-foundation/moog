@@ -52,3 +52,16 @@ while true; do
   sleep 60
   echo "..."
 done
+
+case $(query_run | jq -r .value.outcome) in
+  success)
+    exit 0;
+    ;;
+  failure)
+    echo "failed"
+    exit 1
+    ;;
+  *) # includes "unknown"
+    echo "unknown outcome"
+    exit 1
+esac

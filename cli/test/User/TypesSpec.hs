@@ -34,7 +34,7 @@ import User.Types
     , TestRun (..)
     , TestRunRejection (..)
     , TestRunState (..)
-    , URL (..)
+    , URL (..), Outcome (OutcomeSuccess)
     )
 
 testRunRejectionGen :: Gen TestRunRejection
@@ -83,6 +83,7 @@ spec = do
                                 Finished
                                     accepted
                                     (Duration duration)
+                                    OutcomeSuccess
                                     (URL url)
                         roundTrip finished
 

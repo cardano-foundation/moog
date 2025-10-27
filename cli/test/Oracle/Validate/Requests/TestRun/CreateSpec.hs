@@ -103,7 +103,7 @@ import User.Types
     , TestRunRejection (..)
     , TestRunState (..)
     , URL (..)
-    , tryIndexL
+    , tryIndexL, Outcome(OutcomeSuccess)
     )
 
 shouldHaveReason
@@ -339,7 +339,7 @@ spec = do
             finalDuration <- genA
             finalURL <- genA
             let finished =
-                    Finished accepted (Duration finalDuration) (URL finalURL)
+                    Finished accepted (Duration finalDuration) OutcomeSuccess (URL finalURL)
             testRunStateDB <-
                 gen
                     $ oneof

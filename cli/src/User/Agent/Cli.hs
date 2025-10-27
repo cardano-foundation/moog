@@ -123,7 +123,7 @@ import User.Types
     , TestRunRejection
     , TestRunState (..)
     , URL (..)
-    , getIdentificationPublicKey
+    , getIdentificationPublicKey, Outcome
     )
 
 type ValidateWithContext m a =
@@ -213,8 +213,8 @@ agentCmd = \case
         $ updateTestRunState tokenId key
         $ \fact ->
             rejectCommand tokenId wallet fact reason
-    Report tokenId wallet key () duration (URL urlText) -> runValidate $ do
-        reportCommand tokenId wallet key duration urlText
+    Report tokenId wallet key () duration outcome (URL urlText) -> runValidate $ do
+        reportCommand tokenId wallet key duration outcome urlText
     PushTest tokenId registry auth dir key slack -> runValidate $ do
         pushTestToAntithesisIO
             tokenId
@@ -329,6 +329,7 @@ data AgentCommand (phase :: IsReady) result where
         -> ResolveId phase
         -> IfReady phase (TestRunState RunningT)
         -> Duration
+        -> Outcome
         -> URL
         -> AgentCommand
             phase
@@ -518,17 +519,18 @@ reportTxCommand
     -> Wallet
     -> Fact TestRun (TestRunState RunningT)
     -> Duration
+    -> Outcome
     -> URL
     -> ValidateWithContext
         m
         (WithTxHash (TestRunState DoneT))
-reportTxCommand tokenId wallet fact duration url =
+reportTxCommand tokenId wallet fact duration outcome url =
     signAndSubmitAnUpdate
         (`validateToDoneUpdate` ForUser)
         tokenId
         wallet
         fact
-        $ Finished (factValue fact) duration url
+        $ Finished (factValue fact) duration outcome url
 
 rejectCommand
     :: Monad m
@@ -569,17 +571,18 @@ reportCommand
     -> Wallet
     -> TestRunId
     -> Duration
+    -> Outcome
     -> String
     -> Validate
         ReportFailure
         (WithContext m)
         (WithTxHash (TestRunState DoneT))
-reportCommand tokenId wallet key duration urlText = do
+reportCommand tokenId wallet key duration outcome urlText = do
     encryptedUrl <- encryptForRequester tokenId key urlText
     mapFailure ReportFailureUpdate
         $ updateTestRunState tokenId key
         $ \fact ->
-            reportTxCommand tokenId wallet fact duration
+            reportTxCommand tokenId wallet fact duration outcome
                 $ URL
                 $ B8.unpack . Base64.encode
                 $ encryptedUrl

@@ -437,7 +437,7 @@ submitDone
 submitDone
     ProcessOptions{poAuth, poMPFSClient, poWallet, poTokenId}
     duration
-    Result{description, link} =
+    Result{description, link, outcome} =
         cmd
             $ AgentCommand poAuth poMPFSClient
             $ Report
@@ -446,6 +446,7 @@ submitDone
                 (mkTestRunId description)
                 ()
                 duration
+                outcome
             $ URL
             $ T.unpack link
 

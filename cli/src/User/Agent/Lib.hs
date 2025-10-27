@@ -48,4 +48,4 @@ testRunDuration :: TestRunState v -> Duration
 testRunDuration (Pending d _) = d
 testRunDuration (Rejected pending _) = testRunDuration pending
 testRunDuration (Accepted pending) = testRunDuration pending
-testRunDuration (Finished accepted _ _) = testRunDuration accepted
+testRunDuration (Finished accepted _ _ _) = testRunDuration accepted

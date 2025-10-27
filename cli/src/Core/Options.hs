@@ -14,6 +14,7 @@ module Core.Options
     , tokenIdOption
     , downloadAssetsDirectoryOption
     , walletOption
+    , outcomeOption
     )
 where
 
@@ -55,6 +56,8 @@ import OptEnvConf
     )
 import OptEnvConf.Reader (Reader (..))
 import Submitting (readWallet)
+import User.Types (Outcome)
+import Text.JSON.Canonical (FromJSON(fromJSON), JSValue (JSString), toJSString)
 
 platformOption :: Parser Platform
 platformOption =
@@ -216,3 +219,19 @@ tokenIdOption =
 
 walletOption :: Parser Wallet
 walletOption = checkEither (left show <$> readWallet) mnemonicsParser
+
+outcomeOption :: Parser Outcome
+outcomeOption =
+        setting
+            [ long "outcome"
+            , metavar "OUTCOME"
+            , help "success, failure or unknown"
+            , reader (maybeReader parseOutcome)
+            , option
+            ]
+  where
+    parseOutcome :: String -> Maybe Outcome
+    parseOutcome s = fromJSON (JSString $ toJSString s)
+
+
+

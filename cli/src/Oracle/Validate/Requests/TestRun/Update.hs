@@ -127,7 +127,7 @@ validateToDoneCore
     validation
     testRun = \case
         Rejected pending _ -> checkPastState validation testRun pending
-        Finished accepted _ _ -> checkPastState validation testRun accepted
+        Finished accepted _ _ _ -> checkPastState validation testRun accepted
 
 checkPastState
     :: (Monad m, FromJSON Maybe (TestRunState t))

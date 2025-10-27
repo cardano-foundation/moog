@@ -48,7 +48,7 @@ import Test.QuickCheck
 import Test.QuickCheck.EGen (egenProperty, gen, genA, genBlind)
 import Test.QuickCheck.JSString (genAscii)
 import Test.QuickCheck.Property (cover)
-import User.Types (TestRunState (..), URL (..))
+import User.Types (TestRunState (..), URL (..), Outcome(OutcomeSuccess))
 
 spec :: Spec
 spec = do
@@ -68,6 +68,7 @@ spec = do
                     Finished
                         acceptedState
                         (Duration actualDuration)
+                        OutcomeSuccess
                         (URL url)
                 test = validateToDoneCore validation testRun newTestRunState
             pure $ test `shouldReturn` Nothing
@@ -86,7 +87,7 @@ spec = do
                             , operation =
                                 Update
                                     pendingState
-                                    (Finished pendingState (Duration 1) (URL ""))
+                                    (Finished pendingState (Duration 1) OutcomeSuccess (URL ""))
                             }
                     pendingRequest =
                         FinishedRequest
@@ -144,6 +145,7 @@ spec = do
                         Finished
                             request
                             (Duration finishedDuration)
+                            OutcomeSuccess
                             (URL url)
                     test = validateToDoneCore validation testRun newTestRunState
                 pure
