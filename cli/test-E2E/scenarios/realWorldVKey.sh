@@ -136,7 +136,8 @@ being_agent
 validation=$(moog agent query)
 moog agent report-test -i "$reference" \
     --duration 1 \
-    --url "https://example.com/report"
+    --url "https://example.com/report" \
+    --outcome "success"
 
 log "Include the test run report"
 include_requests

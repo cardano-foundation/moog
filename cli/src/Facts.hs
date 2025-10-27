@@ -199,7 +199,7 @@ decryptURL _ _ Rejected{} _ = Left StateIsNotFinished
 decryptURL
     users
     testRun@TestRun{requester}
-    (Finished old dur (URL enc))
+    (Finished old dur outcome (URL enc))
     KeyPair{privateKey, publicKey = providedPublicKey} = do
         RegisterUserKey{githubIdentification} <-
             nothingLeft (UsersNotRegistered requester)
@@ -220,4 +220,4 @@ decryptURL
         murl <-
             left KeyConversionsFailed $ decryptOnly privateKey decodedURL nonce
         url <- nothingLeft URLDecryptionFailed murl
-        pure $ Finished old dur $ URL $ B8.unpack url
+        pure $ Finished old dur outcome $ URL $ B8.unpack url

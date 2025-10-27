@@ -16,7 +16,7 @@ import Core.Options
     , platformOption
     , repositoryOption
     , tokenIdOption
-    , walletOption
+    , walletOption, outcomeOption
     )
 import Core.Types.Basic (Duration (..), Success)
 import Core.Types.Tx (WithTxHash)
@@ -343,6 +343,7 @@ reportTestOptions = do
     tokenId <- tokenIdOption
     testRunId <- testRunIdOption "report"
     wallet <- walletOption
+    outcome <- outcomeOption
     duration <-
         Duration
             <$> setting
@@ -361,4 +362,4 @@ reportTestOptions = do
                 , reader str
                 , option
                 ]
-    pure $ Report tokenId wallet testRunId () duration url
+    pure $ Report tokenId wallet testRunId () duration outcome url

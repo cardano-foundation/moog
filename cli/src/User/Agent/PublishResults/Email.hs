@@ -17,6 +17,7 @@ module User.Agent.PublishResults.Email
     )
 where
 
+import User.Types ( Outcome(..), TestRun )
 import Control.Applicative (asum, (<|>))
 import Control.Arrow (left)
 import Control.Lens (view, (&), (^.), (^..))
@@ -93,8 +94,8 @@ import System.Time
 import Text.HTML.Parser (Attr (..), Token (..), parseTokens)
 import Text.JSON.Canonical (FromJSON (..), parseCanonicalJSON)
 import Text.JSON.Canonical.Class (ToJSON (..))
+import Text.Read (readMaybe)
 import User.Agent.PushTest (TestRunWithId (..))
-import User.Types (TestRun)
 
 newtype EmailUser = EmailUser String
     deriving (Show, Eq)
@@ -123,15 +124,17 @@ data Result = Result
     { description :: TestRun
     , date :: ZonedTime
     , link :: T.Text
+    , outcome :: Outcome
     }
     deriving (Show)
 
 instance Monad m => ToJSON m Result where
-    toJSON (Result desc d l) =
+    toJSON (Result desc d l s) =
         object
             [ "description" .= desc
             , "date" .= show d
             , "link" .= l
+            , "success" .= s
             ]
 
 instance Eq Result where
@@ -148,9 +151,9 @@ compareResults (Right a) (Right b) =
         (zonedTimeToLocalTime $ date a)
 compareResults (Left (WithDate d' _)) (Left (WithDate d'' _)) =
     compare (zonedTimeToLocalTime d'') (zonedTimeToLocalTime d')
-compareResults (Left (WithDate d' _)) (Right (Result _ d'' _)) =
+compareResults (Left (WithDate d' _)) (Right (Result _ d'' _ _)) =
     compare (zonedTimeToLocalTime d'') (zonedTimeToLocalTime d')
-compareResults (Right (Result _ d' _)) (Left (WithDate d'' _)) =
+compareResults (Right (Result _ d' _ _)) (Left (WithDate d'' _)) =
     compare (zonedTimeToLocalTime d'') (zonedTimeToLocalTime d')
 compareResults (Right _) _ = GT
 compareResults (Left (WithDate _ _)) _ = GT
@@ -166,7 +169,7 @@ keepInLimit
     -> [Either ParsingError Result]
 keepInLimit limit = takeWhile $ not . isOld
   where
-    isOld (Right (Result _ d _)) = zonedTimeToLocalTime d < limit
+    isOld (Right (Result _ d _ _)) = zonedTimeToLocalTime d < limit
     isOld (Left (WithDate d _)) = zonedTimeToLocalTime d < limit
     isOld _ = False
 
@@ -291,9 +294,43 @@ parseEmail content = do
                             <*> nothingLeft
                                 (WithDate date LinkMissing)
                                 (listToMaybe (findLinks ts))
+                            <*> pure (findOutcome ts)
         __ ->
             Left
                 $ ParsingError ("Expected one entity, got " ++ show (length es)) ""
+
+findOutcome :: [Token] -> Outcome
+findOutcome tokens = do
+    let
+        findFirst :: (T.Text -> Maybe a) -> Maybe a
+        findFirst f = asum $ map f contentTexts
+
+        failIfNonZero 0 = OutcomeSuccess
+        failIfNonZero _ = OutcomeFailure
+
+    case (findFirst findNew, findFirst findOngoing) of
+        (Just new, Just ongoing) -> failIfNonZero (new + ongoing)
+        (Nothing, Just ongoing) -> failIfNonZero ongoing
+        (_, Nothing) -> OutcomeUnknown
+  where
+    findNew :: T.Text -> Maybe Word
+    findNew "No findings introduced this run." = pure 0
+    findNew t = case T.breakOn " " t of
+        (n, txt)
+            | "new" `T.isInfixOf` txt -> readMaybe $ T.unpack n
+            | otherwise -> Nothing
+
+    findOngoing :: T.Text -> Maybe Word
+    findOngoing t = case T.breakOn " " t of
+        (n, txt) | "ongoing" `T.isInfixOf` txt -> readMaybe $ T.unpack n
+        _ -> Nothing
+
+    contentTexts = mapMaybe maybeGetContentText tokens
+
+    maybeGetContentText = \case
+        ContentText s -> Just s
+        _ -> Nothing
+
 findDescription :: [Token] -> Maybe TestRun
 findDescription = asum . fmap f
   where

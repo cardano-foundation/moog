@@ -14,6 +14,7 @@ module User.Types
     , commitIdL
     , tryIndexL
     , requesterL
+    , Outcome (..)
     , TestRunState (..)
     , TestRunRejection (..)
     , Phase (..)
@@ -205,7 +206,7 @@ data TestRunState a where
         :: TestRunState PendingT -> [TestRunRejection] -> TestRunState DoneT
     Accepted :: TestRunState PendingT -> TestRunState RunningT
     Finished
-        :: TestRunState RunningT -> Duration -> URL -> TestRunState DoneT
+        :: TestRunState RunningT -> Duration -> Outcome -> URL -> TestRunState DoneT
 
 deriving instance Eq (TestRunState a)
 
@@ -229,12 +230,13 @@ instance (Monad m) => ToJSON m (TestRunState a) where
             [ ("phase", stringJSON "accepted")
             , ("from", toJSON pending)
             ]
-    toJSON (Finished running duration url) =
+    toJSON (Finished running duration outcome url) =
         object
             [ ("phase", stringJSON "finished")
             , ("from", toJSON running)
             , ("duration", intJSON $ case duration of Duration d -> d)
             , ("url", stringJSON $ case url of URL u -> u)
+            , ("outcome", toJSON outcome)
             ]
 
 instance (ReportSchemaErrors m) => FromJSON m (TestRunState PendingT) where
@@ -276,7 +278,8 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState DoneT) where
                 running <- getField "from" mapping >>= fromJSON
                 duration <- getIntegralField "duration" mapping
                 url <- getStringField "url" mapping
-                pure $ Finished running (Duration duration) (URL url)
+                outcome <- getField "outcome" mapping >>= fromJSON
+                pure $ Finished running (Duration duration) outcome (URL url)
             _ ->
                 expectedButGotValue
                     "a rejected phase"
@@ -464,3 +467,21 @@ instance (ReportSchemaErrors m) => FromJSON m AgentValidation where
         expectedButGotValue
             "an object representing an agent validation"
             r
+
+data Outcome
+    = OutcomeSuccess
+    | OutcomeFailure
+    | OutcomeUnknown -- Failed to parse email
+    deriving (Eq, Show)
+
+instance Monad m => ToJSON m Outcome where
+    toJSON OutcomeSuccess = stringJSON "success"
+    toJSON OutcomeFailure = stringJSON "failure"
+    toJSON OutcomeUnknown = stringJSON "unknown"
+
+instance ReportSchemaErrors m => FromJSON m Outcome where
+    fromJSON (JSString "success") = pure OutcomeSuccess
+    fromJSON (JSString "failure") = pure OutcomeFailure
+    fromJSON (JSString "unknown") = pure OutcomeUnknown
+    fromJSON v = expectedButGotValue "success, failure or unknown" v
+
