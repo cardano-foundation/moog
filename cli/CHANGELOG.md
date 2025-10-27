@@ -1,5 +1,10 @@
 # Changelog for moog-cli
 
+### v0.3.3.0 - 2025-10-27
+
+#### Added
+- `outcome` field of test runs which is either `"success"` `"failure"` or `"unknown"`
+
 ### v0.3.2.0 - 2025-10-20
 #### Bug Fixes
 - Fixed oracle process image to contain the docker command
