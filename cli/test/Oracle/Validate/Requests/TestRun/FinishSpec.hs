@@ -63,7 +63,7 @@ spec = do
             actualDuration <- genA
             url <- gen genAscii
             let acceptedState = Accepted $ Pending (Duration 5) signature
-            testRunFact <- toJSFact testRun acceptedState
+            testRunFact <- toJSFact testRun acceptedState 0
             let validation =
                     mkEffects
                         (withFacts [testRunFact] mockMPFS)
@@ -140,7 +140,7 @@ spec = do
                             $ Pending
                                 (Duration differentPendingDuration)
                                 differentSignature
-                testRunFact <- toJSFact testRun fact
+                testRunFact <- toJSFact testRun fact 0
                 let validation =
                         mkEffects
                             (withFacts [testRunFact] mockMPFS)

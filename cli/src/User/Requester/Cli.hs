@@ -221,8 +221,8 @@ createCommand
         lift $ runValidate $ do
             users :: [Fact RegisterUserKey ()] <-
                 lift $ getFacts mpfs $ Just tokenId
-            user <- case find (\(Fact k _) -> k.username == requester testRun) users of
-                Just (Fact k _) -> pure $ githubIdentification k
+            user <- case find (\(Fact k _ _) -> k.username == requester testRun) users of
+                Just (Fact k _ _) -> pure $ githubIdentification k
                 Nothing -> notValidated CreateTestRequesterNotRegistered
             (key, signature) <- case (mSshClient, user) of
                 (_, IdentifyViaVKey _) -> signKey (walletKeyPair wallet) testRun

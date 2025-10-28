@@ -140,7 +140,7 @@ findFact tk (TestRunId testRunId) = do
         $ withMPFS
         $ \mpfs -> mpfsGetTokenFacts mpfs tk
     let match :: Fact TestRun JSValue -> Bool
-        match (Fact key _) = case keyHash key of
+        match (Fact key _ _) = case keyHash key of
             Nothing -> False
             Just keyId -> keyId == testRunId
     pure $ find match facts
@@ -227,7 +227,7 @@ agentCmd = \case
             $> Success
     CheckResultFor tk emailUser emailPassword key days -> runValidate $ do
         mfact <- lift $ findFact tk key
-        Fact testRun' _ <-
+        Fact testRun' _ _ <-
             liftMaybe (CheckResultsNoTestRunFor key) mfact
         r <- liftIO $ do
             let onlyResults (Right r@Result{description}) = do
@@ -493,7 +493,7 @@ signAndSubmitAnUpdate
     -> Fact key old
     -> new
     -> ValidateWithContext m (WithTxHash new)
-signAndSubmitAnUpdate validate tokenId wallet (Fact testRun oldState) newState = do
+signAndSubmitAnUpdate validate tokenId wallet (Fact testRun oldState _) newState = do
     let requester = owner wallet
     validation <- lift $ askValidation $ Just tokenId
     mconfig <- lift $ askConfig tokenId
@@ -596,7 +596,7 @@ encryptForRequester
     -> Validate ReportFailure (WithContext m) B8.ByteString
 encryptForRequester tokenId key urlText = do
     mfact <- lift $ findFact tokenId key
-    Fact testRun _ <-
+    Fact testRun _ _ <-
         liftMaybe (ReportFailureFactNotFound key) mfact
     let user = requester testRun
     users <- lift

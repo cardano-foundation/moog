@@ -39,19 +39,9 @@ build:
 integration match="":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
-    export MOOG_MPFS_HOST="https://mpfs.plutimus.com"
-    if [[ '{{ match }}' == "" ]]; then
-      cabal test moog-integration-test \
-          --test-show-details=direct
-    else
-      cabal test moog-integration-test \
-          --test-show-details=direct \
-          --test-option=--match \
-          --test-option="{{ match }}"
-    fi
-E2E match="":
-    #!/usr/bin/env bash
     mkdir -p tmp/bin
+    cabal install --overwrite-policy=always --installdir=tmp >/dev/null
+    export PATH="$PWD/tmp:$PATH"
     if [ -z "${MOOG_GITHUB_PAT:-}" ]; then
         echo "Please set MOOG_GITHUB_PAT environment variable, this is a valid GitHub personal access token with access to the public github API"
         exit 1
@@ -64,8 +54,79 @@ E2E match="":
         echo "E2E tests expect wallet definition in tmp/test.json file"
         exit 1
     fi
+    randomMPFSPort=$(shuf -i 1024-65636 -n 1)
+    export MOOG_MPFS_HOST="http://localhost:$randomMPFSPort"
+    export MPFS_PORT="$randomMPFSPort"
+    randomYaciAdminPort=$(shuf -i 1024-65536 -n 1)
+    export YACI_ADMIN_PORT="$randomYaciAdminPort"
+    export MOOG_TEST_YACI_ADMIN="http://localhost:$YACI_ADMIN_PORT"
+
+    # shellcheck disable=SC2002
+    randomName=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
+    docker compose -p "$randomName" -f test-E2E/fixtures/docker-compose.yml up -d
+    down() {
+      docker compose -p "$randomName" \
+        -f test-E2E/fixtures/docker-compose.yml down
+    }
+    trap down EXIT INT
+
+    export MOOG_WALLET_FILE=tmp/requester.json
+    export MOOG_TEST_REQUESTER_WALLET=tmp/requester.json # this must be cfhal wallet, get it in 1p at https://start.1password.com/open/i?a=TYQQQLKUDBAFVHQ4P7XKFCUVYM&v=fhipthmhnufti4q2kky6d7336u&i=jgle6xhz6b4pgma7aodrsebfgu&h=cardanofoundation.1password.com
+    export MOOG_TEST_ORACLE_WALLET=tmp/requester.json # or create your own wallet
+    export MOOG_TEST_AGENT_WALLET=tmp/requester.json # or create your own wallet
+    export MOOG_SSH_FILE=test-E2E/fixtures/cfhal_ed25519
+    export MOOG_WAIT=2
+    while [[ "$(curl -s "localhost:$MPFS_PORT/tokens" | jq -r '.indexerStatus.ready')" != "true" ]]; do
+        echo "Waiting for indexer to be ready..."
+        sleep 2
+    done
+    address=$(moog wallet info | jq -r '.address')
+    echo "Funding address: $address"
+    topup(){
+        curl -s -X 'POST' \
+            "$MOOG_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
+            -H 'accept: */*' \
+            -H 'Content-Type: application/json' \
+            -d '{
+            "address": "'"$address"'",
+            "adaAmount": 10000
+            }'
+        }
+    while true; do
+        if topup | grep -q "Topup successful"; then
+            break
+        fi
+        echo "Retrying topup..."
+        sleep 2
+    done
+    owner=$(moog wallet info | jq -r '.owner')
+    export MOOG_AGENT_PUBLIC_KEY_HASH=$owner
+    if [[ '{{ match }}' == "" ]]; then
+      cabal test moog-integration-test \
+          --test-show-details=direct
+    else
+      cabal test moog-integration-test \
+          --test-show-details=direct \
+          --test-option=--match \
+          --test-option="{{ match }}"
+    fi
+E2E match="":
+    #!/usr/bin/env bash
+    mkdir -p tmp/bin
     cabal install --overwrite-policy=always --installdir=tmp >/dev/null
     export PATH="$PWD/tmp:$PATH"
+    if [ -z "${MOOG_GITHUB_PAT:-}" ]; then
+        echo "Please set MOOG_GITHUB_PAT environment variable, this is a valid GitHub personal access token with access to the public github API"
+        exit 1
+    fi
+    if [ -z "${MOOG_SSH_PASSWORD:-}" ]; then
+        echo "Please set MOOG_SSH_PASSWORD environment variable, this is the passphrase for the cfhal encrypted SSH private key"
+        exit 1
+    fi
+    if ! test -f  tmp/test.json; then
+        echo "E2E tests expect wallet definition in tmp/test.json file"
+        exit 1
+    fi
     randomMPFSPort=$(shuf -i 1024-65636 -n 1)
     export MOOG_MPFS_HOST="http://localhost:$randomMPFSPort"
     export MPFS_PORT="$randomMPFSPort"

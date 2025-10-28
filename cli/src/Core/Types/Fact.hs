@@ -22,14 +22,27 @@ import Lib.JSON.Canonical.Extra
     )
 import Text.JSON.Canonical
     ( FromJSON (..)
+    , Int54
     , JSValue (..)
     , ReportSchemaErrors (..)
     , ToJSON (..)
     )
 
+newtype Slot = Slot {unSlot :: Int}
+    deriving (Eq, Show, Num, Ord)
+
+instance (Monad m) => ToJSON m Slot where
+    toJSON (Slot s) = pure $ JSNum (fromIntegral s)
+
+instance (ReportSchemaErrors m, Monad m) => FromJSON m Slot where
+    fromJSON v = do
+        s <- fromJSON @_ @Int54 v
+        pure $ Slot (fromIntegral s)
+
 data Fact k v = Fact
     { factKey :: k
     , factValue :: v
+    , factSlot :: Slot
     }
     deriving (Eq, Show, Functor, Foldable, Traversable)
 
@@ -48,16 +61,18 @@ instance
     fromJSON = withObject "Fact" $ \v -> do
         key <- v .: "key"
         value <- v .: "value"
-        pure $ Fact key value
+        slot <- v .: "slot"
+        pure $ Fact key value slot
 
 instance (Monad m, ToJSON m k, ToJSON m v) => ToJSON m (Fact k v) where
-    toJSON (Fact key value) = do
+    toJSON (Fact key value slot) = do
         keyJ <- toJSON key
         idJ <- keyHash key
         object
             [ "key" .= keyJ
             , "value" .= value
             , "id" .= idJ
+            , "slot" .= slot
             ]
 
 type JSFact = Fact JSValue JSValue
@@ -68,20 +83,21 @@ parseFacts v = fromMaybe [] $ do
     factsJSON <- fromJSON v
     pure $ mapMaybe f factsJSON
   where
-    f (Fact key value) = do
+    f (Fact key value slot) = do
         key' <- fromJSON key
         value' <- fromJSON value
-        Just $ Fact key' value'
+        Just $ Fact key' value' slot
 
-toJSFact :: (ToJSON m k, ToJSON m v, Monad m) => k -> v -> m JSFact
-toJSFact key value = do
+toJSFact
+    :: (ToJSON m k, ToJSON m v, Monad m) => k -> v -> Slot -> m JSFact
+toJSFact key value slot = do
     keyJ <- toJSON key
     valueJ <- toJSON value
-    return $ Fact keyJ valueJ
+    return $ Fact keyJ valueJ slot
 
 fromJSFact
     :: (FromJSON m k, FromJSON m v, Monad m) => JSFact -> m (Fact k v)
-fromJSFact (Fact key value) = do
+fromJSFact (Fact key value slot) = do
     key' <- fromJSON key
     value' <- fromJSON value
-    return $ Fact key' value'
+    return $ Fact key' value' slot

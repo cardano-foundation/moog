@@ -58,7 +58,7 @@ spec = do
             testRun <- testRunEGen
             signature <- gen signatureGen
             let pendingState = Pending (Duration 5) signature
-            testRunFact <- toJSFact testRun pendingState
+            testRunFact <- toJSFact testRun pendingState 0
             let validation =
                     mkEffects (withFacts [testRunFact] mockMPFS) noValidation
                 newTestRunState = Accepted pendingState
@@ -113,7 +113,7 @@ spec = do
                 let fact = Pending (Duration duration) signature
                     request =
                         Pending (Duration differentDuration) differentSignature
-                testRunFact <- toJSFact testRun fact
+                testRunFact <- toJSFact testRun fact 0
                 let validation =
                         mkEffects (withFacts [testRunFact] mockMPFS) noValidation
                     newTestRunState = Accepted request

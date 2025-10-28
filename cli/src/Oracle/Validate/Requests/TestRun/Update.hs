@@ -13,7 +13,7 @@ import Core.Types.Basic (Owner)
 import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..), Operation (..))
-import Data.Foldable (for_)
+import Data.Foldable (find, for_)
 import Effects
     ( Effects (..)
     , KeyFailure
@@ -137,9 +137,9 @@ checkPastState
     -> m (Maybe AgentRejection)
 checkPastState Effects{mpfsGetFacts} testRun accepted = do
     testRuns <- mpfsGetFacts
-    if Fact testRun accepted `elem` testRuns
-        then pure Nothing
-        else pure $ Just PreviousStateWrong
+    case find (\(Fact k v _) -> k == testRun && v == accepted) testRuns of
+        Just _ -> pure Nothing
+        Nothing -> pure $ Just PreviousStateWrong
 
 validateToRunningUpdate
     :: Monad m

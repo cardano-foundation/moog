@@ -126,8 +126,9 @@ testPlatform = Platform "github"
 facts :: [JSFact]
 facts = runIdentity $ do
     config <-
-        toJSFact ConfigKey
-            $ Config
+        toJSFact
+            ConfigKey
+            ( Config
                 { configAgent = Owner "agent"
                 , configTestRun =
                     TestRunValidationConfig
@@ -135,6 +136,8 @@ facts = runIdentity $ do
                         , maxDuration = 10
                         }
                 }
+            )
+            0
     role <-
         toJSFact
             ( RegisterRoleKey
@@ -144,6 +147,7 @@ facts = runIdentity $ do
                 }
             )
             ()
+            0
     user <-
         toJSFact
             ( RegisterUserKey
@@ -156,6 +160,7 @@ facts = runIdentity $ do
                 }
             )
             ()
+            0
     whiteList <-
         toJSFact
             ( WhiteListKey
@@ -164,6 +169,7 @@ facts = runIdentity $ do
                 }
             )
             ()
+            0
     pure [config, role, whiteList, user]
 
 aliceKey :: ByteString

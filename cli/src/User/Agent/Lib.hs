@@ -25,10 +25,14 @@ resolveTestRunId tk (TestRunId testRunId) = do
         $ withMPFS
         $ \mpfs -> mpfsGetTokenFacts mpfs tk
     let match :: Fact TestRun JSValue -> Bool
-        match (Fact key _) = case keyHash key of
+        match (Fact key _ _) = case keyHash key of
             Nothing -> False
             Just keyId -> keyId == testRunId
-    pure $ find match facts >>= \(Fact k v) -> Fact k <$> fromJSON v
+    pure
+        $ find match facts >>= \(Fact k v s) ->
+            Fact k
+                <$> fromJSON v
+                <*> pure s
 
 withState
     :: forall a

@@ -63,7 +63,7 @@ withConfig tokenId f = do
             $ lift
             $ mpfsGetTokenFacts mpfs tokenId
     pure $ case facts of
-        [Fact _ c] -> Just $ f c
+        [Fact _ c _] -> Just $ f c
         _ -> Nothing
 
 askConfig :: Monad m => TokenId -> WithContext m (Maybe Config)

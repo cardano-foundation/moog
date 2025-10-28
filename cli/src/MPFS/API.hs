@@ -68,14 +68,14 @@ instance ToJSON RequestInsertBody where
     toJSON (RequestInsertBody k v) =
         object
             [ "key" .= toAesonString k
-            , "value" .= toAesonString v
+            , "newValue" .= toAesonString v
             ]
 
 instance FromJSON RequestInsertBody where
     parseJSON = withObject "RequestInsertBody" $ \o ->
         RequestInsertBody
             <$> (o .: "key" >>= fromAesonString)
-            <*> (o .: "value" >>= fromAesonString)
+            <*> (o .: "newValue" >>= fromAesonString)
 
 data RequestDeleteBody = RequestDeleteBody
     { key :: JSValue
@@ -86,14 +86,14 @@ instance ToJSON RequestDeleteBody where
     toJSON (RequestDeleteBody k v) =
         object
             [ "key" .= toAesonString k
-            , "value" .= toAesonString v
+            , "oldValue" .= toAesonString v
             ]
 
 instance FromJSON RequestDeleteBody where
     parseJSON = withObject "RequestDeleteBody" $ \o ->
         RequestDeleteBody
             <$> (o .: "key" >>= fromAesonString)
-            <*> (o .: "value" >>= fromAesonString)
+            <*> (o .: "oldValue" >>= fromAesonString)
 
 data RequestUpdateBody = RequestUpdateBody
     { key :: JSValue

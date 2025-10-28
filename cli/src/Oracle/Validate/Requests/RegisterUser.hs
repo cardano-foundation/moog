@@ -99,8 +99,8 @@ validateRegisterUser
                 users :: [Fact RegisterUserKey ()] <- lift mpfsGetFacts
                 let matchUsername (RegisterUserKey platform' username' _) =
                         platform' == platform && username' == username
-                case find (\(Fact k' _) -> matchUsername k') users of
-                    Just (Fact (RegisterUserKey _ _ k) _) ->
+                case find (\(Fact k' _ _) -> matchUsername k') users of
+                    Just (Fact (RegisterUserKey _ _ k) _ _) ->
                         notValidated $ RegisterUserKeyAlreadyExists k
                     Nothing -> do
                         case githubIdentification of

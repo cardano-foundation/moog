@@ -24,6 +24,7 @@ import Core.Types.VKey (decodeVKey)
 import Crypto.PubKey.Ed25519 (PublicKey)
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.ByteString.Lazy qualified as BL
+import Data.List (find)
 import Data.Maybe (mapMaybe)
 import Effects
     ( Effects (..)
@@ -189,10 +190,10 @@ checkRole
     Effects{mpfsGetFacts}
     testRun = do
         fs <- mpfsGetFacts
-        let roleFact = roleOfATestRun testRun
-        if Fact roleFact () `elem` fs
-            then return Nothing
-            else return $ Just (UnacceptableRole roleFact)
+        let roleKey = roleOfATestRun testRun
+        case find (\(Fact k () _) -> k == roleKey) fs of
+            Just _ -> return Nothing
+            Nothing -> return $ Just (UnacceptableRole roleKey)
 
 checkWhiteList
     :: Monad m
@@ -204,7 +205,7 @@ checkWhiteList
     testRun = do
         let proposed = WhiteListKey testRun.platform testRun.repository
         facts :: [Fact WhiteListKey ()] <- mpfsGetFacts
-        if any (\(Fact k _) -> k == proposed) facts
+        if any (\(Fact k _ _) -> k == proposed) facts
             then return Nothing
             else return $ Just RepositoryNotWhitelisted
 

@@ -17,7 +17,7 @@ services:
       - "${YACI_ADMIN_PORT:-10000}:10000"
 
   mpfs:
-    image: ghcr.io/paolino/mpfs:0.0.1
+    image: ghcr.io/cardano-foundation/mpfs/mpfs:v1.1.0
     platform: linux/x86_64
     command:
       - --port

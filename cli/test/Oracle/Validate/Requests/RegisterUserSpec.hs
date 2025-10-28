@@ -150,7 +150,7 @@ spec = do
                             , username = user
                             , githubIdentification = pk
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 (_, pk1) <- genValidDBElement
                 let
                     validation =
@@ -243,7 +243,7 @@ spec = do
                             , username = user
                             , githubIdentification = pk
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 let validation =
                         mkEffects (withFacts [fact] mockMPFS)
                             $ noValidation{mockIdentifications = [e]}
@@ -304,7 +304,7 @@ spec = do
                             , username = user
                             , githubIdentification = pk
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 let validation =
                         mkEffects
                             (withFacts [fact] mockMPFS)
@@ -360,7 +360,7 @@ spec = do
                             , username = user
                             , githubIdentification = pk
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 let validation =
                         mkEffects
                             (withFacts [fact] mockMPFS)
@@ -394,7 +394,7 @@ spec = do
                             , username = user
                             , githubIdentification = pk
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 let validation = mkEffects (withFacts [fact] mockMPFS) noValidation
                     test =
                         validateUnregisterUser validation forRole
@@ -419,7 +419,7 @@ spec = do
                             , username = user
                             , githubIdentification = pk
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 let validation =
                         mkEffects
                             (withFacts [fact] mockMPFS)

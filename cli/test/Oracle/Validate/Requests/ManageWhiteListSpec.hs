@@ -146,7 +146,7 @@ spec = do
                 let platform = Platform "github"
                     insertion = addWhiteListKey platform repo
                     key = WhiteListKey platform repo
-                fact <- toJSFact key ()
+                fact <- toJSFact key () 0
                 presenceInFacts <-
                     gen $ oneof [pure [], pure [fact]]
                 let validation =
@@ -174,7 +174,7 @@ spec = do
             let platform = Platform "github"
                 removal = removeWhiteListKey platform repo
                 key = WhiteListKey platform repo
-            fact <- toJSFact key ()
+            fact <- toJSFact key () 0
             presenceInGithub <-
                 gen $ withAPresenceInAList 0.5 repo genRepository
             let validation =
@@ -201,7 +201,7 @@ spec = do
                 let platform = Platform "github"
                     removal = removeWhiteListKey platform repo
                     key = WhiteListKey platform repo
-                fact <- toJSFact key ()
+                fact <- toJSFact key () 0
                 presenceInFacts <-
                     gen $ oneof [pure [], pure [fact]]
                 let validation =
@@ -231,7 +231,7 @@ spec = do
                 platform <- gen $ withAPresence 0.5 "github" genAscii
                 let removal = removeWhiteListKey (Platform platform) repo
                     key = WhiteListKey (Platform platform) repo
-                fact <- toJSFact key ()
+                fact <- toJSFact key () 0
                 presenceInGithub <- gen $ withAPresenceInAList 0.5 repo genRepository
                 let validation =
                         mkEffects (withFacts [fact] mockMPFS)
@@ -262,7 +262,7 @@ spec = do
                     insertion = addWhiteListKey platform repo
                     removal = removeWhiteListKey platform repo
                     key = WhiteListKey platform repo
-                fact <- toJSFact key ()
+                fact <- toJSFact key () 0
                 presenceInGithub <-
                     gen $ withAPresenceInAList 0.5 repo genRepository
                 presenceInFacts <-

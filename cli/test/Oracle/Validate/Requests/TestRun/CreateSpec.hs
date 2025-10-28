@@ -153,6 +153,7 @@ spec = do
                         , repository = testRun.repository
                         }
                     ()
+                    0
             let previous = case tryIndex testRun of
                     1 -> []
                     n -> do
@@ -162,7 +163,7 @@ spec = do
                                 <$> signTestRun
                                     sign
                                     previousTestRun
-                        toJSFact previousTestRun previousState
+                        toJSFact previousTestRun previousState 0
                 facts = [user, role, whiteListRepo] <> previous
                 commit = gitCommit testRun
                 directory = gitDirectory testRun
@@ -331,7 +332,7 @@ spec = do
                         , pure $ tryIndexL %~ succ $ testRunDB
                         ]
             let mkTestRunFact :: Monad m => TestRunState x -> m JSFact
-                mkTestRunFact = toJSFact testRunDB
+                mkTestRunFact s = toJSFact testRunDB s 0
                 pending = Pending (Duration duration) signature
                 accepted = Accepted pending
             rejections <-
@@ -353,7 +354,7 @@ spec = do
                         , mkTestRunFact rejected
                         , mkTestRunFact finished
                         ]
-            testRunFact <- toJSFact testRunDB testRunStateDB
+            testRunFact <- toJSFact testRunDB testRunStateDB 0
             let validation =
                     mkEffects
                         (withFacts [testRunFact | testRunDB.tryIndex > 0] mockMPFS)
@@ -389,7 +390,7 @@ spec = do
             testRun <- testRunEGen
             testRun' <- gen $ oneof [changeDirectory testRun, pure testRun]
             let testRunState = Pending (Duration duration) signature
-            testRunFact <- toJSFact testRun' testRunState
+            testRunFact <- toJSFact testRun' testRunState 0
             let validation =
                     mkEffects (withFacts [testRunFact] mockMPFS)
                         $ noValidation
@@ -420,7 +421,7 @@ spec = do
                         { platform = testRun.platform
                         , repository = testRun.repository
                         }
-            whiteListFact <- toJSFact key ()
+            whiteListFact <- toJSFact key () 0
             whiteListed <-
                 gen
                     $ oneof

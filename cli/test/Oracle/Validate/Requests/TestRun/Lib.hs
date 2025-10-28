@@ -128,6 +128,7 @@ jsFactRole testRun =
             , username = testRun.requester
             }
         ()
+        0
 
 jsFactUser :: (Monad m) => TestRun -> GithubIdentification -> m JSFact
 jsFactUser testRun githubIdentification =
@@ -138,6 +139,7 @@ jsFactUser testRun githubIdentification =
             , githubIdentification
             }
         ()
+        0
 
 data MockValidation = MockValidation
     { mockCommits :: [(GithubRepository, Commit)]

@@ -216,7 +216,8 @@ getFacts
 getFacts mpfs = maybe (pure []) (fmap parseFacts . mpfsGetTokenFacts mpfs)
 
 getTestRuns :: Applicative m => MPFS m -> Maybe TokenId -> m [TestRun]
-getTestRuns mpfs tk = mapMaybe (\(Fact k _ :: JSFact) -> fromJSON k) <$> getFacts mpfs tk
+getTestRuns mpfs tk =
+    mapMaybe (\(Fact k _ _ :: JSFact) -> fromJSON k) <$> getFacts mpfs tk
 
 getTokenRequests
     :: Monad m => MPFS m -> Maybe TokenId -> m [RequestZoo]
@@ -309,7 +310,7 @@ insertValidation
     -> Validate KeyFailure m ()
 insertValidation Effects{mpfsGetFacts} (Change (Key k) _) = do
     facts :: [Fact k v] <- lift mpfsGetFacts
-    when (any (\(Fact k' _) -> k' == k) facts)
+    when (any (\(Fact k' _ _) -> k' == k) facts)
         $ notValidated
         $ KeyAlreadyExists
         $ show k
@@ -322,7 +323,7 @@ deleteValidation
     -> Validate KeyFailure m ()
 deleteValidation Effects{mpfsGetFacts} (Change (Key k) _) = do
     facts :: [Fact k v] <- lift mpfsGetFacts
-    when (all (\(Fact k' _) -> k' /= k) facts)
+    when (all (\(Fact k' _ _) -> k' /= k) facts)
         $ notValidated
         $ KeyDoesNotExist
         $ show k
@@ -335,7 +336,7 @@ updateValidation
     -> Validate KeyFailure m ()
 updateValidation Effects{mpfsGetFacts} (Change (Key k) _) = do
     facts :: [Fact k v] <- lift mpfsGetFacts
-    when (not $ any (\(Fact k' _) -> k' == k) facts)
+    when (not $ any (\(Fact k' _ _) -> k' == k) facts)
         $ notValidated
         $ KeyDoesNotExist
         $ show k

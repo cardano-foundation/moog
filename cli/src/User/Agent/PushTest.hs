@@ -196,7 +196,7 @@ getTestRun
         (TestRun, Duration)
 getTestRun tk testRunId = do
     mts <- lift $ resolveTestRunId tk testRunId
-    Fact tr v <- liftMaybe (Couldn'tResolveTestRunId testRunId) mts
+    Fact tr v _ <- liftMaybe (Couldn'tResolveTestRunId testRunId) mts
     liftMaybe (Couldn'tResolveTestRunId testRunId)
         $ withState (\state -> (tr, testRunDuration state)) v
 

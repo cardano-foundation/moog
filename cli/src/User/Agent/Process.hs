@@ -252,7 +252,7 @@ agentProcess
                         loggin
                             $ "No matching test-run found in facts for email result: "
                                 ++ trId
-                    Just (Left (Fact testRun testState)) -> do
+                    Just (Left (Fact testRun testState _)) -> do
                         loggin
                             $ "Publishing result for test-run: "
                                 ++ show testRun
@@ -275,7 +275,7 @@ agentProcess
                             $ "Test-run "
                                 ++ trId
                                 ++ " has email result and is already in done state."
-            for_ pendingTests $ \(Fact testRun _) -> runExceptT $ do
+            for_ pendingTests $ \(Fact testRun _ _) -> runExceptT $ do
                 let TestRunId trId = mkTestRunId testRun
                     user = requester testRun
                     testId = mkTestRunId testRun
@@ -334,7 +334,7 @@ agentProcess
                                 ++ " is pending from untrusted requester "
                                 ++ show user
                                 ++ ", waiting for it to start running."
-            for_ runningTests $ \(Fact testRun _) -> do
+            for_ runningTests $ \(Fact testRun _ _) -> do
                 let TestRunId trId = mkTestRunId testRun
                     sameKey = (== testRun) . description
                 case find sameKey results of
@@ -416,7 +416,7 @@ pollTestRuns
                     notRequested :: [Fact TestRun v] -> [Fact TestRun v]
                     notRequested =
                         filter
-                            (\(Fact tr _) -> tr `notElem` changingState)
+                            (\(Fact tr _ _) -> tr `notElem` changingState)
                 pure
                     $ ValidationSuccess
                         ( notRequested typed

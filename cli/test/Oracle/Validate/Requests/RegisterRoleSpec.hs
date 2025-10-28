@@ -188,7 +188,7 @@ spec = do
                             , username = user
                             , repository = repo
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 let validation =
                         mkEffects
                             (withFacts [fact] mockMPFS)
@@ -266,7 +266,7 @@ spec = do
                             , username = user
                             , repository = repo
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 let validation =
                         mkEffects
                             (withFacts [fact] mockMPFS)
@@ -342,7 +342,7 @@ spec = do
                             , username = user
                             , repository = repo
                             }
-                fact <- toJSFact registration ()
+                fact <- toJSFact registration () 0
                 let validation =
                         mkEffects
                             (withFacts [fact] mockMPFS)

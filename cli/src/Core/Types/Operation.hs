@@ -68,13 +68,13 @@ instance (ToJSON m a, Monad m) => ToJSON m (Operation (OpI a)) where
     toJSON (Insert a) = do
         v <- BL.unpack . renderCanonicalJSON <$> toJSON a
         object
-            ["type" .= ("insert" :: String), "value" .= v]
+            ["type" .= ("insert" :: String), "newValue" .= v]
 
 instance (ToJSON m a, Monad m) => ToJSON m (Operation (OpD a)) where
     toJSON (Delete a) = do
         v <- BL.unpack . renderCanonicalJSON <$> toJSON a
         object
-            ["type" .= ("delete" :: String), "value" .= v]
+            ["type" .= ("delete" :: String), "oldValue" .= v]
 
 instance (ToJSON m a, ToJSON m b, Monad m) => ToJSON m (Operation (OpU a b)) where
     toJSON (Update old new) = do
@@ -94,7 +94,7 @@ instance
         op <- v .: "type"
         case op of
             JSString "insert" -> do
-                valueString <- v .: "value"
+                valueString <- v .: "newValue"
                 Insert <$> parseJSValue (B.pack valueString)
             _ -> expectedButGotValue "insert operation" op
 
@@ -106,7 +106,7 @@ instance
         op <- v .: "type"
         case op of
             JSString "delete" -> do
-                valueString <- v .: "value"
+                valueString <- v .: "oldValue"
                 Delete <$> parseJSValue (B.pack valueString)
             _ -> expectedButGotValue "delete operation" op
 

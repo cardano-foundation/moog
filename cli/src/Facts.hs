@@ -184,10 +184,10 @@ tryDecryption
     -> Fact TestRun (TestRunState 'DoneT)
     -> Fact TestRun (TestRunState 'DoneT)
 tryDecryption _ Nothing f = f
-tryDecryption registeredUsers (Just kapi) f@(Fact tr ts) =
+tryDecryption registeredUsers (Just kapi) f@(Fact tr ts slot) =
     case decryptURL registeredUsers tr ts kapi of
         Left _ -> f
-        Right ts' -> Fact{factKey = tr, factValue = ts'}
+        Right ts' -> Fact{factKey = tr, factValue = ts', factSlot = slot}
 
 decryptURL
     :: [RegisterUserKey]

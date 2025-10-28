@@ -152,7 +152,7 @@ expectedGet1=$(
         "change": {
             "key": "{\"platform\":\"github\",\"repository\":{\"organization\":\"cardano-foundation\",\"project\":\"hal-fixture-sin\"},\"type\":\"register-role\",\"user\":\"cfhal\"}",
             "type": "insert",
-            "value": "null"
+            "newValue": "null"
             },
         "outputRefId": "$outputRoleRef1",
         "owner": "$owner"
