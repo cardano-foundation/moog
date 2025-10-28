@@ -72,6 +72,16 @@
             inherit pkgs project node-project version;
             rewrite-libs = rewrite-libs.packages.default;
           };
+          moog-docker-light-image = import ./nix/moog-docker-light.nix {
+            inherit pkgs;
+            inherit version;
+            inherit project;
+          };
+          moog-docker-image = import ./nix/moog-docker.nix {
+            inherit pkgs;
+            inherit version;
+            inherit project;
+          };
           moog-oracle-docker-image = import ./nix/moog-oracle-docker.nix {
             inherit pkgs;
             inherit version;
@@ -85,6 +95,8 @@
           docker.packages = {
             inherit moog-oracle-docker-image;
             inherit moog-agent-docker-image;
+            inherit moog-docker-image;
+            inherit moog-docker-light-image;
           };
           info.packages = { inherit version; };
           fullPackages = lib.mergeAttrsList [

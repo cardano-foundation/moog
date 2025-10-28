@@ -158,6 +158,26 @@ build-moog-agent tag='latest':
     docker image tag ghcr.io/cardano-foundation/moog/moog-agent:"$version" \
         "ghcr.io/cardano-foundation/moog/moog-agent:latest"
 
+build-moog tag='latest':
+    #!/usr/bin/env bash
+    nix build .#moog-docker-image
+    docker load < result
+    version=$(nix eval --raw .#version)
+    docker image tag ghcr.io/cardano-foundation/moog/moog:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/moog/moog:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog:latest"
+
+build-moog-light tag='latest':
+    #!/usr/bin/env bash
+    nix build .#moog-docker-light-image
+    docker load < result
+    version=$(nix eval --raw .#version)
+    docker image tag ghcr.io/cardano-foundation/moog/moog-light:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog-light:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/moog/moog-light:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog-light:latest"
+
 start-moog-agent bg="false":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
@@ -220,12 +240,18 @@ recreate-moog-services:
 build-docker-images:
     #!/usr/bin/env bash
     tag=$(just moog-version)
+    just build-moog "$tag"
+    just build-moog-light "$tag"
     just build-moog-agent "$tag"
     just build-moog-oracle "$tag"
 
 push-docker-images:
     #!/usr/bin/env bash
     tag=$(just moog-version)
+    docker push "ghcr.io/cardano-foundation/moog/moog:$tag"
+    docker push "ghcr.io/cardano-foundation/moog/moog:latest"
+    docker push "ghcr.io/cardano-foundation/moog/moog-light:$tag"
+    docker push "ghcr.io/cardano-foundation/moog/moog-light:latest"
     docker push "ghcr.io/cardano-foundation/moog/moog-agent:$tag"
     docker push "ghcr.io/cardano-foundation/moog/moog-oracle:$tag"
     docker push "ghcr.io/cardano-foundation/moog/moog-agent:latest"
