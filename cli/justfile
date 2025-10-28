@@ -217,14 +217,24 @@ recreate-moog-services:
     just build-and-start-moog-agent true
     just build-and-start-moog-oracle true
 
-build-docker-images tag='latest':
+build-docker-images:
     #!/usr/bin/env bash
-    just build-moog-agent "{{ tag }}"
-    just build-moog-oracle "{{ tag }}"
+    tag=$(just moog-version)
+    just build-moog-agent "$tag"
+    just build-moog-oracle "$tag"
 
-push-docker-images tag='latest':
+push-docker-images:
     #!/usr/bin/env bash
-    docker push "ghcr.io/cardano-foundation/moog/moog-agent:{{ tag }}"
-    docker push "ghcr.io/cardano-foundation/moog/moog-oracle:{{ tag }}"
+    tag=$(just moog-version)
+    docker push "ghcr.io/cardano-foundation/moog/moog-agent:$tag"
+    docker push "ghcr.io/cardano-foundation/moog/moog-oracle:$tag"
     docker push "ghcr.io/cardano-foundation/moog/moog-agent:latest"
     docker push "ghcr.io/cardano-foundation/moog/moog-oracle:latest"
+
+cabal-version:
+    #!/usr/bin/env bash
+    nix eval --raw .#moog.version
+
+moog-version:
+    #!/usr/bin/env bash
+    echo "v$(just cabal-version)"
