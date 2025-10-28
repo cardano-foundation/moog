@@ -21,7 +21,7 @@ function HomepageHeader() {
                     <p>{siteConfig.tagline}</p>
                     <Link
                         className="button button--secondary button--lg"
-                        to="/docs/installation">
+                        to="/docs/overview">
                         Start here 🚀
                     </Link>
                 </div>

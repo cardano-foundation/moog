@@ -14,30 +14,37 @@ import type { SidebarsConfig } from '@docusaurus/plugin-content-docs';
  */
 const sidebars: SidebarsConfig = {
     tutorialSidebar: [
-        'installation',
+        'overview',
         {
             type: 'category',
             label: 'User Manual',
             items: [
-                'manual/any-role',
-                'manual/oracle-role',
-                'manual/requester-role',
-                'manual/agent-role'
+                'user/intro',
+                'user/installation',
+                'user/configuration',
+                'user/usage',
+                'user/secrets-management'
             ]
         },
-        { type: 'category', label: 'Examples', items: ['examples/real-world'] },
         {
             type: 'category',
-            label: 'Core Concepts',
-            items: ['concepts/architecture', 'concepts/antithesis-interface']
+            label: 'Operations Manual',
+            items: [
+                'ops/intro',
+                'ops/architecture',
+                'ops/protocol',
+                'ops/oracle-role',
+                'ops/agent-role',
+                'ops/real-world',
+                'ops/security'
+            ]
         },
         {
             type: 'category',
-            label: 'Advanced Topics',
+            label: 'Developers',
             items: [
-                'advanced/security',
-                'advanced/code-design',
-                'advanced/secrets-management'
+                'ops/architecture',
+                'dev/code-design',
             ]
         }
     ]

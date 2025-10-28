@@ -1,6 +1,6 @@
-# Requester role manual
+# Usage
 
-This is the role of the user who wants to run tests using the Antithesis platform.
+This describes Moog's usage for a user who wants to run tests using the Antithesis platform.
 
 Before you can request a test run, you need to register yourself as GitHub user with an SSH ed25519 public key.
 

@@ -1,4 +1,4 @@
-# Real-world scenario
+# Real-World Scenario
 
 This manual describes a real-world scenario, involving an interaction between the three roles involved in using the system (requester, agent and oracle). It is based on an end-to-end test bash script.
 
@@ -10,7 +10,7 @@ The following scenario assumes that each role has fulfilled its pre-requisites, 
 * wallet created and funded
 * environment variables have been set
 
-For details of how to achieve this, see the [README][README] and the manual for the corresponding role.
+For details of how to achieve this, see [configuration](user/configuration.md).
 
 ## The Scenario
 
@@ -23,7 +23,7 @@ anti oracle token boot
 
 ```
 
-This token is unique for a system. It enables all the actors to collaborate. It needs to be shared by some means with users. For example, the one that has been created (currently on preprod) for this project (an interface the the Antithesis instance managed by Cardano Foundation) is provided in the [README][README]. In order to "connect" to this interface all roles need to set the ANTI_TOKEN_ID environment variable to the value that was returned by the above command.
+This token is unique for a system. It enables all the actors to collaborate. It needs to be shared by some means with users. For example, the one that has been created (currently on preprod) for this project (an interface the the Antithesis instance managed by Cardano Foundation) is provided in the [configuration](user/configuration.md). In order to "connect" to this interface all roles need to set the ANTI_TOKEN_ID environment variable to the value that was returned by the above command.
 
 Then, the agent must configure this interface on-chain, in particular test durations and the public key hash of the agent:
 
@@ -143,5 +143,4 @@ anti agent report-test -i "$references" \
 ```
 
 
-[README]: installation.md
 [Discord]: https://discord.gg/sVUnen7t
