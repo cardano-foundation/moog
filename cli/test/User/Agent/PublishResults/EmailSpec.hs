@@ -42,10 +42,17 @@ import User.Agent.PublishResults.Email
     , utcTimeToClockTime
     )
 import User.Types
-    ( TestRun(TestRun, commitId, directory, platform, repository,
-              requester, tryIndex),
-      Outcome,
-      Outcome(..) )
+    ( Outcome (..)
+    , TestRun
+        ( TestRun
+        , commitId
+        , directory
+        , platform
+        , repository
+        , requester
+        , tryIndex
+        )
+    )
 
 spec :: Spec
 spec = do
@@ -139,9 +146,12 @@ spec = do
             it "goldenEmail" $ goldenEmail `shouldHaveOutcome` OutcomeFailure
             it "quotedPrintableGood"
                 $ quotedPrintableGood `shouldHaveOutcome` OutcomeFailure
-            it "outcomeFailure" $ outcomeFailure `shouldHaveOutcome` OutcomeFailure
-            it "outcomeSuccess" $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
-            it "outcomeSuccess2" $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
+            it "outcomeFailure"
+                $ outcomeFailure `shouldHaveOutcome` OutcomeFailure
+            it "outcomeSuccess"
+                $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
+            it "outcomeSuccess2"
+                $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
 
 genTime :: Gen UTCTime
 genTime = do

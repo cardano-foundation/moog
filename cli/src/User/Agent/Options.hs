@@ -13,10 +13,11 @@ module User.Agent.Options
 
 import Core.Options
     ( downloadAssetsDirectoryOption
+    , outcomeOption
     , platformOption
     , repositoryOption
     , tokenIdOption
-    , walletOption, outcomeOption
+    , walletOption
     )
 import Core.Types.Basic (Duration (..), Success)
 import Core.Types.Tx (WithTxHash)

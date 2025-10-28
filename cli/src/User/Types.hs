@@ -206,7 +206,11 @@ data TestRunState a where
         :: TestRunState PendingT -> [TestRunRejection] -> TestRunState DoneT
     Accepted :: TestRunState PendingT -> TestRunState RunningT
     Finished
-        :: TestRunState RunningT -> Duration -> Outcome -> URL -> TestRunState DoneT
+        :: TestRunState RunningT
+        -> Duration
+        -> Outcome
+        -> URL
+        -> TestRunState DoneT
 
 deriving instance Eq (TestRunState a)
 
@@ -484,4 +488,3 @@ instance ReportSchemaErrors m => FromJSON m Outcome where
     fromJSON (JSString "failure") = pure OutcomeFailure
     fromJSON (JSString "unknown") = pure OutcomeUnknown
     fromJSON v = expectedButGotValue "success, failure or unknown" v
-

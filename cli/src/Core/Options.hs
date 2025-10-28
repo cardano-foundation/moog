@@ -56,8 +56,12 @@ import OptEnvConf
     )
 import OptEnvConf.Reader (Reader (..))
 import Submitting (readWallet)
+import Text.JSON.Canonical
+    ( FromJSON (fromJSON)
+    , JSValue (JSString)
+    , toJSString
+    )
 import User.Types (Outcome)
-import Text.JSON.Canonical (FromJSON(fromJSON), JSValue (JSString), toJSString)
 
 platformOption :: Parser Platform
 platformOption =
@@ -222,16 +226,13 @@ walletOption = checkEither (left show <$> readWallet) mnemonicsParser
 
 outcomeOption :: Parser Outcome
 outcomeOption =
-        setting
-            [ long "outcome"
-            , metavar "OUTCOME"
-            , help "success, failure or unknown"
-            , reader (maybeReader parseOutcome)
-            , option
-            ]
+    setting
+        [ long "outcome"
+        , metavar "OUTCOME"
+        , help "success, failure or unknown"
+        , reader (maybeReader parseOutcome)
+        , option
+        ]
   where
     parseOutcome :: String -> Maybe Outcome
     parseOutcome s = fromJSON (JSString $ toJSString s)
-
-
-

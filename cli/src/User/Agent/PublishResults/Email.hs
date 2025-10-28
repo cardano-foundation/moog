@@ -17,7 +17,6 @@ module User.Agent.PublishResults.Email
     )
 where
 
-import User.Types ( Outcome(..), TestRun )
 import Control.Applicative (asum, (<|>))
 import Control.Arrow (left)
 import Control.Lens (view, (&), (^.), (^..))
@@ -96,6 +95,7 @@ import Text.JSON.Canonical (FromJSON (..), parseCanonicalJSON)
 import Text.JSON.Canonical.Class (ToJSON (..))
 import Text.Read (readMaybe)
 import User.Agent.PushTest (TestRunWithId (..))
+import User.Types (Outcome (..), TestRun)
 
 newtype EmailUser = EmailUser String
     deriving (Show, Eq)

@@ -48,7 +48,11 @@ import Test.QuickCheck
 import Test.QuickCheck.EGen (egenProperty, gen, genA, genBlind)
 import Test.QuickCheck.JSString (genAscii)
 import Test.QuickCheck.Property (cover)
-import User.Types (TestRunState (..), URL (..), Outcome(OutcomeSuccess))
+import User.Types
+    ( Outcome (OutcomeSuccess)
+    , TestRunState (..)
+    , URL (..)
+    )
 
 spec :: Spec
 spec = do

@@ -117,13 +117,14 @@ import User.Agent.Types
     , WhiteListKey (..)
     )
 import User.Types
-    ( Phase (..)
+    ( Outcome
+    , Phase (..)
     , RegisterUserKey (..)
     , TestRun (..)
     , TestRunRejection
     , TestRunState (..)
     , URL (..)
-    , getIdentificationPublicKey, Outcome
+    , getIdentificationPublicKey
     )
 
 type ValidateWithContext m a =

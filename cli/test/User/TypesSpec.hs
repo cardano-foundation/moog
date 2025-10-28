@@ -30,11 +30,12 @@ import Test.QuickCheck
 import Test.QuickCheck.Crypton (ed25519Gen)
 import User.Types
     ( GithubIdentification (IdentifyViaSSHKey)
+    , Outcome (OutcomeSuccess)
     , RegisterUserKey (..)
     , TestRun (..)
     , TestRunRejection (..)
     , TestRunState (..)
-    , URL (..), Outcome (OutcomeSuccess)
+    , URL (..)
     )
 
 testRunRejectionGen :: Gen TestRunRejection

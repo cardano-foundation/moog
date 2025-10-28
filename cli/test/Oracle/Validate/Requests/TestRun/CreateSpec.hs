@@ -98,12 +98,13 @@ import Test.QuickCheck.EGen
 import User.Agent.Types (WhiteListKey (..))
 import User.Types
     ( GithubIdentification (..)
+    , Outcome (OutcomeSuccess)
     , RegisterRoleKey (..)
     , TestRun (..)
     , TestRunRejection (..)
     , TestRunState (..)
     , URL (..)
-    , tryIndexL, Outcome(OutcomeSuccess)
+    , tryIndexL
     )
 
 shouldHaveReason
@@ -339,7 +340,11 @@ spec = do
             finalDuration <- genA
             finalURL <- genA
             let finished =
-                    Finished accepted (Duration finalDuration) OutcomeSuccess (URL finalURL)
+                    Finished
+                        accepted
+                        (Duration finalDuration)
+                        OutcomeSuccess
+                        (URL finalURL)
             testRunStateDB <-
                 gen
                     $ oneof
