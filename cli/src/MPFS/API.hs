@@ -31,16 +31,12 @@ import Data.Aeson
     , (.:)
     , (.=)
     )
-import Data.Aeson.KeyMap qualified as Aeson
-import Data.Aeson.Types (parseMaybe)
 import Data.Data (Proxy (..))
-import Data.Maybe (fromMaybe, mapMaybe)
 import Lib.JSON.Canonical.Extra
     ( fromAesonString
     , fromAesonThrow
     , toAesonString
     )
-import Lib.JSON.Canonical.Extra qualified as Canonical
 import Servant.API
     ( Capture
     , Get
@@ -57,7 +53,6 @@ import Servant.Client (ClientM, client)
 import Text.JSON.Canonical
     ( JSValue (..)
     )
-import Text.JSON.Canonical qualified as Canonical
 
 data RequestInsertBody = RequestInsertBody
     { key :: JSValue
@@ -255,26 +250,7 @@ getToken :: TokenId -> ClientM JSValue
 getToken tokenId = fromAesonThrow <$> getToken' tokenId
 
 getTokenFacts :: TokenId -> ClientM JSValue
-getTokenFacts tokenId = do
-    aesonFacts <- getTokenFacts' tokenId
-    pure $ case aesonFacts of
-        Object obj ->
-            let es = flip mapMaybe (Aeson.toList obj) $ \(key, value) -> do
-                    key' <- parseMaybe fromAesonString $ toJSON key
-                    value' <- parseMaybe fromAesonString value
-                    pure (key', value')
-                j = do
-                    r <- traverse explode es
-                    Canonical.toJSON r
-            in  fromMaybe JSNull j
-        _ -> error "getTokenFacts: expected JSObject"
-
-explode :: Monad m => (JSValue, JSValue) -> m JSValue
-explode (key, value) =
-    Canonical.object
-        [ "key" Canonical..= key
-        , "value" Canonical..= value
-        ]
+getTokenFacts tokenId = fromAesonThrow <$> getTokenFacts' tokenId
 
 submitTransaction :: SignedTx -> ClientM TxHash
 submitTransaction = submitTransaction'

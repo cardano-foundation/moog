@@ -3,19 +3,26 @@
 
 module Core.Types.Fact
     ( Fact (..)
+    , Slot (..)
     , keyHash
     , parseFacts
     , JSFact
     , toJSFact
     , fromJSFact
+    , renderFacts
     ) where
 
+import Control.Lens (Identity (runIdentity))
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Char8 qualified as B
+import Data.ByteString.Char8 qualified as B8
+import Data.Map qualified as M
 import Data.Maybe (fromMaybe, mapMaybe)
 import Lib.JSON.Canonical.Extra
     ( blakeHashOfJSON
     , object
+    , parseJSValue
+    , renderJSValue
     , withObject
     , (.:)
     , (.=)
@@ -44,7 +51,7 @@ data Fact k v = Fact
     , factValue :: v
     , factSlot :: Slot
     }
-    deriving (Eq, Show, Functor, Foldable, Traversable)
+    deriving (Eq, Show, Functor, Foldable, Traversable, Ord)
 
 keyHash :: (ToJSON m k, Monad m) => k -> m String
 keyHash key = do
@@ -75,18 +82,49 @@ instance (Monad m, ToJSON m k, ToJSON m v) => ToJSON m (Fact k v) where
             , "slot" .= slot
             ]
 
-type JSFact = Fact JSValue JSValue
+data RawValue = RawValue
+    { _rawValue :: String
+    , _rawSlot :: Slot
+    }
+    deriving (Eq, Show)
+
+instance (ReportSchemaErrors m) => FromJSON m RawValue where
+    fromJSON = withObject "RawValue" $ \v -> do
+        value <- v .: "value"
+        slot <- v .: "slot"
+        pure $ RawValue value slot
 
 parseFacts
     :: (FromJSON Maybe key, FromJSON Maybe val) => JSValue -> [Fact key val]
 parseFacts v = fromMaybe [] $ do
     factsJSON <- fromJSON v
-    pure $ mapMaybe f factsJSON
+    pure $ mapMaybe f $ M.assocs factsJSON
   where
-    f (Fact key value slot) = do
-        key' <- fromJSON key
-        value' <- fromJSON value
+    f (key, RawValue value slot) = do
+        key' <- parseJSValue (B8.pack key)
+        value' <- parseJSValue (B8.pack value)
         Just $ Fact key' value' slot
+
+renderFacts
+    :: forall k v
+     . (ToJSON Identity k, ToJSON Identity v)
+    => [Fact k v]
+    -> JSValue
+renderFacts facts = runIdentity $ object =<< traverse f facts
+  where
+    f :: Fact k v -> Identity (String, Identity JSValue)
+    f (Fact key value slot) = do
+        key' <- B8.unpack <$> renderJSValue key
+        value' <- B8.unpack <$> renderJSValue value
+        pure
+            ( key'
+            , object
+                [ "value" .= value'
+                , "slot" .= slot
+                ]
+            )
+
+type JSFact = Fact JSValue JSValue
 
 toJSFact
     :: (ToJSON m k, ToJSON m v, Monad m) => k -> v -> Slot -> m JSFact

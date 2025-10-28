@@ -30,6 +30,7 @@ module Lib.JSON.Canonical.Extra
     , mergeObject
     , blakeHashOfJSON
     , getFieldWithDefault
+    , renderJSValue
     )
 where
 
@@ -254,6 +255,10 @@ parseJSValue b = do
         Right js -> pure js
     fromJSON js
 
+renderJSValue :: (ToJSON m a, Monad m) => a -> m StrictByteString
+renderJSValue a = do
+    j <- toJSON a
+    pure $ BL.toStrict $ renderCanonicalJSON j
 instance Applicative m => ToJSON m () where
     toJSON () = pure JSNull
 

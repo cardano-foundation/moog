@@ -7,7 +7,7 @@ import Core.Types.Basic
     , RequestRefId (..)
     , TokenId
     )
-import Core.Types.Fact (JSFact)
+import Core.Types.Fact (JSFact, renderFacts)
 import Core.Types.Tx
     ( Root (..)
     , UnsignedTx (UnsignedTx)
@@ -51,7 +51,7 @@ withRequestInsert
 withRequestInsert f mpfs = mpfs{mpfsRequestInsert = f}
 
 withFacts :: Monad m => [JSFact] -> MPFS m -> MPFS m
-withFacts fs mpfs = mpfs{mpfsGetTokenFacts = \_ -> toJSON fs}
+withFacts fs mpfs = mpfs{mpfsGetTokenFacts = \_ -> pure $ renderFacts fs}
 
 withRequests :: Monad m => [RequestZoo] -> MPFS m -> MPFS m
 withRequests reqs mpfs = mpfs{mpfsGetToken = \_ -> toJSON (mockToken reqs)}

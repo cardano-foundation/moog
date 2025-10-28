@@ -95,6 +95,7 @@ import Test.QuickCheck.EGen
     , genBlind
     , genShrinkA
     )
+import Test.QuickCheck.JSString (genAscii)
 import User.Agent.Types (WhiteListKey (..))
 import User.Types
     ( GithubIdentification (..)
@@ -339,7 +340,7 @@ spec = do
                 gen $ listOf $ elements [BrokenInstructions, UnclearIntent]
             let rejected = Rejected pending rejections
             finalDuration <- genA
-            finalURL <- genA
+            finalURL <- gen genAscii
             let finished =
                     Finished
                         accepted

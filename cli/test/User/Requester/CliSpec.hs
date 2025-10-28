@@ -18,7 +18,7 @@ import Core.Types.Basic
     , Platform (..)
     , TokenId (..)
     )
-import Core.Types.Fact (JSFact, keyHash, toJSFact)
+import Core.Types.Fact (JSFact, keyHash, renderFacts, toJSFact)
 import Core.Types.Mnemonics
     ( Mnemonics (ClearText)
     , MnemonicsPhase (..)
@@ -55,7 +55,6 @@ import Oracle.Validate.Requests.TestRun.Lib
 import Oracle.Validate.Types (AValidationResult (..))
 import Submitting (Submission (Submission), readWallet)
 import Test.Hspec (Spec, describe, it, shouldBe)
-import Text.JSON.Canonical (ToJSON (..))
 import User.Agent.Types (TestRunId (TestRunId), WhiteListKey (..))
 import User.Requester.Cli
     ( NewTestRunCreated (NewTestRunCreated)
@@ -208,7 +207,7 @@ spec = describe "User.Requester.Cli" $ do
             command = RequestTest tokenId wallet (Just sshClient) testRun testDuration
 
         withContext
-            mockMPFS{mpfsGetTokenFacts = const $ toJSON facts}
+            mockMPFS{mpfsGetTokenFacts = const . pure $ renderFacts facts}
             ( \_ _ ->
                 mkEffects
                     (withFacts facts mockMPFS)

@@ -298,7 +298,7 @@ mpfsAPISpec = aroundAllWith setupAction $ do
             $ \(Context{mpfs = Call call, tokenId}) -> do
                 res <- call $ getTokenFacts tokenId
                 case res of
-                    JSArray _ -> return ()
+                    JSObject _ -> return ()
                     _ -> error "Response is not an object"
         it "can retrieve a request-insert tx"
             $ \Context{mpfs = Call call, tokenId, requesterWallet} -> do
