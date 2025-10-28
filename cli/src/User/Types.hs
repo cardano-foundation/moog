@@ -52,6 +52,7 @@ import Lib.JSON.Canonical.Extra
     ( byteStringFromJSON
     , byteStringToJSON
     , getField
+    , getFieldWithDefault
     , getIntegralField
     , getListField
     , getStringField
@@ -282,7 +283,7 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState DoneT) where
                 running <- getField "from" mapping >>= fromJSON
                 duration <- getIntegralField "duration" mapping
                 url <- getStringField "url" mapping
-                outcome <- getField "outcome" mapping >>= fromJSON
+                outcome <- getFieldWithDefault "outcome" OutcomeUnknown mapping
                 pure $ Finished running (Duration duration) outcome (URL url)
             _ ->
                 expectedButGotValue

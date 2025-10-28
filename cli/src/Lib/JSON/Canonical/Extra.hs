@@ -1,7 +1,6 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# OPTIONS_GHC -Wno-orphans #-}
-{-# OPTIONS_GHC -Wno-redundant-constraints #-}
 
 module Lib.JSON.Canonical.Extra
     ( getField
@@ -30,6 +29,7 @@ module Lib.JSON.Canonical.Extra
     , byteStringFromJSON
     , mergeObject
     , blakeHashOfJSON
+    , getFieldWithDefault
     )
 where
 
@@ -66,24 +66,38 @@ import Text.JSON.Canonical
     )
 
 getField
-    :: ReportSchemaErrors m => String -> Map String JSValue -> m JSValue
+    :: (ReportSchemaErrors m, FromJSON m a)
+    => String
+    -> Map String JSValue
+    -> m a
 getField key mapping = case Map.lookup key mapping of
     Nothing -> expected (key <> " key") Nothing
-    Just value -> pure value
+    Just value -> fromJSON value
+
+getFieldWithDefault
+    :: (ReportSchemaErrors m, FromJSON m a)
+    => String
+    -> a
+    -> Map String JSValue
+    -> m a
+getFieldWithDefault key def mapping =
+    case Map.lookup key mapping of
+        Nothing -> pure def
+        Just value -> fromJSON value
 
 getStringField
     :: ReportSchemaErrors m
     => String
     -> Map String JSValue
     -> m String
-getStringField key mapping = getField key mapping >>= fromJSON
+getStringField = getField
 
 getListField
     :: ReportSchemaErrors m
     => String
     -> Map String JSValue
     -> m [JSValue]
-getListField key mapping = getField key mapping >>= fromJSON
+getListField = getField
 
 getIntegralField
     :: (ReportSchemaErrors m, Num a)
@@ -91,14 +105,14 @@ getIntegralField
     -> Map String JSValue
     -> m a
 getIntegralField key mapping =
-    getField key mapping >>= fromJSON @_ @Int54 <&> fromIntegral
+    fromIntegral @Int54 <$> getField key mapping
 
 getStringMapField
     :: ReportSchemaErrors m
     => String
     -> Map String JSValue
     -> m (Map String JSValue)
-getStringMapField key mapping = getField key mapping >>= fromJSON
+getStringMapField = getField
 
 object :: (Monad m, ToJSON m a) => [(String, m a)] -> m JSValue
 object xs = toJSON <=< sequence $ Map.fromList xs
@@ -247,7 +261,7 @@ instance (ReportSchemaErrors m) => FromJSON m () where
     fromJSON JSNull = pure ()
     fromJSON v = expectedButGotValue "()" v
 
-instance (Monad m, ToJSON m a) => ToJSON m (Identity a) where
+instance ToJSON m a => ToJSON m (Identity a) where
     toJSON (Identity a) = toJSON a
 
 instance (ReportSchemaErrors m, FromJSON m a) => FromJSON m (Identity a) where
