@@ -6,7 +6,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Moog',
-  tagline: 'Cardano testing with Antithesis',
+  tagline: 'Testing Cardano on Cardano with Antithesis',
   favicon: 'img/cardano-ada-logo.svg',
 
   // Set the production url of your site here
@@ -130,6 +130,14 @@ const config: Config = {
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
+    },
+      announcementBar: {
+      id: 'support_us',
+      content:
+          '<strong>Moog is still at an early stage and experimental. Contributions and ideas are <a target="_blank" rel="noopener noreferrer" href="https://github.com/cardano-foundation/moog/">most welcome</a></strong>',
+      backgroundColor: '#ff9999',
+      textColor: '#091E42',
+      isCloseable: false,
     },
   } satisfies Preset.ThemeConfig,
 };
