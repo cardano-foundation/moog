@@ -325,3 +325,13 @@ cabal-version:
 moog-version:
     #!/usr/bin/env bash
     echo "v$(just cabal-version)"
+
+release-linux:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    CI/release.sh "$(just moog-version)" linux64
+
+release-macos:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    CI/release.sh "$(just moog-version)" darwin64

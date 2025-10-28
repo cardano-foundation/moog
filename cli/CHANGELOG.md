@@ -1,10 +1,26 @@
 # Changelog for moog-cli
 
+### v0.4.0.0 - 2025-10-28
+
+#### Added
+- Support for `moog` exe as a docker image, light and full versions.
+- Slot in facts. Each fact now comes with the slot of the last transaction that modified it.
+
+---
+
+### v0.3.3.1 - 2025-10-28
+
+#### Bug Fixes
+- Fixed parsing of outcome field in old test runs.
+
+---
+
 ### v0.3.3.0 - 2025-10-27
 
 #### Added
 - `outcome` field of test runs which is either `"success"` `"failure"` or `"unknown"`
 
+---
 ### v0.3.2.0 - 2025-10-20
 #### Bug Fixes
 - Fixed oracle process image to contain the docker command
