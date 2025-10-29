@@ -34,7 +34,7 @@ Alternatively, oracle commands can be run manually, using the `moog` CLI. See th
 
 ## Creating the moog token (only once)
 
-Oracle operations need a wallet. Since the oracle role is critical, in addition to setting the `ANTI_WALLET_FILE` environment variable to point to the wallet file, you should also set the `ANTI_WALLET_PASSPHRASE` environment variable to encrypt the wallet.
+Oracle operations need a wallet. Since the oracle role is critical, in addition to setting the `MOOG_WALLET_FILE` environment variable to point to the wallet file, you should also set the `MOOG_WALLET_PASSPHRASE` environment variable to encrypt the wallet.
 
 You can create a wallet with the `moog wallet create` command.
 
@@ -62,7 +62,7 @@ To create the Antithesis token, you can use the `moog oracle token create` comma
 moog oracle token boot
 ```
 
-It will create the Antithesis token. This token is a unique identifier for the Antithesis platform and will be used by all users to interact with the platform. You have to distribute it so that users can set the `ANTI_TOKEN_ID` environment variable to point to it.
+It will create the Antithesis token. This token is a unique identifier for the Antithesis platform and will be used by all users to interact with the platform. You have to distribute it so that users can set the `MOOG_TOKEN_ID` environment variable to point to it.
 
 You can review the token info anytime with
 
