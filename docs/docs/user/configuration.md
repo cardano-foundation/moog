@@ -17,9 +17,14 @@ export MOOG_MPFS_HOST=https://mpfs.plutimus.com
 
 #### Your wallet
 
-Currently the moog CLI works only by reading a wallet file containing a mnemonic phrase.
+Moog is a [DApp](https://en.wikipedia.org/wiki/Decentralized_application) that
+allows one to request Antithesis tests execution by posting transactions to
+Cardano blockchain (currently on preprod network). As such it requires a
+"wallet" to pay for fees and sign transactions.
 
-The moog command will read the wallet file from the `MOOG_WALLET_FILE` environment variable.
+Currently the Moog CLI works only by reading a wallet file containing a mnemonic phrase.
+
+The `moog` command will read the wallet file from the `MOOG_WALLET_FILE` environment variable.
 
 ```bash
 export MOOG_WALLET_FILE=wallet.json
@@ -73,9 +78,16 @@ moog wallet decrypt path/to/decrypted/secret/file
 
 For the both cases `MOOG_WALLET_FILE` is set as before.
 
->  Store a copy of your encrypted/plaintext wallet file in a password manager. Think twice before storing a plaintext wallet file. Store your passphrase in a password manager too. Currently we do not support hardware wallets like Ledger or Trezor.
+:::warning
+Store a copy of your encrypted/plaintext wallet file in a password manager.
+Think twice before storing a plaintext wallet file. Store your passphrase in a
+password manager too. Currently we do not support hardware wallets like Ledger
+or Trezor.
+:::
 
-> Fund your wallet with some tAda tokens on preprod, for example using the [Cardano Testnet Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/).
+Fund your wallet with some tAda tokens on preprod, for example using the
+[Cardano Testnet
+Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/).
 
 
 #### Antithesis token
