@@ -7,8 +7,9 @@ Operating Moog requires:
 - having an [Antithesis](https://antithesis.com/) account in which to execute
   test runs
 - running several services
-  * an Oracle, which represents the specific portal, and knows how to query
+  * an oracle process, which represents the specific portal, and knows how to query
     GitHub in order to verify claims made by users
+  * an agent process, which forward test-runs to Antithesis platform and report results back
   * an MPFS service which stores the details about the transactions between
     users and the portal on the [Cardano](https://cardano.org/) blockchain
     ([MPFS](https://cardano-foundation.github.io/mpfs) is the Merkle Patricia
