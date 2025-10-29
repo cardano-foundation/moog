@@ -92,7 +92,7 @@ Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/).
 
 #### Antithesis token
 
-This is the unique token that identifies the Antithesis access interface. You need to refer to it setting the `MOOG_TOKEN_ID` environment variable.
+This is the unique token that identifies the (Cardano Foundation) Antithesis access interface. You need to refer to it setting the `MOOG_TOKEN_ID` environment variable.
 
 ```bash
 export MOOG_TOKEN_ID=21c523c3b4565f1fc1ad7e54e82ca976f60997d8e7e9946826813fabf341069b
@@ -110,7 +110,7 @@ export MOOG_WAIT=120
 
 #### Configuring access to GitHub
 
-The tool will query the GitHub platform on your behalf in order to obtain (public) information about repositories (where Antithesis test runs are stored) and users (requesting a test run).
+The tool will query the GitHub platform on your behalf in order to obtain (public) information about users, repositories and test assets as stored into repositories.
 
 In order to make this possible you must provide a GitHub Personal Access Token (PAT) for read-only access to public data. See the GitHub platform's documentation for how to create one.
 
@@ -122,7 +122,7 @@ export MOOG_GITHUB_PAT="github_pat_31A...<snipped>...xL"
 
 ### Querying the token state
 
-You can query the state of the Antithesis token with the following command:
+You can now query the state of the (Cardano Foundation) Antithesis token with the following command:
 
 ```bash
 moog token
@@ -136,33 +136,29 @@ This will show
 
 ### Querying facts of the Antithesis token
 
-You can always query the Antithesis token and its facts
+You can always query the Antithesis token and all its facts
 
 ```bash
 moog facts
 ```
 
-Will query all facts
-
-But you can also query specific facts, for example:
+But you can also query specific facts, for example to report the GitHub registered users:
 
 ```bash
 moog facts users
 ```
-will report the GitHub registered users.
 
-Or
+Or to query all test-run states:
 
 ```bash
 moog facts test-runs
 ```
-will report all the test runs.
 
+To report the pending test-runs:
 
 ```bash
 moog facts test-runs pending
 ```
-will report the pending test runs.
 
 You can also query facts for a specific test-run id:
 
@@ -180,3 +176,38 @@ moog facts --help
 ```
 will show you all the available facts you can query.
 
+All facts come with their last-modification slot, that you can use to sort them. (Only externally via jq, currently)
+
+```bash
+moog facts test-runs | jq '[.[] | select(.key.repository.repo == "moog")] | sort_by(.slot) | last' | jq
+{
+  "id": "1879281b7787d6e8cfc35e322510afd3438d53720e7e5731839deae2279e2f39",
+  "key": {
+    "commitId": "c5ce800a2a008237df21b4927d33f8b3d953f20b",
+    "directory": "compose/testnets/cardano_node_master",
+    "platform": "github",
+    "repository": {
+      "organization": "cardano-foundation",
+      "repo": "moog"
+    },
+    "requester": "cfhal",
+    "try": 1,
+    "type": "test-run"
+  },
+  "slot": 106050979,
+  "value": {
+    "duration": 1,
+    "from": {
+      "from": {
+        "duration": 1,
+        "phase": "pending",
+        "signature": "68d2457749aaeafea128f2fbdb05575ee1bb2961a2b4b42dc31631bcbdb29200a073a623ceedeb5ef770e1f79a6c92c5d0c6ccb023f89e60bbae4f794dafb20f"
+      },
+      "phase": "accepted"
+    },
+    "outcome": "success",
+    "phase": "finished",
+    "url": "Jqt4G6cEKgOH3n0nkNcN84jb/EU26UD1qMZRZpqB1uL7Fiaqab4X8EHnj1lEajxMOxMDd5CJejGBoBag09svp9zADaqYyXgwRSJFxjLYyZDbQVZL1QhUU6jRyAT79iFXzfUkq2mdvWX4ygsRZKklzZ0OD5qqF0SqTEjO8XT3l16NFlp5sqZJbTYzaWr2zxrpkcq3TJxMmGWrnrmgFFIvxw3G8ljZy3aNBEEt0AwUmVVf/PfNN+pp36paZtD2xOMoCBiDUeaTFeJt0r5laxsgVBzPJSWyj84yTiFZg7E+0cIxgRdx7A9PRrgFOwjXb+QQKPIOihCVauZga2fOLdS2mc6E9qGiApjm4q8Nv0Ii7VNiw3NYbINpW5VJ3XhE6gYWgV/sQWzPb3/kwofVgcCMAA7I9ADVA2EqFDRX6q5vqR99VZiLZsoMsyDIgoG2Rjm0/OwTbMsaNg5A9s73kJyRsPQG+/wK5slvSS1S2BfJ+e2NVzHJtHcyqMW/SgIZ7tSttFjNiyJRJKAVeRdhxVjP7yn5kJ5iHz2pGiSJYSlowRgsQ6XIVph0ce5E8GBEUB2IG2nQPo1FvRYMmSrx/k6aWIeS"
+  }
+}
+```
