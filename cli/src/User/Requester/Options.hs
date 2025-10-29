@@ -12,6 +12,7 @@ import Core.Options
     ( commitOption
     , downloadAssetsDirectoryOption
     , durationOption
+    , faultsEnabledOption
     , platformOption
     , repositoryOption
     , sshPublicKeyHashParser
@@ -206,3 +207,4 @@ requestTestOptions =
                 <*> usernameOption
             )
         <*> durationOption
+        <*> faultsEnabledOption

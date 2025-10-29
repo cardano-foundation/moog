@@ -296,7 +296,7 @@ validateCreateTestRunCore
     config
     validation
     testRun
-    (Pending duration signature) = do
+    (Pending duration _faultsEnabled signature) = do
         (withSystemTempDirectory $ hoistValidation validation)
             "moog-test-run"
             $ \tmpDir -> do

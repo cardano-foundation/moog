@@ -10,6 +10,7 @@ module Lib.JSON.Canonical.Extra
     , object
     , intJSON
     , stringJSON
+    , boolJSON
     , getListField
     , jsonToString
     , CanonicalJSON (..)
@@ -127,6 +128,9 @@ intJSON = toJSON @_ @Int54 . fromIntegral
 
 stringJSON :: Monad m => String -> m JSValue
 stringJSON = toJSON
+
+boolJSON :: Monad m => Bool -> m JSValue
+boolJSON = pure . JSBool
 
 jsonToString :: JSValue -> String
 jsonToString = BL.unpack . renderCanonicalJSON

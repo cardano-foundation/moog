@@ -11,6 +11,7 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , Duration (..)
+    , FaultsEnabled (FaultsEnabled)
     , FileName (..)
     , GithubRepository (..)
     , GithubUsername (..)
@@ -195,16 +196,26 @@ validSSHKeys = [("alice_id_ed25519", aliceKey)]
 testDuration :: Duration
 testDuration = Duration 3
 
+faultsEnabled :: FaultsEnabled
+faultsEnabled = FaultsEnabled True
+
 pendingState :: TestRunState 'PendingT
 pendingState = case signKey keyPair testRun of
     Nothing -> error "Failed to sign testRun"
-    Just (_, signature) -> Pending testDuration signature
+    Just (_, signature) -> Pending testDuration faultsEnabled signature
 
 spec :: Spec
 spec = describe "User.Requester.Cli" $ do
     it "should do something" $ do
         let tokenId = TokenId "token"
-            command = RequestTest tokenId wallet (Just sshClient) testRun testDuration
+            command =
+                RequestTest
+                    tokenId
+                    wallet
+                    (Just sshClient)
+                    testRun
+                    testDuration
+                    faultsEnabled
 
         withContext
             mockMPFS{mpfsGetTokenFacts = const . pure $ renderFacts facts}

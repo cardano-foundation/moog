@@ -11,6 +11,7 @@ import Control.Lens ((%~), (.~))
 import Control.Monad (when)
 import Core.Types.Basic
     ( Duration (..)
+    , FaultsEnabled (..)
     , FileName (..)
     , Owner (..)
     , RequestRefId (RequestRefId)
@@ -132,6 +133,7 @@ spec = do
         it "accepts valid test run" $ egenProperty $ do
             testRun <- testRunEGen
             testConfig <- testConfigEGen
+            faultsEnabled <- FaultsEnabled <$> gen arbitrary
             Positive duration <-
                 gen
                     $ arbitrary
@@ -160,7 +162,7 @@ spec = do
                     n -> do
                         let previousTestRun = testRun{tryIndex = n - 1}
                         previousState <-
-                            Pending (Duration duration)
+                            Pending (Duration duration) faultsEnabled
                                 <$> signTestRun
                                     sign
                                     previousTestRun
@@ -187,7 +189,7 @@ spec = do
                             , mockAssets = files
                             }
             testRunState <-
-                Pending (Duration duration)
+                Pending (Duration duration) faultsEnabled
                     <$> signTestRun sign testRun
             pure $ do
                 mresult <-
@@ -216,13 +218,14 @@ spec = do
                             `suchThat` \(Positive d) ->
                                 d >= testConfig.minDuration
                                     && d <= testConfig.maxDuration
+                faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 (sign, _pk) <- genBlind ed25519Gen
                 forRole <- genForRole
                 testRunState <-
-                    Pending (Duration duration)
+                    Pending (Duration duration) faultsEnabled
                         <$> signTestRun sign testRun
                 otherTestRunState <-
-                    Pending (Duration otherDuration)
+                    Pending (Duration otherDuration) faultsEnabled
                         <$> signTestRun sign testRun
                 let pendingRequest =
                         CreateTestRequest
@@ -257,7 +260,8 @@ spec = do
             testRun <- testRunEGen
             testConfig <- testConfigEGen
             signature <- gen signatureGen
-            let testRunState = Pending (Duration duration) signature
+            faultsEnabled <- FaultsEnabled <$> gen arbitrary
+            let testRunState = Pending (Duration duration) faultsEnabled signature
             pure $ do
                 mresult <-
                     runValidate
@@ -277,6 +281,7 @@ spec = do
         it "reports unacceptable role" $ egenProperty $ do
             testConfig <- testConfigEGen
             duration <- genA
+            faultsEnabled <- FaultsEnabled <$> gen arbitrary
             signature <- gen signatureGen
             testRunRequest <- testRunEGen
             testRunFact <-
@@ -293,7 +298,7 @@ spec = do
                     mkEffects
                         (withFacts [roleFact] mockMPFS)
                         noValidation
-                testRunState = Pending (Duration duration) signature
+                testRunState = Pending (Duration duration) faultsEnabled signature
             pure $ do
                 mresult <-
                     runValidate
@@ -320,6 +325,7 @@ spec = do
             duration <- genA
             signature <- gen signatureGen
             testRunR <- testRunEGen
+            faultsEnabled <- FaultsEnabled <$> gen arbitrary
             testRunDB <-
                 gen
                     $ oneof
@@ -334,7 +340,7 @@ spec = do
                         ]
             let mkTestRunFact :: Monad m => TestRunState x -> m JSFact
                 mkTestRunFact s = toJSFact testRunDB s 0
-                pending = Pending (Duration duration) signature
+                pending = Pending (Duration duration) faultsEnabled signature
                 accepted = Accepted pending
             rejections <-
                 gen $ listOf $ elements [BrokenInstructions, UnclearIntent]
@@ -360,7 +366,7 @@ spec = do
                     mkEffects
                         (withFacts [testRunFact | testRunDB.tryIndex > 0] mockMPFS)
                         noValidation
-            let testRunState = Pending (Duration duration) signature
+            let testRunState = Pending (Duration duration) faultsEnabled signature
             pure
                 $ counterexample (show testRunDB)
                 $ cover
@@ -387,10 +393,11 @@ spec = do
         it "reports unacceptable directory" $ egenProperty $ do
             testConfig <- testConfigEGen
             duration <- genA
+            faultsEnabled <- FaultsEnabled <$> gen arbitrary
             signature <- gen signatureGen
             testRun <- testRunEGen
             testRun' <- gen $ oneof [changeDirectory testRun, pure testRun]
-            let testRunState = Pending (Duration duration) signature
+            let testRunState = Pending (Duration duration) faultsEnabled signature
             testRunFact <- toJSFact testRun' testRunState 0
             let validation =
                     mkEffects (withFacts [testRunFact] mockMPFS)
@@ -414,9 +421,10 @@ spec = do
         it "reports not whitelisted repository" $ egenProperty $ do
             testConfig <- testConfigEGen
             duration <- genA
+            faultsEnabled <- FaultsEnabled <$> gen arbitrary
             signature <- gen signatureGen
             testRun <- testRunEGen
-            let testRunState = Pending (Duration duration) signature
+            let testRunState = Pending (Duration duration) faultsEnabled signature
                 key =
                     WhiteListKey
                         { platform = testRun.platform

@@ -2,11 +2,12 @@ module User.Agent.Lib
     ( resolveTestRunId
     , withState
     , testRunDuration
+    , testRunFaultsEnabled
     ) where
 
 import Control.Applicative (Alternative (..))
 import Core.Context (WithContext, withMPFS)
-import Core.Types.Basic (Duration, TokenId)
+import Core.Types.Basic (Duration, FaultsEnabled, TokenId)
 import Core.Types.Fact (Fact (..), keyHash, parseFacts)
 import Data.Foldable (find)
 import MPFS.API (MPFS (..))
@@ -48,8 +49,15 @@ withState f v =
         :: forall s. FromJSON Maybe (TestRunState s) => Maybe (TestRunState s)
     state = fromJSON v
 
+fromPending :: (TestRunState 'PendingT -> a) -> TestRunState v -> a
+fromPending f = \case
+    p@(Pending{}) -> f p
+    (Rejected pending _) -> f pending
+    (Accepted pending) -> f pending
+    (Finished accepted _ _ _) -> fromPending f accepted
+
 testRunDuration :: TestRunState v -> Duration
-testRunDuration (Pending d _) = d
-testRunDuration (Rejected pending _) = testRunDuration pending
-testRunDuration (Accepted pending) = testRunDuration pending
-testRunDuration (Finished accepted _ _ _) = testRunDuration accepted
+testRunDuration = fromPending $ \(Pending d _ _) -> d
+
+testRunFaultsEnabled :: TestRunState v -> FaultsEnabled
+testRunFaultsEnabled = fromPending $ \(Pending _ faultsEnabled _) -> faultsEnabled

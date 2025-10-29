@@ -15,6 +15,7 @@ module Core.Options
     , downloadAssetsDirectoryOption
     , walletOption
     , outcomeOption
+    , faultsEnabledOption
     )
 where
 
@@ -23,6 +24,7 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , Duration (..)
+    , FaultsEnabled (FaultsEnabled)
     , GithubRepository (..)
     , GithubUsername (..)
     , Platform (..)
@@ -53,6 +55,8 @@ import OptEnvConf
     , short
     , str
     , strOption
+    , switch
+    , value
     )
 import OptEnvConf.Reader (Reader (..))
 import Submitting (readWallet)
@@ -196,6 +200,17 @@ durationOption =
             , help "The duration in hours for the test-run"
             , reader auto
             , option
+            ]
+
+faultsEnabledOption :: Parser FaultsEnabled
+faultsEnabledOption =
+    FaultsEnabled
+        <$> setting
+            [ switch False
+            , long "no-faults"
+            , help "Disable faults injection for the test-run"
+            , reader auto
+            , value True
             ]
 
 tryOption :: Parser Try

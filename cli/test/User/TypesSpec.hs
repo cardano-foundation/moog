@@ -10,6 +10,7 @@ import Core.Types.Basic
     ( Commit (Commit)
     , Directory (Directory)
     , Duration (..)
+    , FaultsEnabled (..)
     , GithubRepository (GithubRepository, organization, project)
     , GithubUsername (GithubUsername)
     , Platform (Platform)
@@ -69,9 +70,12 @@ spec = do
             $ property
             $ \message
                duration
+               faultsEnabled
                (ASCIIString url) -> forAll (listOf testRunRejectionGen) $ \rejections -> do
                     forAllBlind ed25519Gen $ \(sign, _verify) -> do
-                        let pending = Pending (Duration duration) $ sign message
+                        let pending =
+                                Pending (Duration duration) (FaultsEnabled faultsEnabled)
+                                    $ sign message
                         roundTrip pending
                         let rejected =
                                 Rejected

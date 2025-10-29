@@ -20,6 +20,7 @@ import Core.Context
 import Core.Types.Basic
     ( Directory (..)
     , Duration
+    , FaultsEnabled
     , GithubRepository (..)
     , Success (..)
     , TokenId
@@ -116,6 +117,7 @@ data RequesterCommand a where
         -> Maybe (SSHClient 'WithSelector)
         -> TestRun
         -> Duration
+        -> FaultsEnabled
         -> RequesterCommand
             ( AValidationResult
                 CreateTestRunFailure
@@ -146,13 +148,14 @@ requesterCmd command = do
             registerRole tokenId wallet request
         UnregisterRole tokenId wallet request ->
             unregisterRole tokenId wallet request
-        RequestTest tokenId wallet mSshClient testRun duration ->
+        RequestTest tokenId wallet mSshClient testRun duration faultsEnabled ->
             createCommand
                 tokenId
                 wallet
                 mSshClient
                 testRun
                 duration
+                faultsEnabled
         GenerateAssets directory -> generateAssets directory
 
 generateAssets
@@ -202,6 +205,7 @@ createCommand
     -> Maybe (SSHClient 'WithSelector)
     -> TestRun
     -> Duration
+    -> FaultsEnabled
     -> WithContext
         m
         ( AValidationResult
@@ -213,7 +217,8 @@ createCommand
     wallet
     mSshClient
     testRun
-    duration = do
+    duration
+    faultsEnabled = do
         mconfig <- askConfig tokenId
         validation <- askValidation $ Just tokenId
         Submission submit <- askSubmit wallet
@@ -233,7 +238,7 @@ createCommand
                         liftMaybe CreateTestRunInvalidSSHKey
                             =<< decodePrivateSSHFile (hoistValidation validation) sshClient
                     lift $ signKey sshKeyPair testRun
-            let newState = Pending duration signature
+            let newState = Pending duration faultsEnabled signature
             Config{configTestRun} <-
                 liftMaybe CreateTestConfigNotAvailable mconfig
             void

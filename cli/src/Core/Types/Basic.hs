@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE StrictData #-}
 
 module Core.Types.Basic
@@ -17,6 +18,7 @@ module Core.Types.Basic
     , Try (..)
     , GithubUsername (..)
     , Success (..)
+    , FaultsEnabled (..)
     , organizationL
     , projectL
     )
@@ -39,6 +41,7 @@ import Text.JSON.Canonical
     , JSValue (..)
     , ReportSchemaErrors (..)
     , ToJSON (..)
+    , expectedButGotValue
     , fromJSString
     )
 
@@ -196,6 +199,18 @@ instance ToHttpApiData Address where
 
 newtype Duration = Duration Int
     deriving (Eq, Show)
+
+newtype FaultsEnabled = FaultsEnabled {getFaultsEnabled :: Bool}
+    deriving (Eq, Show)
+    deriving newtype (Aeson.FromJSON)
+    deriving newtype (Aeson.ToJSON)
+
+instance ReportSchemaErrors m => FromJSON m FaultsEnabled where
+    fromJSON (JSBool b) = pure $ FaultsEnabled b
+    fromJSON v = expectedButGotValue "Bool" v
+
+instance Monad m => ToJSON m FaultsEnabled where
+    toJSON (FaultsEnabled b) = pure $ JSBool b
 
 newtype Try = Try Int
     deriving (Eq, Show, Ord, Enum, Num, Generic)

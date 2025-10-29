@@ -6,6 +6,7 @@ where
 import Control.Monad (when)
 import Core.Types.Basic
     ( Duration (..)
+    , FaultsEnabled (..)
     , Owner (..)
     , RequestRefId (..)
     )
@@ -62,7 +63,8 @@ spec = do
             signature <- gen signatureGen
             actualDuration <- genA
             url <- gen genAscii
-            let acceptedState = Accepted $ Pending (Duration 5) signature
+            faultsEnabled <- FaultsEnabled <$> gen arbitrary
+            let acceptedState = Accepted $ Pending (Duration 5) faultsEnabled signature
             testRunFact <- toJSFact testRun acceptedState 0
             let validation =
                     mkEffects
@@ -84,7 +86,7 @@ spec = do
                 signature <- gen signatureGen
                 forRole <- genForRole
                 anOwner <- gen $ Owner <$> genAscii
-                let pendingState = Accepted (Pending (Duration 5) signature)
+                let pendingState = Accepted (Pending (Duration 5) (FaultsEnabled True) signature)
                     change =
                         Change
                             { key = Key testRun
@@ -113,7 +115,7 @@ spec = do
                 testRun <- testRunEGen
                 signature <- gen signatureGen
                 duration <- genA
-                let pendingState = Pending (Duration duration) signature
+                let pendingState = Pending (Duration duration) (FaultsEnabled True) signature
                     newTestRunState = Accepted pendingState
                     test =
                         validateToRunningCore
@@ -133,12 +135,15 @@ spec = do
                 signature <- gen signatureGen
                 differentSignature <- gen $ oneof [signatureGen, pure signature]
                 finishedDuration <- genA
+                faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 url <- genA
-                let fact = Accepted $ Pending (Duration pendingDuration) signature
+                let fact =
+                        Accepted $ Pending (Duration pendingDuration) faultsEnabled signature
                     request =
                         Accepted
                             $ Pending
                                 (Duration differentPendingDuration)
+                                faultsEnabled
                                 differentSignature
                 testRunFact <- toJSFact testRun fact 0
                 let validation =

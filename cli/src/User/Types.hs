@@ -35,6 +35,7 @@ import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
     , Duration (..)
+    , FaultsEnabled (..)
     , GithubRepository (..)
     , GithubUsername (..)
     , Platform (..)
@@ -202,7 +203,11 @@ newtype URL = URL String
     deriving (Show, Eq)
 
 data TestRunState a where
-    Pending :: Duration -> Ed25519.Signature -> TestRunState PendingT
+    Pending
+        :: Duration
+        -> FaultsEnabled
+        -> Ed25519.Signature
+        -> TestRunState PendingT
     Rejected
         :: TestRunState PendingT -> [TestRunRejection] -> TestRunState DoneT
     Accepted :: TestRunState PendingT -> TestRunState RunningT
@@ -217,12 +222,13 @@ deriving instance Eq (TestRunState a)
 
 deriving instance Show (TestRunState a)
 
-instance (Monad m) => ToJSON m (TestRunState a) where
-    toJSON (Pending (Duration d) signature) =
+instance Monad m => ToJSON m (TestRunState a) where
+    toJSON (Pending (Duration d) faultsEnabled signature) =
         object
             [ ("phase", stringJSON "pending")
             , ("duration", intJSON d)
             , ("signature", byteStringToJSON $ BA.convert signature)
+            , "faults_enabled" .= faultsEnabled
             ]
     toJSON (Rejected pending reasons) =
         object
@@ -253,9 +259,11 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState PendingT) where
                 duration <- getIntegralField "duration" mapping
                 signatureJSValue <- getField "signature" mapping
                 signatureByteString <- byteStringFromJSON signatureJSValue
+                faultsEnabled <-
+                    getFieldWithDefault "faults_enabled" (FaultsEnabled True) mapping
                 case Ed25519.signature signatureByteString of
                     CryptoPassed signature ->
-                        pure $ Pending (Duration duration) signature
+                        pure $ Pending (Duration duration) faultsEnabled signature
                     CryptoFailed e ->
                         expectedButGotValue
                             ("a valid Ed25519 signature " ++ show e)
