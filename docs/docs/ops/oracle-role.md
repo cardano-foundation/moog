@@ -30,7 +30,7 @@ docker run ghcr.io/cardano-foundation/moog/anti-oracle:$version
 
 ## Running oracle commands manually
 
-Alternatively, oracle commands can be run manually, using the `anti` CLI. See the [Installation instructions](installation.md) for how to install it.
+Alternatively, oracle commands can be run manually, using the `anti` CLI. See the [Installation instructions](user/installation.md) for how to install it.
 
 ## Creating the anti token (only once)
 

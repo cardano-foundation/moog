@@ -5,9 +5,8 @@ improve the security of the network!
 
 We especially welcome help improving the documentation and packaging.
 
-We use a [Radicle][Radicle] repository (GitHub is only a mirror), so the preferred way of
-contributing is to clone the [Radicle repository][Repo] and use Radicle to open
-issues or submit patches.
+The preferred way of contributing is through our [GitHub repository][Repo], by
+opening issues or submitting pull requests.
 
 Other ways to get in touch are provided on the [Moog website][Moog].
 
@@ -21,6 +20,5 @@ See README.md and CONTRIBUTING.md in each of these.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
-[Radicle]: https://radicle.xyz/
 [Moog]: https://cardano-foundation.github.io/moog
-[Repo]: https://app.radicle.xyz/nodes/ash.radicle.garden/rad:z2a7Te5b28CX5YyPQ7ihrdG2EEUsC
+[Repo]: https://github.com/cardano-foundation/moog

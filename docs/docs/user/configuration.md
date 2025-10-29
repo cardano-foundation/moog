@@ -1,8 +1,12 @@
-# Manual (any role)
+# Configuration
 
-## Environment variables and preliminaries
+## Prerequisites
 
-### MPFS host
+You must have previously [installed](installation.md) Moog's CLI.
+
+### Environment variables and preliminaries
+
+#### MPFS host
 If you do not want to host your own MPFS service, you can use a public one at `https://mpfs.plutimus.com`.
 
 In any case set the `MOOG_MPFS_HOST` environment variable to point to the MPFS service you want to use.
@@ -11,11 +15,16 @@ In any case set the `MOOG_MPFS_HOST` environment variable to point to the MPFS s
 export MOOG_MPFS_HOST=https://mpfs.plutimus.com
 ```
 
-### Your wallet
+#### Your wallet
 
-Currently the moog CLI works only by reading a wallet file containing a mnemonic phrase.
+Moog is a [DApp](https://en.wikipedia.org/wiki/Decentralized_application) that
+allows one to request Antithesis tests execution by posting transactions to
+Cardano blockchain (currently on preprod network). As such it requires a
+"wallet" to pay for fees and sign transactions.
 
-The moog command will read the wallet file from the `MOOG_WALLET_FILE` environment variable.
+Currently the Moog CLI works only by reading a wallet file containing a mnemonic phrase.
+
+The `moog` command will read the wallet file from the `MOOG_WALLET_FILE` environment variable.
 
 ```bash
 export MOOG_WALLET_FILE=wallet.json
@@ -69,12 +78,19 @@ moog wallet decrypt path/to/decrypted/secret/file
 
 For the both cases `MOOG_WALLET_FILE` is set as before.
 
->  Store a copy of your encrypted/plaintext wallet file in a password manager. Think twice before storing a plaintext wallet file. Store your passphrase in a password manager too. Currently we do not support hardware wallets like Ledger or Trezor.
+:::warning
+Store a copy of your encrypted/plaintext wallet file in a password manager.
+Think twice before storing a plaintext wallet file. Store your passphrase in a
+password manager too. Currently we do not support hardware wallets like Ledger
+or Trezor.
+:::
 
-> Fund your wallet with some tAda tokens on preprod, for example using the [Cardano Testnet Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/).
+Fund your wallet with some tAda tokens on preprod, for example using the
+[Cardano Testnet
+Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/).
 
 
-### Antithesis token
+#### Antithesis token
 
 This is the unique token that identifies the Antithesis access interface. You need to refer to it setting the `MOOG_TOKEN_ID` environment variable.
 
@@ -82,7 +98,7 @@ This is the unique token that identifies the Antithesis access interface. You ne
 export MOOG_TOKEN_ID=21c523c3b4565f1fc1ad7e54e82ca976f60997d8e7e9946826813fabf341069b
 ```
 
-### Set the timeout for the `moog` command
+#### Set the timeout for the `moog` command
 
 When submitting txs to the chain, it's quite convenient to wait for the transaction to be included in the chain, so that you can immediately use the result of the transaction.
 
@@ -92,7 +108,7 @@ To do that, you can set the `MOOG_WAIT` environment variable to the number of se
 export MOOG_WAIT=120
 ```
 
-### Configuring access to GitHub
+#### Configuring access to GitHub
 
 The tool will query the GitHub platform on your behalf in order to obtain (public) information about repositories (where Antithesis test runs are stored) and users (requesting a test run).
 
@@ -104,7 +120,7 @@ Provide your GitHub PAT to the tool by setting an environment variable:
 export MOOG_GITHUB_PAT="github_pat_31A...<snipped>...xL"
 ```
 
-## Querying the token state
+### Querying the token state
 
 You can query the state of the Antithesis token with the following command:
 
@@ -118,7 +134,7 @@ This will show
 - the root of the mpf tree
 - the current UTxO of the state
 
-## Querying facts of the Antithesis token
+### Querying facts of the Antithesis token
 
 You can always query the Antithesis token and its facts
 
@@ -163,3 +179,4 @@ Finally
 moog facts --help
 ```
 will show you all the available facts you can query.
+

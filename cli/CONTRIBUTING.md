@@ -65,10 +65,4 @@ nix shell github:cardano-foundation/moog?dir=cli#moog
 <!-- MARKDOWN LINKS & IMAGES -->
 
 [Nix]: https://nixos.org/download.html
-[Repo]: https://app.radicle.xyz/nodes/ash.radicle.garden/rad:z2a7Te5b28CX5YyPQ7ihrdG2EEUsC
 [prereq]: https://developers.cardano.org/docs/operate-a-stake-pool/node-operations/installing-cardano-node/#building-via-cabal
-[Moog]: https://cardano-foundation.github.io/moog
-[Antithesis]: https://antithesis.com
-[HAL]: https://github.com/cardano-foundation/hal
-[CF]: https://github.com/cardano-foundation
-[Cardano]: https://cardano.org/

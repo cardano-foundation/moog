@@ -1,4 +1,6 @@
-# Installation Guide
+# Installation
+
+## Prerequisites
 
 The Moog command-line-interface (CLI) can run on Linux and MacOS.
 
@@ -7,15 +9,23 @@ The Moog command-line-interface (CLI) can run on Linux and MacOS.
 The recommended way for end-users to install the Moog CLI is to download the
 pre-built binaries for your platform from the [releases page](https://github.com/cardano-foundation/moog/releases)
 
-For additional ways, see the CONTRIBUTING files in the [source repository](https://app.radicle.xyz/nodes/ash.radicle.garden/rad:z2a7Te5b28CX5YyPQ7ihrdG2EEUsC)
+Alternatively, if you are a Nix user you may run the CLI directly from the official repository:
 
-After unpacking the binary tarball, you should be able to run:
-
-```
-./moog --help
+```bash
+nix shell github:cardano-foundation/moog?dir=cli#moog
 ```
 
-## Optional CLI features
+For additional ways, see the CONTRIBUTING files in the [source repository](https://github.com/cardano-foundation/moog).
+
+After installation, you should be able to run:
+
+```
+moog --help
+```
+
+If this prints out Moog's CLI help, you have successfully installed the CLI.
+
+### Optional CLI features
 
 You can enable bash completion for the `moog` command by adding the following
 line to your `.bashrc` or `.bash_profile` file:
@@ -35,4 +45,3 @@ export MOOG_PRETTY=1
 For scripting purposes you can disable the pretty effect of the env-var by
 passing `--no-pretty` switch.
 
-Now you can progress with the [manual for your role](manual/any-role.md).
