@@ -1,5 +1,13 @@
 # Changelog for moog-cli
 
+### v0.4.1.0 - 2025-10-29
+
+### Added
+
+- Support for creating tests with faults injector disabled.
+
+---
+
 ### v0.4.0.0 - 2025-10-28
 
 #### Added
