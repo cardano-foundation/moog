@@ -198,6 +198,8 @@ anti requester create-test --platform github --username alice --repository youro
 
 You can request multiple test-runs for the same commit but you have to specify a different `--try` number for each request.
 
+You can use the `--no-faults` option to disable the fault injector for this test-run.
+
 #### Checking the test-run status
 
 You can check the status of your test-run requests with the `anti facts test-runs` command.
