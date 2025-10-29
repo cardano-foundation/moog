@@ -38,6 +38,8 @@ You can have a pretty output (not valid JSON,  but easier to read) by passing
 `--pretty` switch or setting the `MOOG_PRETTY` environment variable to any
 value:
 
+> Be careful that, in general, `| jq`, will not work with this setting.
+
 ```bash
 export MOOG_PRETTY=1
 ```
