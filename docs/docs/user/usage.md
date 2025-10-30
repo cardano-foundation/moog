@@ -214,12 +214,11 @@ You can find all running test-runs for a user with
 moog facts test-runs running --whose alice
 ```
 
-Because the result URL is encrypted, you need to provide the requester SSH for decryption (see above). This work for the done selector and the full test-runs list.
+The URL of the results is going to be encrypted so that only the requester will be able to decrypt it.
 
-```bash
-moog facts test-runs done --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
-```
+Decryption will happen depending on the `MOOG_WALLET_FILE` environment variable to be pointing to the requester wallet.
 
-```bash
-moog facts test-runs --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
-```
+Old SSH registered requester will have to set up the same SSH env vars used to create the test-run.
+
+> Careful that SSH setup will take over vkey (wallet) setup if both are setup. Remove SSH env vars once you migrate to vkey or the URL decryption will be tried via SSH.  
+
