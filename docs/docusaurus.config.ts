@@ -2,13 +2,16 @@ import { themes as prismThemes } from 'prism-react-renderer';
 import type { Config } from '@docusaurus/types';
 import type * as Preset from '@docusaurus/preset-classic';
 
-// This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
-
 const config: Config = {
   title: 'Moog',
   tagline: 'Testing Cardano on Cardano with Antithesis',
   favicon: 'img/cardano-ada-logo.svg',
 
+  stylesheets: [
+    // Asciinema Player CSS (use the minified version for production)
+    'https://unpkg.com/asciinema-player@3.0.0/dist/bundle/asciinema-player.min.css',
+    // You can add more CSS links if needed, e.g., another theme or custom file
+  ],
   // Set the production url of your site here
   url: process.env.MOOG_SITE_URL ?? 'https://cardano-foundation.github.io/',
   // Set the /<baseUrl>/ pathname under which your site is served

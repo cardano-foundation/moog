@@ -1,3 +1,5 @@
+import AsciinemaEmbed from '@site/src/components/AsciinemaEmbed';
+
 # Configuration
 
 ## Prerequisites
@@ -135,6 +137,12 @@ This will show
 - the current UTxO of the state
 
 ### Querying facts of the Antithesis token
+
+<AsciinemaEmbed
+  src="/moog/video/facts-querying.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
+
 
 You can always query the Antithesis token and all its facts
 

@@ -1,3 +1,6 @@
+import AsciinemaEmbed from '@site/src/components/AsciinemaEmbed';
+
+
 # Installation
 
 ## Prerequisites
@@ -33,6 +36,10 @@ line to your `.bashrc` or `.bash_profile` file:
 ```bash
 source <(moog --bash-completion-script "$(which moog)")
 ```
+<AsciinemaEmbed
+  src="/moog/video/shell-completions.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
 
 You can have a pretty output (not valid JSON,  but easier to read) by passing
 `--pretty` switch or setting the `MOOG_PRETTY` environment variable to any
@@ -46,4 +53,3 @@ export MOOG_PRETTY=1
 
 For scripting purposes you can disable the pretty effect of the env-var by
 passing `--no-pretty` switch.
-
