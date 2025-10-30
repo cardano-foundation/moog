@@ -23,7 +23,7 @@ while true; do
       ;;
     finished)
       echo "already finished"
-      exit 0
+      break;
       ;;
     pending)
       ;;
