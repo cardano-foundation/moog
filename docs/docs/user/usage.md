@@ -16,16 +16,16 @@ Be careful that there is no imperativity here, so i.e. you cannot unregister a u
 
 ### Registering a user public key
 
-To register yourself as a user, you can use the `anti requester register-user` command.
+To register yourself as a user, you can use the `moog requester register-user` command.
 
 It's required that you publish an ed25519 public key in your GitHub account.
 
 First collect your wallet `vkey`
 ```bash
-export MYPK=$(anti wallet info --no-pretty | jq -r '.publicKey')
+export MYPK=$(moog wallet info --no-pretty | jq -r '.publicKey')
 ```
 
-Now make sure you already have a Github repository for your user under [your-profile-repo](https://github.com/your-username/your-username) and add an `anti-cli.vkey` file in the root of the repository containing your wallet public key (the `vkey` you just collected above).
+Now make sure you already have a Github repository for your user under [your-profile-repo](https://github.com/your-username/your-username) and add an `moog-cli.vkey` file in the root of the repository containing your wallet public key (the `vkey` you just collected above).
 
 ```bash
 export GITHUB_USERNAME=your-github-username
@@ -35,50 +35,50 @@ export GITHUB_USERNAME=your-github-username
 set -e
 git clone git@github.com:${GITHUB_USERNAME}/${GITHUB_USERNAME}.git
 cd ${GITHUB_USERNAME}
-echo $MYPK > anti-cli.vkey
-git add anti-cli.vkey
+echo $MYPK > moog-cli.vkey
+git add moog-cli.vkey
 git commit -m "Add Antithesis wallet vkey"
 git push origin main
 cd ..
 rm -rf ${GITHUB_USERNAME}
 ```
 
-Then register your user with the `anti requester register-user` command.
+Then register your user with the `moog requester register-user` command.
 ```bash
-anti requester register-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
+moog requester register-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
 ```
 
 As with all other requests, once submitted you have to wait for the oracle to merge your request into the Antithesis token.
 
-You can use the `anti token` command to inspect your pending requests in the Antithesis token.
+You can use the `moog token` command to inspect your pending requests in the Antithesis token.
 
-You can use the `anti facts` command to query the Antithesis token and see if your user is part of the facts.
+You can use the `moog facts` command to query the Antithesis token and see if your user is part of the facts.
 
 ```bash
-anti token --no-pretty | jq '.requests'
+moog token --no-pretty | jq '.requests'
 ```
 
-As long as your request is listed by `anti token`, you cannot proceed with the next steps.
+As long as your request is listed by `moog token`, you cannot proceed with the next steps.
 
-As with all requests to an MPFS you can retract your request using the `anti retract` command, anytime before the oracle merges it into the Antithesis token.
+As with all requests to an MPFS you can retract your request using the `moog retract` command, anytime before the oracle merges it into the Antithesis token.
 
 Get the `outputRefId` of your request from pending requests command output and use it to retract your request
 
 ```bash
-anti retract -o 9ec36572e01bca9f7d32d791a5a6c529ef91c10d536f662735af26311b2c8766-0
+moog retract -o 9ec36572e01bca9f7d32d791a5a6c529ef91c10d536f662735af26311b2c8766-0
 ```
 
-Currently the oracle is not able to justify a request rejection. But anti cli will apply the oracle validation before submitting it, so rejections will be caught before submitting the request.
+Currently the oracle is not able to justify a request rejection. But moog cli will apply the oracle validation before submitting it, so rejections will be caught before submitting the request.
 
 ### Unregistering a user public key
 
-To unregister a user, you can use the `anti requester unregister-user` command.
+To unregister a user, you can use the `moog requester unregister-user` command.
 
 ```bash
-anti requester unregister-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
+moog requester unregister-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
 ```
 
-> Unregistering will not work if the user is correcly registered. To unregister you need to falsify the registration, i.e. remove the file `anti-cli.vkey` from your GitHub repository or change its content to a different key.
+> Unregistering will not work if the user is correcly registered. To unregister you need to falsify the registration, i.e. remove the file `moog-cli.vkey` from your GitHub repository or change its content to a different key.
 
 ## Unregistering the legacy SSH public key.
 
@@ -100,10 +100,10 @@ CODEOWNERS file can be in the root of the repository, or in the `.github` or `do
 
 You can have as many users as you want but registering them as test-run requesters has to be done one by one.
 
-To register a role, you can use the `anti requester register-role` command.
+To register a role, you can use the `moog requester register-role` command.
 
 ```bash
-anti requester register-role --platform github --username alice --repository yourorg/yourrepo
+moog requester register-role --platform github --username alice --repository yourorg/yourrepo
 ```
 
 > Registering a role is not enough to gain rights to request test-runs. Your repository have to be white-listed by the agent. This requires you to get in contact with the agent and ask them to white-list your repository.
@@ -111,7 +111,7 @@ anti requester register-role --platform github --username alice --repository you
 ### Unregistering a role
 
 ```bash
-anti requester unregister-role --platform github --username alice --repository yourorg/yourrepo
+moog requester unregister-role --platform github --username alice --repository yourorg/yourrepo
 ```
 
 ## Test-runs
@@ -128,13 +128,13 @@ You can obtain a set of standard test assets by running the following command:
 If you are in your repository directory, you can run:
 
 ```bash
-anti requester generate-assets -D ./path/to/your/test/directory
+moog requester generate-assets -D ./path/to/your/test/directory
 ```
 
-Once you modified them you can try to run them locally  with the `anti requester test-run` command.
+Once you modified them you can try to run them locally  with the `moog requester test-run` command.
 
 ```bash
-anti agent test-run -D ./path/to/your/test/directory (TBD)
+moog agent test-run -D ./path/to/your/test/directory (TBD)
 ```
 
 Then commit and push the changes to your repository so you will have a commit hash to use when requesting the test-run.
@@ -154,45 +154,45 @@ i.e. if you have an asset file `myconfig.json` in the test directory, it will be
 #### SSH key setup
 Before proceding be careful to set the necessary signing assets in your environment variables.
 
-- `anti` will use the SSH private key to sign the request
+- `moog` will use the SSH private key to sign the request
 - The private key has to be an ed25519 key.
 - The public key corresponding to the private key has to be registered in your github account [see above](#registering-a-user-public-key).
 
-Multiple keys file are supported, in this case you have to specify which key to use with the `ANTI_SSH_KEY_SELECTOR` environment variable or the `--ssh-key-selector` option.
+Multiple keys file are supported, in this case you have to specify which key to use with the `MOOG_SSH_KEY_SELECTOR` environment variable or the `--ssh-key-selector` option.
 In case you don't know the selector, you can inspect the keys in your file with
 
 ```bash
-anti ssh-selectors --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
+moog ssh-selectors --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
 ```
 
 If multiple keys are present in the file and you don't specify a selector, the first key in the file will be used.
 
-To link to your private key file, set the `ANTI_SSH_FILE` environment variable to point to it.
+To link to your private key file, set the `MOOG_SSH_FILE` environment variable to point to it.
 
 
 As with the wallet passphrase you can set the password in the environment variable (not recommended)
 
 ```bash
-read -s -p "Enter password to decrypt the SSH private key: " ANTI_SSH_PASSWORD
-export ANTI_SSH_PASSWORD
+read -s -p "Enter password to decrypt the SSH private key: " MOOG_SSH_PASSWORD
+export MOOG_SSH_PASSWORD
 ```
 
 Or better paste it from a password manager each time you need it using the `--ask-ssh-password` option
 
-Or set the `ANTI_INTERACTIVE_SECRETS` environment variable to any value to imply the `--ask-ssh-password` option
+Or set the `MOOG_INTERACTIVE_SECRETS` environment variable to any value to imply the `--ask-ssh-password` option
 
 ```bash
-export ANTI_INTERACTIVE_SECRETS=1
+export MOOG_INTERACTIVE_SECRETS=1
 ```
 
-> The file at ANTI_SSH_FILE path has to be the encrypted ssh private key matching the user registration [see above](#registering-a-user-public-key).
+> The file at MOOG_SSH_FILE path has to be the encrypted ssh private key matching the user registration [see above](#registering-a-user-public-key).
 
 #### Requesting the test-run
 
-To request a test-run, you can use the `anti requester create-test` command.
+To request a test-run, you can use the `moog requester create-test` command.
 
 ```bash
-anti requester create-test --platform github --username alice --repository yourorg/yourrepo --directory ./path/to/your/test/directory --commit your_commit_hash --try 1 --duration 2
+moog requester create-test --platform github --username alice --repository yourorg/yourrepo --directory ./path/to/your/test/directory --commit your_commit_hash --try 1 --duration 2
 ```
 > This command  will spit out the test-run-id (just a hash of the key) that you can use later to query the status of your test-run state.
 
@@ -202,24 +202,24 @@ You can use the `--no-faults` option to disable the fault injector for this test
 
 #### Checking the test-run status
 
-You can check the status of your test-run requests with the `anti facts test-runs` command.
+You can check the status of your test-run requests with the `moog facts test-runs` command.
 
 ```bash
-anti facts test-runs -i <your_test_run_id>
+moog facts test-runs -i <your_test_run_id>
 ```
 
 You can find all running test-runs for a user with
 
 ```bash
-anti facts test-runs running --whose alice
+moog facts test-runs running --whose alice
 ```
 
 Because the result URL is encrypted, you need to provide the requester SSH for decryption (see above). This work for the done selector and the full test-runs list.
 
 ```bash
-anti facts test-runs done --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
+moog facts test-runs done --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
 ```
 
 ```bash
-anti facts test-runs --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
+moog facts test-runs --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
 ```
