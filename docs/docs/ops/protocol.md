@@ -20,44 +20,44 @@ sequenceDiagram
 
     %% Step 1: Alice registers as an identified user
     Alice->>+GitHub: Add an Ed25519 SSH key to github profile
-    Alice->>+Token: anti requester register-user
+    Alice->>+Token: moog requester register-user
     Oracle->>+GitHub: Validate alice credentials
-    Oracle->>+Token: anti oracle update-token
+    Oracle->>+Token: moog oracle update-token
 
     %% Step 2: Alice registers role as an antithesis test runner
     Alice->>+GitHub: Add herself under Antithesis key in CODEOWNERS file in her repository
-    Alice->>+Token: anti requester register-role
+    Alice->>+Token: moog requester register-role
     Oracle->>+GitHub: Validate alice role in CODEOWNERS
-    Oracle->>+Token: anti oracle update-token
+    Oracle->>+Token: moog oracle update-token
 
     %% Step 3: Agent white-list alice repository
-    Antithesis->>+Token: anti agent white-list
+    Antithesis->>+Token: moog agent white-list
     Oracle->>+Token: Validate antithesis identity
 
     %% Step 4: Alice requests test runs
     loop alice test runs request
-    Alice->>+Token: anti requester create-test
+    Alice->>+Token: moog requester create-test
     Oracle->>+Token: Check alice is maintainer
     Oracle->>+Token: Check platform/repo/commit prefix and run-index
     Oracle->>+Token: Validate alice SSH signature of the request
-    Oracle->>+Token: anti oracle update-token
+    Oracle->>+Token: moog oracle update-token
 
     %% Step 5: Antithesis processes test run request
     alt Antithesis rejects request
-        Antithesis->>+Token: anti agent reject-test
+        Antithesis->>+Token: moog agent reject-test
         Oracle->>+Token: Validate antithesis identity and test state
-        Oracle->>+Token: anti oracle update-token
+        Oracle->>+Token: moog oracle update-token
     else Antithesis accepts request
         Antithesis->>+AntithesisPlatform: Start test run
-        Antithesis->>+Oracle: anti agent accept-test
+        Antithesis->>+Oracle: moog agent accept-test
         Oracle->>+Token: Validate antithesis identity and test state
-        Oracle->>+Token: anti oracle update-token
+        Oracle->>+Token: moog oracle update-token
     end
 
     %% Step 6: Antithesis updates test run results
     Antithesis->>+AntithesisPlatform: Poll platform for test results
-    Antithesis->>+Token: anti agent finish-test
+    Antithesis->>+Token: moog agent finish-test
     Oracle->>+Token: Validate antithesis identity and test state
-    Oracle->>+Token: anti oracle update-token
+    Oracle->>+Token: moog oracle update-token
     end
 ```

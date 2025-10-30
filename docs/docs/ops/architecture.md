@@ -17,7 +17,7 @@ In a perfect setup, each actor should run both the CLI tool and the MPFS service
 ```mermaid
 architecture-beta
     service gh(cloud)[GitHub]
-    service anti(cloud)[Antithesis]
+    service antithesis(cloud)[Antithesis]
     service chain(internet)[Cardano Blockchain preprod]
     group cf(cloud)[Cardano foundation Antithesis tenant]
         service agent(server)[Agent process] in cf
@@ -25,7 +25,7 @@ architecture-beta
         service cfMpfs(server)[MPFS Service] in cf
     agent:R -- L:cfMpfs
     oracle:L -- R:cfMpfs
-    agent:B -- T:anti
+    agent:B -- T:antithesis
     oracle:B -- T:gh
     cfMpfs:T -- L:chain
     group nodeDevs(cloud)[Cardano node devs]
@@ -69,7 +69,7 @@ graph TD
 
 Any GitHub user can register themselves against the system state by deploying a file containing a Cardano public key in their personal GitHub repository.
 - GitHub docs: [profile repository](https://docs.github.com/en/account-and-profile/how-tos/profile-customization/managing-your-profile-readme).
-- Example: [anti-cli.vkey](https://github.com/cfhal/cfhal/blob/main/anti-cli.vkey).
+- Example: [moog-cli.vkey](https://github.com/cfhal/cfhal/blob/main/moog-cli.vkey).
 
 #### Github as Antithesis role management
 

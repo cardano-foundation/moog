@@ -8,7 +8,7 @@ Opt-env-conf is a library that extends optparse-applicative by adding support fo
 
 We chose to use opt-env-conf over optparse-applicative for the following reasons:
 1. Some commands require some env vars to be set, while others don't. opt-env-conf allows us to handle this complexity more gracefully, wihout passing around Maybe values.
-2. We need to handle both encrypted and unencrypted mnemonics. Depending on that the settings are different. opt-env-conf allows us to define different settings based on the context, making it easier to manage these variations. In particular after parsing the env var ANTI_WALLET_FILE we insert a read-only operation (checkMapIO) that brings in the fields of the wallet file as settings. Depending on the field we require different settings for the passphrase.
+2. We need to handle both encrypted and unencrypted mnemonics. Depending on that the settings are different. opt-env-conf allows us to define different settings based on the context, making it easier to manage these variations. In particular after parsing the env var MOOG_WALLET_FILE we insert a read-only operation (checkMapIO) that brings in the fields of the wallet file as settings. Depending on the field we require different settings for the passphrase.
 3. We want to support interactive prompts for sensitive information like passwords. opt-env-conf `mapIO` allows us to introduce interactive prompts as part of the settings parsing process, making it easier to handle user input securely.
 
 
@@ -21,7 +21,7 @@ All commands are reified as GADTs where
 
 By using GADTs it's possible to have a different output type for each command.
 
-To structure the commands we use subcommands. Higher level commands just wraps the lower level ones. For example the `anti wallet` command is a subcommand of the `anti` command and the `anti wallet create` command is a subcommand of the `anti wallet` command.
+To structure the commands we use subcommands. Higher level commands just wraps the lower level ones. For example the `moog wallet` command is a subcommand of the `moog` command and the `moog wallet create` command is a subcommand of the `moog wallet` command.
 
 Thanks to GADTs the high level commands can just demandate the output type of the lower level commands and return it as their own output type.
 

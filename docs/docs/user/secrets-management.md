@@ -2,7 +2,7 @@
 
 ## Secrets in docker containers
 
-When passing secrets to a docker container in a compose you can use the `ANTI_SECRETS_FILE` environment variable to point to a file containing the secrets in yaml format. So instead of setting say `ANTI_SSH_PASSWORD` and `ANTI_GITHUB_PAT` you can create a file `secrets.yaml` with the following content:
+When passing secrets to a docker container in a compose you can use the `MOOG_SECRETS_FILE` environment variable to point to a file containing the secrets in yaml format. So instead of setting say `MOOG_SSH_PASSWORD` and `MOOG_GITHUB_PAT` you can create a file `secrets.yaml` with the following content:
 
 ```yaml
 sshPassword: your_ssh_password
@@ -13,10 +13,10 @@ and then pass it to the container with someething like:
 
 ```yaml
 services:
-  anti:
+  moog:
     .....
     environment:
-      - ANTI_SECRETS_FILE=/run/secrets/anti_secrets
+      - MOOG_SECRETS_FILE=/run/secrets/anti_secrets
     secrets:
       - anti_secrets
 
