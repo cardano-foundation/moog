@@ -1,10 +1,10 @@
-# How to record asciinema videos
+# How to record and embed asciinema casts
 
-## Fixing terminal inversed colors on paste
+## Fixing terminal inverted colors on paste
 
-As you will probably set up a file fill of commands to run in the terminal,
+As you will probably set up a file full of commands to run in the terminal,
 you may notice that when you paste commands into the terminal, the colors get
-inversed (background becomes foreground color and vice versa). To avoid this, you can disable
+inverted (background becomes foreground color and vice versa). To avoid this, you can disable
 bracketed paste mode in your terminal before starting the recording:
 
 ```bash
