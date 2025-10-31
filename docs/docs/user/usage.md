@@ -81,6 +81,11 @@ Currently the oracle is not able to justify a request rejection. But moog cli wi
 
 To unregister a user, you can use the `moog requester unregister-user` command.
 
+<AsciinemaEmbed
+  src="/moog/video/unregister-user.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
+
 ```bash
 moog requester unregister-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
 ```
