@@ -1,3 +1,5 @@
+import AsciinemaEmbed from '@site/src/components/AsciinemaEmbed';
+
 # Usage
 
 This describes Moog's usage for a user who wants to run tests using the Antithesis platform.
@@ -19,6 +21,11 @@ Be careful that there is no imperativity here, so i.e. you cannot unregister a u
 To register yourself as a user, you can use the `moog requester register-user` command.
 
 It's required that you publish an ed25519 public key in your GitHub account.
+
+<AsciinemaEmbed
+  src="/moog/video/register-user.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
 
 First collect your wallet `vkey`
 ```bash
@@ -220,5 +227,4 @@ Decryption will happen depending on the `MOOG_WALLET_FILE` environment variable 
 
 Old SSH registered requester will have to set up the same SSH env vars used to create the test-run.
 
-> Careful that SSH setup will take over vkey (wallet) setup if both are setup. Remove SSH env vars once you migrate to vkey or the URL decryption will be tried via SSH.  
-
+> Careful that SSH setup will take over vkey (wallet) setup if both are setup. Remove SSH env vars once you migrate to vkey or the URL decryption will be tried via SSH.
