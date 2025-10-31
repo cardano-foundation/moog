@@ -173,56 +173,25 @@ i.e. if you have an asset file `myconfig.json` in the test directory, it will be
 
 ### Requesting a test-run
 
-#### SSH key setup
-Before proceding be careful to set the necessary signing assets in your environment variables.
-
-- `moog` will use the SSH private key to sign the request
-- The private key has to be an ed25519 key.
-- The public key corresponding to the private key has to be registered in your github account [see above](#registering-a-user-public-key).
-
-Multiple keys file are supported, in this case you have to specify which key to use with the `MOOG_SSH_KEY_SELECTOR` environment variable or the `--ssh-key-selector` option.
-In case you don't know the selector, you can inspect the keys in your file with
-
-```bash
-moog ssh-selectors --ssh-file PATH_TO_YOUR_SSH_FILE --ask-ssh-passphrase
-```
-
-If multiple keys are present in the file and you don't specify a selector, the first key in the file will be used.
-
-To link to your private key file, set the `MOOG_SSH_FILE` environment variable to point to it.
-
-
-As with the wallet passphrase you can set the password in the environment variable (not recommended)
-
-```bash
-read -s -p "Enter password to decrypt the SSH private key: " MOOG_SSH_PASSWORD
-export MOOG_SSH_PASSWORD
-```
-
-Or better paste it from a password manager each time you need it using the `--ask-ssh-password` option
-
-Or set the `MOOG_INTERACTIVE_SECRETS` environment variable to any value to imply the `--ask-ssh-password` option
-
-```bash
-export MOOG_INTERACTIVE_SECRETS=1
-```
-
-> The file at MOOG_SSH_FILE path has to be the encrypted ssh private key matching the user registration [see above](#registering-a-user-public-key).
-
-#### Requesting the test-run
-
 To request a test-run, you can use the `moog requester create-test` command.
+
+<AsciinemaEmbed
+  src="/moog/video/submit-test.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
+
 
 ```bash
 moog requester create-test --platform github --username alice --repository yourorg/yourrepo --directory ./path/to/your/test/directory --commit your_commit_hash --try 1 --duration 2
 ```
+
 > This command  will spit out the test-run-id (just a hash of the key) that you can use later to query the status of your test-run state.
 
 You can request multiple test-runs for the same commit but you have to specify a different `--try` number for each request.
 
 You can use the `--no-faults` option to disable the fault injector for this test-run.
 
-#### Checking the test-run status
+### Checking the test-run status
 
 You can check the status of your test-run requests with the `moog facts test-runs` command.
 
