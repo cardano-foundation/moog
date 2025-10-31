@@ -102,6 +102,11 @@ In the past we supported SSH public keys for user registration. This is now depr
 
 This is necessary to register a user as a GitHub repository antithesis test requester.
 
+<AsciinemaEmbed
+  src="/moog/video/register-role.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
+
 Before you do this make sure your repository CODEOWNERS file contains a line like this:
 
 ```
