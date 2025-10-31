@@ -3,8 +3,10 @@ import sys
 
 # get the input file name as CLI arg
 input_file = sys.argv[1]
+# get the minimum delta time from CLI args
+min_delta = float(sys.argv[2])
 # get the maximum delta time from CLI args
-max_delta = float(sys.argv[2])
+max_delta = float(sys.argv[3])
 # base name without extension
 base_name = input_file.rsplit(".", 1)[0]
 # extension
@@ -36,7 +38,10 @@ with open(input_file) as f:
             # set delta = timestamp - last_time
             delta = timestamp - last_time
             # set new delta = min (delta, max_delta)
-            new_delta = min(delta, max_delta)
+            if delta < max_delta:
+                new_delta = min_delta
+            else:
+                new_delta = max_delta
             # update current_time += new_delta
             current_time += new_delta
             # update last_time = timestamp

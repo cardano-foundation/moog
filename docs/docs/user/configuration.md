@@ -28,6 +28,11 @@ Currently the Moog CLI works only by reading a wallet file containing a mnemonic
 
 The `moog` command will read the wallet file from the `MOOG_WALLET_FILE` environment variable.
 
+<AsciinemaEmbed
+  src="/moog/video/wallet-create.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
+
 ```bash
 export MOOG_WALLET_FILE=wallet.json
 ```
