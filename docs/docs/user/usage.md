@@ -138,6 +138,11 @@ moog requester unregister-role --platform github --username alice --repository y
 
 Once you are registered as a user and a role, you can request test-runs.
 
+<AsciinemaEmbed
+  src="/moog/video/test-quick-prep.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
+
 Before doing that make sure you have a commit in your repository containing a directory with "valid" test assets inside.
 
 You can obtain a set of standard test assets by running the following command:
