@@ -79,12 +79,16 @@ main() {
     while true; do
         status=1
 
+        # Try up to ~16 minutes for status to converge, in slices of 10 seconds
+        # The reason we wait for 15 minutes is because that's the default timeout for
+        # failed DNS resolutions and connections errors baked in the node network
+        # layer.
         for i in {1..100}; do
             validate_block_hash
             if [ "${status}" -eq 0 ]; then
                 break
             else
-                sleep 2
+                sleep 10
             fi
         done
 
@@ -95,8 +99,6 @@ main() {
             echo "[{\"status\":\"diverged\"}]"
             exit 1
         fi
-
-        sleep 300
     done
 }
 
