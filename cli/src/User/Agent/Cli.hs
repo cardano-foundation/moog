@@ -100,6 +100,7 @@ import User.Agent.PublishResults.Email
     ( EmailException
     , EmailPassword
     , EmailUser
+    , Minutes
     , Result (..)
     , readEmails
     )
@@ -225,7 +226,7 @@ agentCmd = \case
             key
             slack
             $> Success
-    CheckResultFor tk emailUser emailPassword key days -> runValidate $ do
+    CheckResultFor tk emailUser emailPassword key minutes -> runValidate $ do
         mfact <- lift $ findFact tk key
         Fact testRun' _ _ <-
             liftMaybe (CheckResultsNoTestRunFor key) mfact
@@ -234,7 +235,7 @@ agentCmd = \case
                     when (description == testRun') $ S.yield r
                 onlyResults (Left _) = pure ()
             runExceptT
-                $ readEmails emailUser emailPassword days
+                $ readEmails emailUser emailPassword minutes
                 & flip S.for onlyResults
                 & S.head_
 
@@ -242,11 +243,11 @@ agentCmd = \case
             Left err -> notValidated $ CheckResultsEmail err
             Right Nothing -> notValidated $ CheckResultsNoEmailsFor key
             Right (Just result) -> pure result
-    CheckAllResults emailUser emailPassword days -> runValidate $ do
+    CheckAllResults emailUser emailPassword minutes -> runValidate $ do
         r <-
             liftIO
                 $ runExceptT
-                $ readEmails emailUser emailPassword days
+                $ readEmails emailUser emailPassword minutes
                 & S.toList_
         case r of
             Left err -> notValidated $ CheckResultsEmail err
@@ -367,14 +368,13 @@ data AgentCommand (phase :: IsReady) result where
         -> EmailUser
         -> EmailPassword
         -> TestRunId
-        -> Int
-        -- ^ limit to last N days
+        -> Minutes
         -> AgentCommand phase (AValidationResult CheckResultsFailure Result)
     CheckAllResults
         :: EmailUser
         -> EmailPassword
-        -> Int
-        -- ^ limit to last N days
+        -> Minutes
+        -- ^ limit to last N minutes
         -> AgentCommand phase (AValidationResult CheckResultsFailure [Result])
     PushTest
         :: TokenId

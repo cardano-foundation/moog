@@ -77,12 +77,13 @@ import User.Agent.Options
     ( agentEmailOption
     , agentEmailPasswordOption
     , antithesisAuthOption
-    , daysOption
+    , minutesOption
     , registryOption
     )
 import User.Agent.PublishResults.Email
     ( EmailPassword
     , EmailUser
+    , Minutes
     , Result (..)
     )
 import User.Agent.PushTest
@@ -139,7 +140,7 @@ data ProcessOptions = ProcessOptions
     , poMPFSClient :: MPFSClient
     , poAntithesisEmail :: EmailUser
     , poAntithesisEmailPassword :: EmailPassword
-    , poDays :: Int
+    , poMinutes :: Minutes
     , poTrustedRequesters :: Requesters
     , poRegistry :: Registry
     , poAntithesisAuth :: AntithesisAuth
@@ -156,7 +157,7 @@ processOptionsParser =
         <*> mpfsClientOption
         <*> agentEmailOption
         <*> agentEmailPasswordOption
-        <*> daysOption
+        <*> minutesOption
         <*> requestersOption
         <*> registryOption
         <*> antithesisAuthOption
@@ -366,7 +367,7 @@ pollEmails
         , poAuth
         , poAntithesisEmail
         , poAntithesisEmailPassword
-        , poDays
+        , poMinutes
         } = do
         eresults <-
             cmd
@@ -376,7 +377,7 @@ pollEmails
                 $ CheckAllResults
                     poAntithesisEmail
                     poAntithesisEmailPassword
-                    poDays
+                    poMinutes
 
         case eresults of
             ValidationFailure err -> error $ "Failed to get email results: " ++ show err

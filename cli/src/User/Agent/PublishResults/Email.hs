@@ -14,6 +14,7 @@ module User.Agent.PublishResults.Email
     , WithDateError (..)
     , EmailUser (..)
     , EmailPassword (..)
+    , Minutes (..)
     )
 where
 
@@ -105,6 +106,9 @@ newtype EmailPassword = EmailPassword String
 
 newtype Hours = Hours Int
     deriving (Show, Eq)
+
+newtype Minutes = Minutes Int
+    deriving (Show, Eq, Num, Enum, Ord, Real, Integral)
 
 tryX :: Exception e' => (e' -> e) -> IO c -> ExceptT e IO c
 tryX f a = withExceptT f $ lift (try a) >>= except
@@ -198,8 +202,7 @@ printEmails emails = runExceptT $ S.mapM_ (liftIO . print) emails
 readEmails
     :: EmailUser
     -> EmailPassword
-    -> Int
-    -- ^ days
+    -> Minutes
     -- ^ limit to emails since this time
     -> Stream
         (Of (Either ParsingError Result))
@@ -212,7 +215,7 @@ readEmails (EmailUser username) (EmailPassword password) past = do
     now <- liftIO getCurrentTime
     let limit =
             addUTCTime
-                (negate $ secondsToNominalDiffTime $ fromIntegral $ past * 24 * 60 * 60)
+                (negate $ secondsToNominalDiffTime $ fromIntegral $ past * 60)
                 now
     let clockLimit = utcTimeToClockTime limit
     tz <- liftIO getCurrentTimeZone -- wrong, should be the email server's timezone

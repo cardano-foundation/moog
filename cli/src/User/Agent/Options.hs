@@ -5,7 +5,7 @@ module User.Agent.Options
     ( agentCommandParser
     , agentEmailOption
     , agentEmailPasswordOption
-    , daysOption
+    , minutesOption
     , testRunIdOption
     , registryOption
     , antithesisAuthOption
@@ -60,6 +60,7 @@ import User.Agent.Cli
 import User.Agent.PublishResults.Email
     ( EmailPassword (..)
     , EmailUser (..)
+    , Minutes (..)
     , Result
     )
 import User.Agent.PushTest
@@ -125,17 +126,18 @@ agentEmailPasswordOption =
             "ask-agent-email-password"
             "agentEmailPassword"
 
-daysOption :: Parser Int
-daysOption =
-    setting
-        [ long "days"
-        , help
-            "Number of days in the past to check for test results (default: 7)"
-        , metavar "DAYS"
-        , reader auto
-        , value 7
-        , option
-        ]
+minutesOption :: Parser Minutes
+minutesOption =
+    Minutes
+        <$> setting
+            [ long "minutes"
+            , help
+                "Number of minutes in the past to check for test results (default: 7)"
+            , metavar "MINUTES"
+            , reader auto
+            , value 10
+            , option
+            ]
 
 emailResultsOptions
     :: Parser
@@ -146,7 +148,7 @@ emailResultsOptions =
         <*> agentEmailOption
         <*> agentEmailPasswordOption
         <*> testRunIdOption "check results for"
-        <*> daysOption
+        <*> minutesOption
 
 emailAllResultsOptions
     :: Parser
@@ -155,7 +157,7 @@ emailAllResultsOptions =
     CheckAllResults
         <$> agentEmailOption
         <*> agentEmailPasswordOption
-        <*> daysOption
+        <*> minutesOption
 
 pushTestOptions
     :: Parser
