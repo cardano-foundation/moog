@@ -1,5 +1,14 @@
 # Changelog for moog-cli
 
+### v0.4.1.1 - 2025-11-04
+
+#### Changes
+
+- Changed agent option from `--days` to `--minutes` to specify the time window for checking test results.
+
+---
+
+
 ### v0.4.1.0 - 2025-10-29
 
 ### Added
