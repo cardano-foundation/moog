@@ -24,3 +24,5 @@ cli/tmp
 cli/result
 .aider*
 docs/yarn.lock
+tmp
+result
