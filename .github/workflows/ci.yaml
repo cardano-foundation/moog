@@ -3,8 +3,6 @@ name: CI
 on:
   push:
   pull_request:
-    branches:
-      - main
 
 jobs:
   build:
@@ -12,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.3.0
         with:
           fetch-depth: 1
 
@@ -40,28 +38,50 @@ jobs:
             zlib1g-dev
           version: 1.0
 
-      - name: Cache ghc
-        id: cache-ghc-restore
+      - name: Cache Haskell
+        id: cache-haskell
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-ghc-9.8.4
-          path: |
-            ~/.ghcup
-            ~/.cabal
+          key: ${{ runner.os }}-ghc-9.8.4-${{ hashFiles('cabal.project.freeze') }}
+          path:
+            haskell-bin.tgz
+
       - name: Setup Haskell
-        if: steps.cache-ghc-restore.outputs.cache-hit != 'true'
+        if: steps.cache-haskell.outputs.cache-hit != 'true'
         id: haskell-setup
-        uses: haskell-actions/setup@v2.8.2
-        with:
-          ghc-version: 9.8.4
-      - name: Test cabal and ghc versions
+        run: |
+          curl https://downloads.haskell.org/~ghcup/0.1.50.2/x86_64-linux-ghcup-0.1.50.2 --output ghcup
+          chmod +x ghcup
+          export GHCUP_INSTALL_BASE_PREFIX=$HOME
+          ./ghcup install ghc 9.8.4
+          ./ghcup set ghc 9.8.4
+          ./ghcup install cabal 3.12.1.0
+          ./ghcup set cabal 3.12.1.0
+          which ghc
+          ls -la $HOME/.ghcup/bin/ghc
+          ghc --version
+          tar -czf haskell-bin.tgz -C /usr/local .ghcup
+          ls -la haskell-bin.tgz
+          rm -rf $HOME/.ghcup
+
+      - name: Restore Haskell from cache
+        run: |
+          ls -la haskell-bin.tgz
+          tar -xzf haskell-bin.tgz -C $HOME
+          PATH=$HOME/.ghcup/bin:$PATH
+          echo "PATH=$HOME/.ghcup/bin:$PATH" >> $GITHUB_ENV
+          which ghc
+          ls -la $HOME/.ghcup/bin/ghc
+          ghc --version
+
+      - name: Check GHC and Cabal versions
         run: |
           ghc --version
           cabal --version
           which ghc
           which cabal
-          echo ${{ steps.haskell-setup.outputs.cabal-store }}
-      - name: Extend lib paths
+
+      - name: Add ~/.local/lib and ~/.local/lib/pkgconfig to library paths
         run: |
           LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
           PKG_CONFIG_PATH="$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH"
@@ -142,25 +162,20 @@ jobs:
           # make check
           make install
 
-      - name: Cache Cabal store and build dir
-        id: cabal-cache
+      - name: Cache cabal store
         uses: actions/cache@v4
+        id: cache-cabal
         with:
           path: |
-            ${{ steps.haskell-setup.outputs.cabal-store }}  # Dynamic store path
-            dist-newstyle
+            ~/.cache/cabal
           key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
-          restore-keys: |
-            ${{ runner.os }}-cabal-
 
       - name: Build project
-        if: steps.cabal-cache.outputs.cache-hit != 'true'
+        if: steps.cache-haskell.outputs.cache-hit != 'true' || steps.cache-cabal.outputs.cache-hit != 'true'
         run: |
-          run: |
-            cabal update
-            cabal build all --enable-tests --enable-benchmarks
+          cabal update
+          cabal build all --dependencies-only
 
-    # - name: Run tests
-    #   run: |
-
-    #     cabal test moog-unit-test
+      - name: Run tests
+        run: |
+          cabal test moog-unit-test
