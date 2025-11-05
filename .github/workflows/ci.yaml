@@ -58,6 +58,9 @@ jobs:
         run: |
           ghc --version
           cabal --version
+          which ghc
+          which cabal
+          echo ${{ steps.haskell-setup.outputs.cabal-store }}
       - name: Extend lib paths
         run: |
           LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
