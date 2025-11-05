@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+    - name: Setup tools
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install automake build-essential pkg-config libffi-dev \
+          libgmp-dev libssl-dev libncurses-dev libsystemd-dev zlib1g-dev \
+          make g++ tmux git jq wget libtool autoconf liblmdb-dev -y
+    - name: Cache GHCup
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/local/.ghcup
+        key: ${{ runner.os }}-ghcup-${{ hashFiles('**/*.cabal') }}
+        restore-keys: |
+          ${{ runner.os }}-ghcup-
+    - name: Setup GHCUp
+      run: |
+        curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+    - name: Set the iohknix version
+      run: |
+        CARDANO_NODE_VERSION='10.5.1'
+        IOHKNIX_VERSION=$(curl https://raw.githubusercontent.com/IntersectMBO/cardano-node/$CARDANO_NODE_VERSION/flake.lock | jq -r '.nodes.iohkNix.locked.rev')
+        echo "iohk-nix version: $IOHKNIX_VERSION"
+        echo "IOHKNIX_VERSION=$IOHKNIX_VERSION" >> $GITHUB_ENV
+    - name: Extend lib paths
+      run: |
+        LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+        echo "LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
+        echo "PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+    - name: Cache libsodium, secp256k1, blst
+      uses: actions/cache@v4
+      with:
+        path: |
+          /usr/local/lib/libsodium.*
+          /usr/local/lib/libsecp256k1.*
+          /usr/local/lib/libblst.*
+          /usr/local/include/sodium.h
+          /usr/local/include/secp256k1.h
+          /usr/local/include/blst.h
+          /usr/local/include/blst.hpp
+          /usr/local/include/blst_aux.h
+          /usr/local/lib/pkgconfig/libsodium.pc
+          /usr/local/lib/pkgconfig/libsecp256k1.pc
+          /usr/local/lib/pkgconfig/libblst.pc
+        key: ${{ runner.os }}-libs-${{ hashFiles('**/*.cabal') }}
+        restore-keys: |
+          ${{ runner.os }}-libs-
+
+    - name: Install libsodium fork
+      run: |
+        mkdir -p ~/src
+        cd ~/src
+        SODIUM_VERSION=$(curl https://raw.githubusercontent.com/input-output-hk/iohk-nix/$IOHKNIX_VERSION/flake.lock | jq -r '.nodes.sodium.original.rev')
+        echo "Using sodium version: $SODIUM_VERSION"
+        : ${SODIUM_VERSION:='dbb48cc'}
+        git clone https://github.com/intersectmbo/libsodium
+        cd libsodium
+        git checkout $SODIUM_VERSION
+        ./autogen.sh
+        ./configure
+        make
+        make check
+        sudo make install
+    - name: Install secp256k1
+      run: |
+        SECP256K1_VERSION=$(curl https://raw.githubusercontent.com/input-output-hk/iohk-nix/$IOHKNIX_VERSION/flake.lock | jq -r '.nodes.secp256k1.original.ref')
+        echo "Using secp256k1 version: ${SECP256K1_VERSION}"
+        cd ~/src
+        : ${SECP256K1_VERSION:='v0.3.2'}
+        git clone --depth 1 --branch ${SECP256K1_VERSION} https://github.com/bitcoin-core/secp256k1
+        cd secp256k1
+        ./autogen.sh
+        ./configure --enable-module-schnorrsig --enable-experimental
+        make
+        make check
+        sudo make install
+    - name: Install blst
+      run: |
+        BLST_VERSION=$(curl https://raw.githubusercontent.com/input-output-hk/iohk-nix/$IOHKNIX_VERSION/flake.lock | jq -r '.nodes.blst.original.ref')
+        echo "Using blst version: ${BLST_VERSION}"
+        : ${BLST_VERSION:='v0.3.11'}
+        git clone --depth 1 --branch ${BLST_VERSION} https://github.com/supranational/blst
+        cd blst
+        ./build.sh
+        cat > libblst.pc << EOF
+        prefix=/usr/local
+        exec_prefix=\${prefix}
+        libdir=\${exec_prefix}/lib
+        includedir=\${prefix}/include
+
+        Name: libblst
+        Description: Multilingual BLS12-381 signature library
+        URL: https://github.com/supranational/blst
+        Version: ${BLST_VERSION#v}
+        Cflags: -I\${includedir}
+        Libs: -L\${libdir} -lblst
+        EOF
+        sudo cp libblst.pc /usr/local/lib/pkgconfig/
+        sudo cp bindings/blst_aux.h bindings/blst.h bindings/blst.hpp  /usr/local/include/
+        sudo cp libblst.a /usr/local/lib
+        sudo chmod u=rw,go=r /usr/local/{lib/{libblst.a,pkgconfig/libblst.pc},include/{blst.{h,hpp},blst_aux.h}}
+    - name: Build project
+      run: |
+        cabal update
+        cabal build all
+    - name: Run tests
+      run: |
+        cabal test moog-unit-test
