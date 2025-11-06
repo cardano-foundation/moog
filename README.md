@@ -2,6 +2,8 @@
 
 # Moog
 
+[![CI](https://github.com/cardano-foundation/moog/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/cardano-foundation/moog/actions/workflows/ci.yaml)
+
 Moog is for Cardano testing with Antithesis.
 
 The [Cardano blockchain's][Cardano] core node software implements complex
