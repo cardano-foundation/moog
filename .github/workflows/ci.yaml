@@ -43,7 +43,7 @@ jobs:
         id: cache-haskell
         uses: actions/cache@v4
         with:
-          key: ${{ runner.os }}-ghc-9.8.4-${{ hashFiles('cabal.project.freeze') }}
+          key: ${{ runner.os }}-ghc-9.8.4
           path:
             haskell-bin.tgz
 
@@ -63,7 +63,7 @@ jobs:
           which ghc
           ls -la $HOME/.ghcup/bin/ghc
           ghc --version
-          tar -czvf haskell-bin.tgz -C /usr/local .ghcup
+          tar -czf haskell-bin.tgz -C /usr/local .ghcup
           ls -la haskell-bin.tgz
           rm -rf $HOME/.ghcup
 
