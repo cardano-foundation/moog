@@ -3,11 +3,16 @@
 [![Unit tests](https://github.com/cardano-foundation/moog/actions/workflows/unit-tests.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/unit-tests.yaml)
 
 [![Integration Tests](https://github.com/cardano-foundation/moog/actions/workflows/integration-tests.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/integration-tests.yaml)
-Moog is for Cardano testing with Antithesis.
+
+[![E2E Tests](https://github.com/cardano-foundation/moog/actions/workflows/E2E-test.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/E2E-test.yaml)
 
 [![Publish Docs](https://github.com/cardano-foundation/moog/actions/workflows/publish-site.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/publish-site.yaml)
 
-# Moog Overview
+# Moog
+
+Moog is for Cardano network components testing with Antithesis.
+
+## Overview
 
 The [Cardano blockchain's][Cardano] core node software implements complex
 algorithms and protocols who run in a networked, concurrent context. Many
