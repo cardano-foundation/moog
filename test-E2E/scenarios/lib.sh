@@ -39,17 +39,6 @@ check() {
         echo "Please set MOOG_TEST_REQUESTER_WALLET environment variable"
         exit 1
     fi
-    if [ -z "${MOOG_SSH_FILE:-}" ]; then
-        echo "Please set MOOG_SSH_FILE environment variable, this is an encrypted SSH private key of 'cfhal'. \
-            'cfhal' github user is registered on github. Get his key from 1 password vault.\
-            https://start.1password.com/open/i?a=TYQQQLKUDBAFVHQ4P7XKFCUVYM&v=fhipthmhnufti4q2kky6d7336u&i=sjjrwnsdec5ajb4adeia2uixfy&h=cardanofoundation.1password.com"
-        exit 1
-    fi
-    if [ -z "${MOOG_SSH_PASSWORD:-}" ]; then
-        echo "Please set MOOG_SSH_PASSWORD environment variable, this is the passphrase for the encrypted SSH private key \
-            available in 1password vault at the same record."
-        exit 1
-    fi
     if [ -z "${MOOG_GITHUB_PAT:-}" ]; then
         echo "Please set MOOG_GITHUB_PAT environment variable, this is a valid GitHub personal access token with access to the public github API \
             Or use the pat available in 1password vault at the same record."

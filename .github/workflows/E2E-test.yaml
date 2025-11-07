@@ -1,0 +1,118 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-deps:
+    uses: ./.github/workflows/build-deps.yaml
+  integration-tests:
+    needs: build-deps
+    name: Run moog integration tests
+    runs-on: ubuntu-latest
+    env:
+      MOOG_MPFS_HOST: "http://localhost:3000"
+      MOOG_TEST_YACI_ADMIN: "http://localhost:10000"
+      MOOG_GITHUB_PAT: ${{ secrets.MOOG_GITHUB_PAT }}
+      MOOG_WALLET_FILE: "wallet.json"
+      MOOG_TEST_REQUESTER_WALLET: "wallet.json"
+      MOOG_TEST_ORACLE_WALLET: "wallet.json"
+      MOOG_TEST_AGENT_WALLET: "wallet.json"
+      MOOG_WAIT: 2
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4.3.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup cfhal wallet
+        run: |
+          # This is the real cfhal wallet as its public key is registerered
+          # in Github as user authentication
+          echo ${{ secrets.MOOG_REQUESTER_WALLET }} | base64 -d > "$MOOG_WALLET_FILE"
+
+      - name: Set up Docker Compose
+        uses: docker/setup-compose-action@v1 # Or hoverkraft-tech/compose-action for more options
+
+      - name: Start mpfs on a local preprod Yaci cluster
+        run: docker compose -f test-E2E/fixtures/docker-compose.yml up -d
+
+      - name: Wait for mpfs to be ready
+        run: |
+          echo "Waiting for mpfs to be ready..."
+          while [[ "$(curl -s "$MOOG_MPFS_HOST/tokens" | jq -r '.indexerStatus.ready')" != "true" ]]; do
+              echo "Waiting for mpfs to be ready..."
+              sleep 2
+          done
+
+      - name: Restore haskell compiler
+        id: cache-haskell
+        uses: actions/cache@v4
+        with:
+          key: ${{ runner.os }}-ghc-9.8.4
+          path: haskell-bin.tgz
+
+      - name: Explode haskell compiler
+        run: |
+          tar -xzf haskell-bin.tgz -C $HOME
+          echo "PATH=$HOME/.ghcup/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Restore libsodium, secp256k1, blst
+        uses: actions/cache@v4
+        id: libs-cache
+        with:
+          path: ~/.local
+          key: ${{ runner.os }}-libs
+
+      - name: Extend exe path and library paths
+        run: |
+          echo "PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          echo "LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+
+      - name: Restore cabal store
+        uses: actions/cache@v4
+        id: cache-cabal
+        with:
+          key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
+          path: ~/.cache/cabal
+
+      - name: Build moog exe
+        run: |
+          tar -xzf haskell-bin.tgz -C $HOME
+          cabal install
+
+      - name: Fund the wallet
+        run: |
+          moog wallet create -w "$MOOG_WALLET_FILE"
+          address=$(moog wallet info | jq -r '.address')
+          topup(){
+              curl -s -X 'POST' \
+                  "$MOOG_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
+                  -H 'accept: */*' \
+                  -H 'Content-Type: application/json' \
+                  -d '{
+                  "address": "'"$address"'",
+                  "adaAmount": 10000
+                  }'
+              }
+          while true; do
+              if topup | grep -q "Topup successful"; then
+                  break
+              fi
+              echo "Retrying topup..."
+              sleep 2
+          done
+
+      - name: Export agent PKH
+        run: |
+          owner=$(moog wallet info | jq -r '.owner')
+          echo "MOOG_AGENT_PUBLIC_KEY_HASH=$owner" >> $GITHUB_ENV
+
+      - name: Run E2E tests
+        run: cabal test moog-E2E-test --test-show-details=direct
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f test-E2E/fixtures/docker-compose.yml down
