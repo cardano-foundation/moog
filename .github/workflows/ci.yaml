@@ -58,10 +58,12 @@ jobs:
           ./ghcup set ghc 9.8.4
           ./ghcup install cabal 3.12.1.0
           ./ghcup set cabal 3.12.1.0
+          ./ghcup rm ghc 9.12.2
+          ./ghcup rm ghc 9.10.3
           which ghc
           ls -la $HOME/.ghcup/bin/ghc
           ghc --version
-          tar -czf haskell-bin.tgz -C /usr/local .ghcup
+          tar -czvf haskell-bin.tgz -C /usr/local .ghcup
           ls -la haskell-bin.tgz
           rm -rf $HOME/.ghcup
 
