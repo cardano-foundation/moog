@@ -1,11 +1,9 @@
 ![](/assets/tartarus.jpeg)
 
-[![Unit tests](https://github.com/cardano-foundation/moog/actions/workflows/unit-tests.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/unit-tests.yaml)
-
+<!-- Badges -->
+[![Unit Tests](https://github.com/cardano-foundation/moog/actions/workflows/unit-tests.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/unit-tests.yaml)
 [![Integration Tests](https://github.com/cardano-foundation/moog/actions/workflows/integration-tests.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/integration-tests.yaml)
-
 [![E2E Tests](https://github.com/cardano-foundation/moog/actions/workflows/E2E-test.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/E2E-test.yaml)
-
 [![Publish Docs](https://github.com/cardano-foundation/moog/actions/workflows/publish-site.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/publish-site.yaml)
 
 # Moog
