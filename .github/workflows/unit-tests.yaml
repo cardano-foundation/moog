@@ -6,38 +6,20 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build and run unit tests
+
+  build-deps:
+    uses: ./.github/workflows/build-deps.yaml
+
+  unit-tests:
+    needs: build-deps
+    name: Run unit tests
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4.3.0
         with:
-          fetch-depth: 1
-
-      - name: Cache and Install APT Packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: |
-            autoconf
-            automake
-            build-essential
-            g++
-            git
-            jq
-            libffi-dev
-            libgmp-dev
-            liblmdb-dev
-            libncurses-dev
-            libssl-dev
-            libsystemd-dev
-            libtool
-            make
-            pkg-config
-            tmux
-            wget
-            zlib1g-dev
-          version: 1.0
+          fetch-depth: 0
 
       - name: Cache Haskell
         id: cache-haskell
@@ -47,123 +29,23 @@ jobs:
           path:
             haskell-bin.tgz
 
-      - name: Setup Haskell
-        if: steps.cache-haskell.outputs.cache-hit != 'true'
-        id: haskell-setup
-        run: |
-          curl https://downloads.haskell.org/~ghcup/0.1.50.2/x86_64-linux-ghcup-0.1.50.2 --output ghcup
-          chmod +x ghcup
-          export GHCUP_INSTALL_BASE_PREFIX=$HOME
-          ./ghcup install ghc 9.8.4
-          ./ghcup set ghc 9.8.4
-          ./ghcup install cabal 3.12.1.0
-          ./ghcup set cabal 3.12.1.0
-          ./ghcup rm ghc 9.12.2
-          ./ghcup rm ghc 9.10.3
-          which ghc
-          ls -la $HOME/.ghcup/bin/ghc
-          ghc --version
-          tar -czf haskell-bin.tgz -C /usr/local .ghcup
-          ls -la haskell-bin.tgz
-          rm -rf $HOME/.ghcup
-
       - name: Restore Haskell from cache
         run: |
-          ls -la haskell-bin.tgz
           tar -xzf haskell-bin.tgz -C $HOME
-          PATH=$HOME/.ghcup/bin:$PATH
           echo "PATH=$HOME/.ghcup/bin:$PATH" >> $GITHUB_ENV
-          which ghc
-          ls -la $HOME/.ghcup/bin/ghc
-          ghc --version
-
-      - name: Check GHC and Cabal versions
-        run: |
-          ghc --version
-          cabal --version
-          which ghc
-          which cabal
 
       - name: Add ~/.local/lib and ~/.local/lib/pkgconfig to library paths
         run: |
-          LD_LIBRARY_PATH="$HOME/.local/lib:$LD_LIBRARY_PATH"
-          PKG_CONFIG_PATH="$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH"
-          echo "PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           echo "LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+          echo "PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
 
-      - name: Set the iohknix version
-        if: steps.libs-cache.outputs.cache-hit != 'true'
-        run: |
-          CARDANO_NODE_VERSION='10.5.1'
-          IOHKNIX_VERSION=$(curl https://raw.githubusercontent.com/IntersectMBO/cardano-node/$CARDANO_NODE_VERSION/flake.lock | jq -r '.nodes.iohkNix.locked.rev')
-          echo "iohk-nix version: $IOHKNIX_VERSION"
-          echo "IOHKNIX_VERSION=$IOHKNIX_VERSION" >> $GITHUB_ENV
       - name: Cache libsodium, secp256k1, blst
         uses: actions/cache@v4
         id: libs-cache
         with:
           path: |
             ~/.local
-          key: ${{ runner.os }}-libs-${{ hashFiles('cabal.project.freeze') }}
-          restore-keys: |
-            ${{ runner.os }}-libs-
-
-      - name: Install blst
-        if: steps.libs-cache.outputs.cache-hit != 'true'
-        run: |
-          BLST_VERSION=$(curl https://raw.githubusercontent.com/input-output-hk/iohk-nix/$IOHKNIX_VERSION/flake.lock | jq -r '.nodes.blst.original.ref')
-          echo "Using blst version: ${BLST_VERSION}"
-          : ${BLST_VERSION:='v0.3.11'}
-          git clone --depth 1 --branch ${BLST_VERSION} https://github.com/supranational/blst
-          cd blst
-          prefix=$HOME/.local
-          mkdir -p ${prefix}/{lib/pkgconfig,include}
-          ./build.sh
-          cat > libblst.pc << EOF
-          exec_prefix=\${prefix}
-          libdir=\${exec_prefix}/lib
-          includedir=\${prefix}/include
-
-          Name: libblst
-          Description: Multilingual BLS12-381 signature library
-          URL: https://github.com/supranational/blst
-          Version: ${BLST_VERSION#v}
-          Cflags: -I\${includedir}
-          Libs: -L\${libdir} -lblst
-          EOF
-          cp libblst.pc ${prefix}/lib/pkgconfig/
-          cp bindings/blst_aux.h bindings/blst.h bindings/blst.hpp  ${prefix}/include/
-          cp libblst.a ${prefix}/lib
-          chmod u=rw,go=r ${prefix}/{lib/{libblst.a,pkgconfig/libblst.pc},include/{blst.{h,hpp},blst_aux.h}}
-      - name: Install libsodium fork
-        if: steps.libs-cache.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/src
-          cd ~/src
-          SODIUM_VERSION=$(curl https://raw.githubusercontent.com/input-output-hk/iohk-nix/$IOHKNIX_VERSION/flake.lock | jq -r '.nodes.sodium.original.rev')
-          echo "Using sodium version: $SODIUM_VERSION"
-          git clone https://github.com/intersectmbo/libsodium
-          cd libsodium
-          git checkout $SODIUM_VERSION
-          ./autogen.sh
-          ./configure --prefix=$HOME/.local
-          make
-          # make check
-          make install
-      - name: Install secp256k1
-        if: steps.libs-cache.outputs.cache-hit != 'true'
-        run: |
-          SECP256K1_VERSION=$(curl https://raw.githubusercontent.com/input-output-hk/iohk-nix/$IOHKNIX_VERSION/flake.lock | jq -r '.nodes.secp256k1.original.ref')
-          echo "Using secp256k1 version: ${SECP256K1_VERSION}"
-          cd ~/src
-          : ${SECP256K1_VERSION:='v0.3.2'}
-          git clone --depth 1 --branch ${SECP256K1_VERSION} https://github.com/bitcoin-core/secp256k1
-          cd secp256k1
-          ./autogen.sh
-          ./configure --enable-module-schnorrsig --enable-experimental --prefix=$HOME/.local
-          make
-          # make check
-          make install
+          key: ${{ runner.os }}-libs
 
       - name: Cache cabal store
         uses: actions/cache@v4
@@ -172,12 +54,6 @@ jobs:
           path: |
             ~/.cache/cabal
           key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
-
-      - name: Build project
-        if: steps.cache-haskell.outputs.cache-hit != 'true' || steps.cache-cabal.outputs.cache-hit != 'true'
-        run: |
-          cabal update
-          cabal build all --dependencies-only
 
       - name: Run tests
         run: |
