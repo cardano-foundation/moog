@@ -5,7 +5,8 @@
 [![Integration Tests](https://github.com/cardano-foundation/moog/actions/workflows/integration-tests.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/integration-tests.yaml)
 [![E2E Tests](https://github.com/cardano-foundation/moog/actions/workflows/E2E-test.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/E2E-test.yaml)
 [![Publish Docs](https://github.com/cardano-foundation/moog/actions/workflows/publish-site.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/publish-site.yaml)
-
+[![Build tarballs](https://github.com/cardano-foundation/moog/actions/workflows/tarballs.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/tarballs.yaml)
+[![Build docker images](https://github.com/cardano-foundation/moog/actions/workflows/docker-images.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/docker-images.yaml)
 # Moog
 
 Moog is for Cardano network components testing with Antithesis.
