@@ -204,13 +204,13 @@ durationOption =
 
 faultsEnabledOption :: Parser FaultsEnabled
 faultsEnabledOption =
-    FaultsEnabled
+    FaultsEnabled . not
         <$> setting
             [ switch False
             , long "no-faults"
             , help "Disable faults injection for the test-run"
             , reader auto
-            , value True
+            , value False
             ]
 
 tryOption :: Parser Try
