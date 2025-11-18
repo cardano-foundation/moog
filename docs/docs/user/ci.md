@@ -135,7 +135,7 @@ Finally, we are able to submit our test request:
         set -euo pipefail
 ```
 
-This part of the script computes the trial number for this test run. Test runs are identified by the Git commit SHA plus a trial number in order to avoid duplicate requests. We use the `moog facts test-runs` command parameterise by the user id to retrieve relevant data.
+This part of the script computes the trial number for this test run. Test runs are identified by the Git commit SHA plus a trial number in order to avoid duplicate requests. We use the `moog facts test-runs` command parameterised by the user id to retrieve relevant data.
 
 ```
         TRY=$(moog facts test-runs --whose $MOOG_REQUESTER | jq 'map(select(.key.commitId == "${{ github.sha }}")) | length')
