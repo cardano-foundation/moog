@@ -96,7 +96,7 @@ We then identify the latest available release of Moog,
         repository: cardano-foundation/moog
 ```
 
-retrieve it from Github packages,
+retrieve it from GitHub packages,
 
 ```
     - name: Download moog from latest release
