@@ -37,7 +37,7 @@ We need to define a number of environment variables that will be used by Moog _r
 * `MOOG_TOKEN_ID` is the identifier of the particular "database" Moog will be using (a 32-bytes hash denoting a Cardano native asset name)
 * `MOOG_PLATFORM` is hardcoded to `github` as this is currently the only supported source forge
 * `MOOG_REQUESTER` is the username under which the tests will be run. Note this name must both exist in the _platform_ and be [registered](./usage) with Moog
-* `MOOG_TEST_DIRECTORY` points at a directory in the source code which contains a valid Antithesis `docker-compose.yaml` configuration file for tests submssion
+* `MOOG_TEST_DIRECTORY` points at a directory in the source code which contains a valid Antithesis `docker-compose.yaml` configuration file for tests submission
 
 We also need to set some _secrets_ that will be used by Moog to authenticate and authorize the requests:
 
