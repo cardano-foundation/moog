@@ -1,6 +1,6 @@
 # Continuous Integration
 
-_Moog_ can be easily integrated in a _Continuous Integration_ process to trigger Antithesis tests run on demand. Here is some example configuring [Github actions](https://github.com/features/actions) but this should be straightforward to adapt to any other kind of CI engine.
+_Moog_ can be easily integrated in a _Continuous Integration_ process to trigger Antithesis tests run on demand. Here is some example configuring [GitHub actions](https://github.com/features/actions) but this should be straightforward to adapt to any other kind of CI engine.
 
 These tests are triggered every 6 hours
 
