@@ -168,7 +168,7 @@ The last part of the job simply waits for the result to be published by the Anti
       run: timeout $((($DURATION + 1) * 3600)) ./scripts/wait-for-test.sh "${{ steps.request.outputs.id }}"
 ```
 
-when the test completes, final result is printed in the logs along with the URL where the detailed Antithesis report can be found. The job succeeds if and only if the test `outcome` is a success.
+When the test completes, final result is printed in the logs along with the URL where the detailed Antithesis report can be found. The job succeeds if and only if the test `outcome` is a success.
 
 ```
 final result: [{"id":"722bb7a35a6b9318536b6750751e5f13ed6e1dcc83fd113d98cf4e4b02ea1e14","key":{"commitId":"0ce357a0faabf970eb38d7191bf5f8bb8a36684b","directory":"docker/testnet","platform":"github","repository":{"organization":"pragma-org","repo":"amaru"},"requester":"abailly","try":2,"type":"test-run"},"slot":107737174,"value":{"duration":3,"from":{"from":{"duration":3,"faults_enabled":true,"phase":"pending","signature":"d1a70d0f60d358330f89d58c50f9971f16c54223d31932b3335561cd4efaecf4f9145c0f48f7098a66597062d7b558fe7785276cf67676bad0c787306b54be00"},"phase":"accepted"},"outcome":"failure","phase":"finished","url":"https://cardano.antithesis.com/report/F7dbAImlN-ZGCzC2_rkNKayN/Jw7X8mEfgH6iFqDy1W9jEDeSJ9rQWwAGN_y_eZ3oHwk.html?auth=v2.public.eyJuYmYiOiIyMDI1LTExLTE3VDIxOjU2OjEwLjI0NTMxNzAxNVoiLCJzY29wZSI6eyJSZXBvcnRTY29wZVYxIjp7ImFzc2V0IjoiSnc3WDhtRWZnSDZpRnFEeTFXOWpFRGVTSjlyUVd3QUdOX3lfZVozb0h3ay5odG1sIiwicmVwb3J0X2lkIjoiRjdkYkFJbWxOLVpHQ3pDMl9ya05LYXlOIn19ffVFhhos4dhGHfry7p0K54c_cOHbkxnJW3Il926JxHeMIh3rRZgjuBbMUlyfVCl7sEG1Sc6nNRHr36gTOfM0xAQ"}}]
