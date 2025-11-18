@@ -81,7 +81,7 @@ Now come the sequence of actions needed to run the tests. We first do some setup
     - name: 🔑 Login Docker Registry
       uses: docker/login-action@v3
       with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 ```
