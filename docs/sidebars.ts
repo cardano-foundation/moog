@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
                 'user/installation',
                 'user/configuration',
                 'user/usage',
+                'user/ci',
                 'user/secrets-management'
             ]
         },

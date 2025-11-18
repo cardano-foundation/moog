@@ -96,6 +96,10 @@ moog requester unregister-user --platform github --username ${GITHUB_USERNAME} -
 
 In the past we supported SSH public keys for user registration. This is now deprecated and will be removed in the future. If you have an SSH public key registered, you can unregister it and register a new one with the wallet vkey. To do that, you have to unregister the SSH key first, then register the wallet vkey.
 
+```bash
+moog requester unregister-user --platform github --username ${GITHUB_USERNAME} -k $MY_SSH_PUBKEY
+```
+
 > Because SSH support is deprecated, unregistering the SSH key does not require the key to be absent from GitHub, so you can unregister it even if it's still present in your GitHub account. This is to ease migration to vkey and can lead to surprises as anyone can unregister your user if you used SSH key registration.
 
 ### Registering a role
