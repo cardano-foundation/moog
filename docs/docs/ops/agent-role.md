@@ -1,4 +1,5 @@
 import AsciinemaEmbed from '@site/src/components/AsciinemaEmbed';
+
 # Agent role manual
 
 ## White-list repositories
@@ -10,7 +11,7 @@ Two commands are available
 ### White-list a repository
 
 <AsciinemaEmbed
-  src="/moog/video/blacklist-repo.cast"
+  src="/moog/video/whitelist-repo.cast"
   options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
 />
 
