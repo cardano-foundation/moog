@@ -1,4 +1,4 @@
-{"version": 2, "width": 100, "height": 30, "timestamp": 1761853030, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+{"version": 2, "width": 100, "height": 35, "timestamp": 1761853030, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
 [0.03, "o", "\u001b]0;pawel@pure:~\u001b\\"]
 [0.06, "o", "\u001b]7;file://pure/home/pawel\u001b\\"]
 [0.09, "o", "\u001b[1;32m  \u001b[00m\u001b[1;38;5;99m~ \u03bb\u001b[00m "]
