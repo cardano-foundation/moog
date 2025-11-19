@@ -1,3 +1,4 @@
+import AsciinemaEmbed from '@site/src/components/AsciinemaEmbed';
 # Agent role manual
 
 ## White-list repositories
@@ -8,6 +9,11 @@ Two commands are available
 
 ### White-list a repository
 
+<AsciinemaEmbed
+  src="/moog/video/blacklist-repo.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
+
 This will only work if the repository is not already white-listed and the repository is in GitHub.
 ```bash
 moog agent white-list <platform> <repository>
@@ -17,6 +23,11 @@ ATM only GitHub is supported as a platform.
 The format of the repository is `<owner>/<repository>`, e.g. `cardano-foundation/moog`.
 
 ### Black-list a repository
+
+<AsciinemaEmbed
+  src="/moog/video/blacklist-repo.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
 
 This will only work if the repository is white-listed.
 ```bash
