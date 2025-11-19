@@ -127,6 +127,12 @@ moog requester register-role --platform github --username alice --repository you
 
 ### Unregistering a role
 
+<AsciinemaEmbed
+  src="/moog/video/unregister-role.cast"
+  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
+/>
+
+
 ```bash
 moog requester unregister-role --platform github --username alice --repository yourorg/yourrepo
 ```
