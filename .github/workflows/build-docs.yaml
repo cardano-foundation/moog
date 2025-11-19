@@ -1,0 +1,23 @@
+name: "Build Docs"
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  docs:
+    name: Build docs
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 1
+
+    - name: Build documentation
+      working-directory: docs
+      run: |
+        yarn
+        yarn build
