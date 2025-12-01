@@ -147,11 +147,11 @@ instance Monad m => ToJSON m TestRunRejection where
                 <> show org
                 <> "/"
                 <> show repo
-    toJSON (UnacceptableTryIndex (Try maxIx)) =
+    toJSON (UnacceptableTryIndex (Try latest)) =
         stringJSON
-            $ "unacceptable try index. Expecting at most "
-                <> show maxIx
-                <> " run attempts for a given commit"
+            $ "Unacceptable try index. Expecting exactly "
+                <> show (latest + 1)
+                <> " try for this commit"
     toJSON
         ( UnacceptableRole
                 (RegisterRoleKey _ (GithubRepository org repo) (GithubUsername user))
