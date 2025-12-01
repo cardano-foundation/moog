@@ -8,7 +8,12 @@ module Core.Types.MPFS
 where
 
 import Core.Types.Wallet (Wallet)
-import Network.HTTP.Client (defaultManagerSettings, newManager)
+import Network.HTTP.Client
+    ( ManagerSettings (..)
+    , defaultManagerSettings
+    , newManager
+    , responseTimeoutMicro
+    )
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import OptEnvConf
 import Servant.Client
@@ -31,7 +36,7 @@ data MPFSClient = MPFSClient
     , submitTx :: Wallet -> Submission ClientM
     }
 
-newMPFSClient :: Parser (String, IfToWait)
+newMPFSClient :: Parser (String, IfToWait, Int)
 newMPFSClient = do
     host <-
         setting
@@ -48,13 +53,29 @@ newMPFSClient = do
             , reader $ Wait <$> auto
             , value NoWait
             ]
-    pure (host, wait)
+    timeoutSeconds <-
+        setting
+            [ metavar "SECONDS"
+            , help "Timeout in seconds for MPFS requests"
+            , env "MOOG_MPFS_TIMEOUT_SECONDS"
+            , reader auto
+            , value 120
+            ]
+    pure (host, wait, timeoutSeconds)
 
-newClient :: (String, IfToWait) -> IO MPFSClient
-newClient (host, wait) = do
+timeout :: Int -> ManagerSettings -> ManagerSettings
+timeout tOut r =
+    r
+        { managerResponseTimeout =
+            responseTimeoutMicro $ tOut * 1000000
+        }
+
+newClient :: (String, IfToWait, Int) -> IO MPFSClient
+newClient (host, wait, tOut) = do
     baseUrl <- parseBaseUrl host
     manager <-
         newManager
+            $ timeout tOut
             $ if baseUrlScheme baseUrl == Https
                 then tlsManagerSettings
                 else defaultManagerSettings
