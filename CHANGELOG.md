@@ -1,5 +1,13 @@
 # Changelog for moog-cli
 
+### v0.4.1.2 - 2025-12-02
+
+#### Added
+
+- Support for specifying timeouts against MPFS services in `moog-agent` and `moog-oracle` defaulting at 120 seconds but configurable via `MOOG_MPFS_TIMEOUT_SECONDS` environment variable.
+
+---
+
 ### v0.4.1.1 - 2025-11-04
 
 #### Changes
@@ -7,7 +15,6 @@
 - Changed agent option from `--days` to `--minutes` to specify the time window for checking test results.
 
 ---
-
 
 ### v0.4.1.0 - 2025-10-29
 
