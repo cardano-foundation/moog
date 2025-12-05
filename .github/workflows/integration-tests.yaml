@@ -41,46 +41,14 @@ jobs:
               sleep 2
           done
 
-      - name: Restore haskell compiler
-        id: cache-haskell
-        uses: actions/cache@v4
+      - uses: paolino/dev-assets/setup-nix@v0.0.1
         with:
-          key: ${{ runner.os }}-ghc-9.8.4
-          path: haskell-bin.tgz
-
-      - name: Explode haskell compiler
-        run: |
-          tar -xzf haskell-bin.tgz -C $HOME
-          echo "PATH=$HOME/.ghcup/bin:$PATH" >> $GITHUB_ENV
-
-      - name: Restore libsodium, secp256k1, blst
-        uses: actions/cache@v4
-        id: libs-cache
-        with:
-          path: ~/.local
-          key: ${{ runner.os }}-libs
-
-      - name: Extend exe path and library paths
-        run: |
-          echo "PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-          echo "LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-
-      - name: Restore cabal store
-        uses: actions/cache@v4
-        id: cache-cabal
-        with:
-          key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
-          path: ~/.cache/cabal
-
-      - name: Build moog exe
-        run: |
-          tar -xzf haskell-bin.tgz -C $HOME
-          cabal install
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Fund the wallet
         run: |
-          moog wallet create -w "$MOOG_WALLET_FILE"
-          address=$(moog wallet info | jq -r '.address')
+          nix shell -c moog wallet create -w "$MOOG_WALLET_FILE"
+          address=$(nix shell -c moog wallet info | jq -r '.address')
           topup(){
               curl -s -X 'POST' \
                   "$MOOG_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
@@ -101,11 +69,11 @@ jobs:
 
       - name: Export agent PKH
         run: |
-          owner=$(moog wallet info | jq -r '.owner')
+          owner=$(nix shell -c moog wallet info | jq -r '.owner')
           echo "MOOG_AGENT_PUBLIC_KEY_HASH=$owner" >> $GITHUB_ENV
 
       - name: Run integration tests
-        run: cabal test moog-integration-test --test-show-details=direct
+        run: nix run .#integration-tests
 
       - name: Tear down
         if: always()

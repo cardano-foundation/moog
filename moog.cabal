@@ -435,7 +435,7 @@ library test-lib
   -- Base language which the package is written in.
   default-language: Haskell2010
 
-test-suite moog-integration-test
+test-suite integration-tests
   -- Import common warning flags.
   import:           warnings
 
