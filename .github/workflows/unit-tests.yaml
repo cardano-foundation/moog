@@ -16,42 +16,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout repository
-        uses: actions/checkout@v4.3.0
+      - run: sudo rm -rf /opt&
+      - uses: actions/checkout@v4
+      - uses: paolino/dev-assets/setup-nix@v0.0.1
         with:
-          fetch-depth: 0
-
-      - name: Restore haskell compiler
-        id: cache-haskell
-        uses: actions/cache@v4
-        with:
-          key: ${{ runner.os }}-ghc-9.8.4
-          path:
-            haskell-bin.tgz
-
-      - name: Explode haskell compiler
-        run: |
-          tar -xzf haskell-bin.tgz -C $HOME
-          echo "PATH=$HOME/.ghcup/bin:$PATH" >> $GITHUB_ENV
-
-      - name: Restore libsodium, secp256k1, blst
-        uses: actions/cache@v4
-        id: libs-cache
-        with:
-          path: ~/.local
-          key: ${{ runner.os }}-libs
-
-      - name: Extend library paths
-        run: |
-          echo "LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV
-          echo "PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-
-      - name: Restore cabal store
-        uses: actions/cache@v4
-        id: cache-cabal
-        with:
-          path: ~/.cache/cabal
-          key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Run moog unit tests
-        run: cabal test moog-unit-test
+        run: nix run .#unit-tests

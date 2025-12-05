@@ -23,10 +23,10 @@ unit match="":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
     if [[ '{{ match }}' == "" ]]; then
-      cabal test moog-unit-test \
+      cabal test unit-tests \
           --test-show-details=direct
     else
-      cabal test moog-unit-test\
+      cabal test unit-tests\
           --test-show-details=direct \
           --test-option=--match \
           --test-option="{{ match }}"
