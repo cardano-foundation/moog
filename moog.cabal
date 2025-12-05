@@ -297,7 +297,7 @@ executable moog-agent
   -- Base language which the package is written in.
   default-language: Haskell2010
 
-test-suite moog-E2E-test
+test-suite e2e-tests
   -- Import common warning flags.
   import:           warnings
 
