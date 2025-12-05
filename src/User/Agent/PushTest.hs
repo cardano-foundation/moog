@@ -28,12 +28,14 @@ import Core.Types.Basic
     ( Directory (..)
     , Duration (..)
     , FaultsEnabled (..)
+    , GithubRepository (..)
     , TokenId
     )
 import Core.Types.Fact (Fact (..))
 import Core.Types.Wallet (Wallet (..))
 import Data.Aeson qualified as Aeson
 import Data.ByteString.Lazy.Char8 qualified as BL
+import Data.CaseInsensitive (CI (..))
 import Data.Functor (($>), (<&>))
 import Data.Functor.Identity (Identity (..))
 import Data.List (intercalate)
@@ -148,7 +150,7 @@ pushTestToAntithesisIO
     registry
     auth
     dir
-    testRunId@(TestRunId trId)
+    testRunId
     slack = do
         etag <- liftIO $ buildConfigImage registry dir testRunId
         tag <- throwLeft DockerBuildFailure etag
@@ -164,13 +166,17 @@ pushTestToAntithesisIO
                     , config_image = tagString tag
                     , images
                     , recipients = ["antithesis@cardanofoundation.org"]
-                    , source = trId
+                    , source = renderSource tr
                     , slack = fmap unSlackWebhook slack
                     , faults_enabled = getFaultsEnabled faultsEnabled
                     }
             post = renderPostToAntithesis auth body
         epost <- liftIO $ curl post
         void $ throwLeft PostToAntithesisFailure epost
+
+renderSource :: TestRun -> String
+renderSource TestRun{repository = GithubRepository{organization, project}} =
+    foldedCase organization ++ "/" ++ foldedCase project
 
 renderTestRun :: TestRunId -> TestRun -> String
 renderTestRun trId tr =
