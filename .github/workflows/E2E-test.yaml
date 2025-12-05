@@ -10,7 +10,7 @@ jobs:
     uses: ./.github/workflows/build-deps.yaml
   integration-tests:
     needs: build-deps
-    name: Run moog integration tests
+    name: Run moog E2E tests
     runs-on: ubuntu-latest
     env:
       MOOG_MPFS_HOST: "http://localhost:3000"
