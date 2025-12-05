@@ -1,11 +1,15 @@
-name: Build dependencies
+name: Build without nix
 
 on:
-  workflow_call:
+  workflow_dispatch:
+
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
-    name: Build dependencies
+    name: Build moog without nix
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout repository
@@ -148,7 +152,7 @@ jobs:
             ~/.cache/cabal
           key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
 
-      - name: Build dependencies
+      - name: Cabal build all
         if: steps.cache-cabal.outputs.cache-hit != 'true'
         run: |
           tar -xzf haskell-bin.tgz -C $HOME
