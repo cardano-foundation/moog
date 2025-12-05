@@ -181,10 +181,10 @@ E2E-tests match="":
     #!/usr/bin/env bash
     # shellcheck disable=SC2050
     if [[ '{{ match }}' == "" ]]; then
-    cabal test moog-E2E-test \
+    cabal test e2e-tests \
         --test-show-details=direct
     else
-    cabal test moog-E2E-test \
+    cabal test e2e-tests \
         --test-show-details=direct \
         --test-option=--match \
         --test-option="{{ match }}"
