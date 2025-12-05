@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkmy_website=globalThis.webpackChunkmy_website||[]).push([[4273],{7928:a=>{a.exports=JSON.parse('{"authors":[{"name":"Arnaud Bailly","title":"Project Lead","url":"https://github.com/abailly","socials":{"github":"https://github.com/abailly"},"imageURL":"img/abailly-avatar.jpeg","key":"abailly","page":null,"count":3}]}')}}]);
