@@ -102,10 +102,10 @@ integration match="":
     owner=$(moog wallet info | jq -r '.owner')
     export MOOG_AGENT_PUBLIC_KEY_HASH=$owner
     if [[ '{{ match }}' == "" ]]; then
-      cabal test moog-integration-test \
+      cabal test integration-tests \
           --test-show-details=direct
     else
-      cabal test moog-integration-test \
+      cabal test integration-tests \
           --test-show-details=direct \
           --test-option=--match \
           --test-option="{{ match }}"
