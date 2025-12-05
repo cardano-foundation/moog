@@ -197,7 +197,7 @@ instance FromHttpApiData Address where
 instance ToHttpApiData Address where
     toUrlPiece (Address addr) = addr
 
-newtype Duration = Duration Int
+data Duration = Hours Int | Minutes Int
     deriving (Eq, Show)
 
 newtype FaultsEnabled = FaultsEnabled {getFaultsEnabled :: Bool}

@@ -222,11 +222,26 @@ deriving instance Eq (TestRunState a)
 
 deriving instance Show (TestRunState a)
 
+renderDuration (Hours h) = object ["hours" .= h]
+renderDuration (Minutes m) = object ["minutes" .= m]
+
+parseDuration :: (ReportSchemaErrors m) => JSValue -> m Duration
+parseDuration (JSNum n) = pure $ Hours $ fromIntegral n
+parseDuration (JSObject obj) = do
+    mapping <- fromJSON (JSObject obj)
+    case Map.toList mapping of
+        [("hours", v)] -> Hours <$> fromJSON v
+        [("minutes", v)] -> Minutes <$> fromJSON v
+        _ ->
+            expectedButGotValue
+                "an object with either hours or minutes field"
+                (JSObject obj)
+
 instance Monad m => ToJSON m (TestRunState a) where
-    toJSON (Pending (Duration d) faultsEnabled signature) =
+    toJSON (Pending d faultsEnabled signature) =
         object
             [ ("phase", stringJSON "pending")
-            , ("duration", intJSON d)
+            , ("duration", renderDuration d)
             , ("signature", byteStringToJSON $ BA.convert signature)
             , "faults_enabled" .= faultsEnabled
             ]
@@ -245,7 +260,7 @@ instance Monad m => ToJSON m (TestRunState a) where
         object
             [ ("phase", stringJSON "finished")
             , ("from", toJSON running)
-            , ("duration", intJSON $ case duration of Duration d -> d)
+            , ("duration", renderDuration duration)
             , ("url", stringJSON $ case url of URL u -> u)
             , ("outcome", toJSON outcome)
             ]
@@ -256,14 +271,16 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState PendingT) where
         phase <- getStringField "phase" mapping
         case phase of
             "pending" -> do
-                duration <- getIntegralField "duration" mapping
+                duration <- do
+                    field  <-getField "duration" mapping
+                    parseDuration field
                 signatureJSValue <- getField "signature" mapping
                 signatureByteString <- byteStringFromJSON signatureJSValue
                 faultsEnabled <-
                     getFieldWithDefault "faults_enabled" (FaultsEnabled True) mapping
                 case Ed25519.signature signatureByteString of
                     CryptoPassed signature ->
-                        pure $ Pending (Duration duration) faultsEnabled signature
+                        pure $ Pending duration faultsEnabled signature
                     CryptoFailed e ->
                         expectedButGotValue
                             ("a valid Ed25519 signature " ++ show e)
@@ -289,10 +306,12 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState DoneT) where
                 pure $ Rejected pending reasonList
             "finished" -> do
                 running <- getField "from" mapping >>= fromJSON
-                duration <- getIntegralField "duration" mapping
+                duration <- do
+                    field <- "duration" mapping
+                    parseDuration field
                 url <- getStringField "url" mapping
                 outcome <- getFieldWithDefault "outcome" OutcomeUnknown mapping
-                pure $ Finished running (Duration duration) outcome (URL url)
+                pure $ Finished running duration outcome (URL url)
             _ ->
                 expectedButGotValue
                     "a rejected phase"
