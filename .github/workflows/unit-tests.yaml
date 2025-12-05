@@ -1,6 +1,7 @@
 name: Unit tests
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - main
