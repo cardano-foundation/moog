@@ -23,7 +23,7 @@ import Data.CaseInsensitive (mk)
 import Data.Functor.Identity (Identity (..))
 import Data.Text qualified as T
 import Effects.RegisterUser (VKey (..))
-import Oracle.Config.Types (Config, ConfigKey (..))
+import Oracle.Config.Types (ConfigKey (..))
 import Oracle.Config.TypesSpec (genConfig)
 import Oracle.Types
     ( Request (Request)

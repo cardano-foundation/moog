@@ -33,6 +33,7 @@ import Oracle.Validate.Requests.TestRun.Lib
     ( MockValidation (..)
     , mkEffects
     , noValidation
+    , testConfigFactGen
     )
 import Oracle.Validate.Types
     ( AValidationResult (..)
@@ -48,6 +49,7 @@ import Test.Hspec
     )
 import Test.QuickCheck (Gen, arbitrary, oneof, suchThat)
 import Test.QuickCheck.EGen (egenProperty, gen, genBlind)
+import Test.QuickCheck.JSString (genAscii)
 import Test.QuickCheck.Lib (withAPresence, withAPresenceInAList)
 import User.Types (RegisterRoleKey (..))
 
@@ -100,7 +102,11 @@ spec = do
         it "validate a registered role" $ egenProperty $ do
             forRole <- genForRole
             e@(user, repo) <- gen genRoleDBElement
-            let validation = mkEffects mockMPFS $ noValidation{mockRepoRoles = [e]}
+            anOwner <- gen $ Owner <$> genAscii
+            configFact <- testConfigFactGen anOwner
+            let validation =
+                    mkEffects (withFacts [configFact] mockMPFS)
+                        $ noValidation{mockRepoRoles = [e]}
                 test =
                     validateRegisterRole validation forRole
                         $ registerRoleChange (Platform "github") user repo
@@ -147,9 +153,11 @@ spec = do
                                 , pendingRequest UnregisterRoleRequest otherChange
                                 ]
                             ]
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let validation =
                         mkEffects
-                            (withRequests db mockMPFS)
+                            (withRequests db (withFacts [configFact] mockMPFS))
                             noValidation
 
                     test =
@@ -165,7 +173,12 @@ spec = do
             forRole <- genForRole
             db <- gen $ withAPresenceInAList 0.5 e genRoleDBElement
             platform <- gen $ withAPresence 0.5 "github" arbitrary
-            let validation = mkEffects mockMPFS $ noValidation{mockRepoRoles = db}
+            anOwner <- gen $ Owner <$> genAscii
+            configFact <- testConfigFactGen anOwner
+            let validation =
+                    mkEffects
+                        (withFacts [configFact] mockMPFS)
+                        $ noValidation{mockRepoRoles = db}
                 test =
                     validateRegisterRole validation forRole
                         $ registerRoleChange (Platform platform) user repo
@@ -189,9 +202,11 @@ spec = do
                             , repository = repo
                             }
                 fact <- toJSFact registration () 0
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let validation =
                         mkEffects
-                            (withFacts [fact] mockMPFS)
+                            (withFacts [fact, configFact] mockMPFS)
                             $ noValidation{mockRepoRoles = [e]}
                     test =
                         validateRegisterRole validation forRole
@@ -207,8 +222,13 @@ spec = do
             $ do
                 (user, repo) <- gen genRoleDBElement
                 forRole <- genForRole
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let platform = "github"
-                    validation = mkEffects mockMPFS noValidation
+                    validation =
+                        mkEffects
+                            (withFacts [configFact] mockMPFS)
+                            noValidation
                     test =
                         validateRegisterRole validation forRole
                             $ registerRoleChange (Platform platform) user repo
@@ -224,8 +244,12 @@ spec = do
                 e@(user, repo) <- gen genRoleDBElement
                 forRole <- genForRole
                 (_, repo1) <- gen genRoleDBElement
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let platform = "github"
-                    validation = mkEffects mockMPFS $ noValidation{mockRepoRoles = [e]}
+                    validation =
+                        mkEffects (withFacts [configFact] mockMPFS)
+                            $ noValidation{mockRepoRoles = [e]}
                     test =
                         validateRegisterRole validation forRole
                             $ registerRoleChange (Platform platform) user repo1
@@ -242,8 +266,12 @@ spec = do
                 e@(user, repo) <- gen genRoleDBElement
                 (user1, repo1) <- gen genRoleDBElement
                 forRole <- genForRole
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let platform = "github"
-                    validation = mkEffects mockMPFS $ noValidation{mockRepoRoles = [e]}
+                    validation =
+                        mkEffects (withFacts [configFact] mockMPFS)
+                            $ noValidation{mockRepoRoles = [e]}
                     test =
                         validateRegisterRole validation forRole
                             $ registerRoleChange (Platform platform) user1 repo1
@@ -267,9 +295,11 @@ spec = do
                             , repository = repo
                             }
                 fact <- toJSFact registration () 0
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let validation =
                         mkEffects
-                            (withFacts [fact] mockMPFS)
+                            (withFacts [configFact, fact] mockMPFS)
                             $ noValidation{mockRepoRoles = [e]}
                     test =
                         validateUnregisterRole validation forRole
@@ -319,7 +349,12 @@ spec = do
                                 , pendingRequest RegisterRoleRequest otherChange
                                 ]
                             ]
-                let validation = mkEffects (withRequests db mockMPFS) noValidation
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
+                let validation =
+                        mkEffects
+                            (withRequests db (withFacts [configFact] mockMPFS))
+                            noValidation
                     test =
                         validateUnregisterRole validation forRole
                             $ unregisterRoleChange (Platform platform) user repo
@@ -343,9 +378,11 @@ spec = do
                             , repository = repo
                             }
                 fact <- toJSFact registration () 0
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let validation =
                         mkEffects
-                            (withFacts [fact] mockMPFS)
+                            (withFacts [configFact, fact] mockMPFS)
                             noValidation
                     test =
                         validateUnregisterRole validation forRole

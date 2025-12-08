@@ -39,6 +39,7 @@ import Oracle.Validate.Requests.TestRun.Lib
     ( MockValidation (..)
     , mkEffects
     , noValidation
+    , testConfigFactGen
     )
 import Oracle.Validate.Types
     ( AValidationResult (..)
@@ -129,8 +130,10 @@ spec = do
         it "validate a registered user" $ egenProperty $ do
             e@(user, pk) <- genValidDBElement
             forRole <- genForRole
+            anOwner <- gen $ Owner <$> genAscii
+            configFact <- testConfigFactGen anOwner
             let validation =
-                    mkEffects mockMPFS
+                    mkEffects (withFacts [configFact] mockMPFS)
                         $ noValidation
                             { mockIdentifications = [e]
                             }
@@ -152,9 +155,11 @@ spec = do
                             }
                 fact <- toJSFact registration () 0
                 (_, pk1) <- genValidDBElement
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let
                     validation =
-                        mkEffects (withFacts [fact] mockMPFS)
+                        mkEffects (withFacts [configFact, fact] mockMPFS)
                             $ noValidation{mockIdentifications = [e, (user, pk1)]}
                     test =
                         validateRegisterUser validation forRole
@@ -199,9 +204,11 @@ spec = do
                                 , pendingRequest UnregisterUserRequest otherChange
                                 ]
                             ]
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let validation =
                         mkEffects
-                            (withRequests db mockMPFS)
+                            (withFacts [configFact] (withRequests db mockMPFS))
                             noValidation
                     test =
                         validateRegisterUser validation forRole change
@@ -216,10 +223,12 @@ spec = do
             $ do
                 e@(user, pk) <- gen genUserDBElement
                 forRole <- genForRole
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 db <- gen $ withAPresenceInAList 0.5 e genUserDBElement
                 platform <- gen $ withAPresence 0.5 "github" arbitrary
                 let validation =
-                        mkEffects mockMPFS
+                        mkEffects (withFacts [configFact] mockMPFS)
                             $ noValidation{mockIdentifications = db}
                     test =
                         validateRegisterUser validation forRole
@@ -236,6 +245,8 @@ spec = do
             $ do
                 e@(user, pk) <- gen genUserDBElement
                 forRole <- genForRole
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let platform = "github"
                     registration =
                         RegisterUserKey
@@ -245,7 +256,7 @@ spec = do
                             }
                 fact <- toJSFact registration () 0
                 let validation =
-                        mkEffects (withFacts [fact] mockMPFS)
+                        mkEffects (withFacts [configFact, fact] mockMPFS)
                             $ noValidation{mockIdentifications = [e]}
                     test =
                         validateRegisterUser validation forRole
@@ -261,8 +272,10 @@ spec = do
             $ do
                 (user, pk) <- gen genUserDBElement
                 forRole <- genForRole
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let platform = "github"
-                let validation = mkEffects mockMPFS noValidation
+                let validation = mkEffects (withFacts [configFact] mockMPFS) noValidation
                     test =
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user pk
@@ -277,8 +290,12 @@ spec = do
                 e@(user, pk1) <- genValidDBElement
                 forRole <- genForRole
                 (_, pk2) <- genValidDBElement
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let platform = "github"
-                let validation = mkEffects mockMPFS $ noValidation{mockIdentifications = [e]}
+                let validation =
+                        mkEffects (withFacts [configFact] mockMPFS)
+                            $ noValidation{mockIdentifications = [e]}
                     test =
                         validateRegisterUser validation forRole
                             $ registerUserChange (Platform platform) user pk2
@@ -297,6 +314,8 @@ spec = do
             $ do
                 (user, pk) <- gen genUserDBElement
                 forRole <- genForRole
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let platform = "github"
                     registration =
                         RegisterUserKey
@@ -307,7 +326,7 @@ spec = do
                 fact <- toJSFact registration () 0
                 let validation =
                         mkEffects
-                            (withFacts [fact] mockMPFS)
+                            (withFacts [configFact, fact] mockMPFS)
                             noValidation
                     test =
                         validateUnregisterUser validation forRole
@@ -336,8 +355,12 @@ spec = do
                                 , change = registerUserChange (Platform platform) user pk
                                 }
                 db <- genBlind $ oneof [pure [], pure [requestAnimal]]
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let validation =
-                        mkEffects (withRequests db mockMPFS) noValidation
+                        mkEffects
+                            (withRequests db (withFacts [configFact] mockMPFS))
+                            noValidation
                     test =
                         validateUnregisterUser validation forRole change
                 pure
@@ -361,9 +384,11 @@ spec = do
                             , githubIdentification = pk
                             }
                 fact <- toJSFact registration () 0
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let validation =
                         mkEffects
-                            (withFacts [fact] mockMPFS)
+                            (withFacts [configFact, fact] mockMPFS)
                             noValidation
                     test =
                         validateUnregisterUser validation forRole
@@ -395,7 +420,9 @@ spec = do
                             , githubIdentification = pk
                             }
                 fact <- toJSFact registration () 0
-                let validation = mkEffects (withFacts [fact] mockMPFS) noValidation
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
+                let validation = mkEffects (withFacts [configFact, fact] mockMPFS) noValidation
                     test =
                         validateUnregisterUser validation forRole
                             $ unregisterUserChange (Platform platform) user pk
@@ -420,9 +447,11 @@ spec = do
                             , githubIdentification = pk
                             }
                 fact <- toJSFact registration () 0
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 let validation =
                         mkEffects
-                            (withFacts [fact] mockMPFS)
+                            (withFacts [fact, configFact] mockMPFS)
                             noValidation
                     test =
                         validateUnregisterUser validation forRole

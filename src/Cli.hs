@@ -5,7 +5,6 @@ module Cli
     , TokenInfoFailure (..)
     ) where
 
-import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Class (MonadTrans (..))
 import Core.Context (askConfig, askMpfs, askValidation, withContext)
@@ -38,12 +37,10 @@ import Oracle.Types
     )
 import Oracle.Validate.Failure (RequestValidationFailure)
 import Oracle.Validate.Request (validateRequest)
-import Oracle.Validate.Requests.Config (validatingProtocolVersion)
 import Oracle.Validate.Types
     ( AValidationResult
     , ValidationResult
     , liftMaybe
-    , mapFailure
     , runValidate
     )
 import Submitting (Submission (..))
@@ -154,9 +151,6 @@ cmd = \case
                     mconfig <- askConfig tk
                     mpfs <- askMpfs
                     lift $ runValidate $ do
-                        void
-                            $ mapFailure TokenInfoProtocolFailure
-                            $ validatingProtocolVersion validation
                         mpendings <- lift $ fromJSON <$> mpfsGetToken mpfs tk
                         token <- liftMaybe (TokenInfoTokenNotParsable tk) mpendings
                         let oracle = tokenOwner $ tokenState token
