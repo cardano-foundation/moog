@@ -25,7 +25,9 @@ import Effects.RegisterUser
     ( VKeyFailure (..)
     )
 import Lib.JSON.Canonical.Extra (object, (.=))
+import Oracle.Config.Types (ProtocolFailure)
 import Oracle.Types (requestZooGetRegisterUserKey)
+import Oracle.Validate.Requests.Config (validatingProtocolVersion)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
 import Oracle.Validate.Types
     ( ForRole
@@ -49,6 +51,7 @@ data RegisterUserFailure
     | RegisterUserKeyFailure KeyFailure
     | RegisterUserKeyChangeAlreadyPending RegisterUserKey
     | RegisterUserKeyAlreadyExists GithubIdentification
+    | RegisterUserProtocolFailure ProtocolFailure
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m RegisterUserFailure where
@@ -70,6 +73,8 @@ instance Monad m => ToJSON m RegisterUserFailure where
             object ["registerUserKeyChangeAlreadyPending" .= key]
         RegisterUserKeyAlreadyExists pkHash ->
             object ["registerUserKeyAlreadyExists" .= pkHash]
+        RegisterUserProtocolFailure protocolFailure ->
+            object ["registerUserProtocolFailure" .= protocolFailure]
 
 validateRegisterUser
     :: Monad m
@@ -86,7 +91,10 @@ validateRegisterUser
     change@( Change
                 (Key key@(RegisterUserKey{platform, username, githubIdentification}))
                 _
-            ) =
+            ) = do
+        void
+            $ mapFailure RegisterUserProtocolFailure
+            $ validatingProtocolVersion validation
         case platform of
             Platform "github" -> do
                 when (forUser forRole)
@@ -118,6 +126,7 @@ data UnregisterUserFailure
     | UnregisterUserKeyChangeAlreadyPending RegisterUserKey
     | UnregisterUserKeyIsPresent
     | UnregisterUserKeyGithubError String
+    | UnregisterUserProtocolFailure ProtocolFailure
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m UnregisterUserFailure where
@@ -135,6 +144,8 @@ instance Monad m => ToJSON m UnregisterUserFailure where
                 ]
         UnregisterUserKeyGithubError err ->
             object ["unregisterUserKeyGithubError" .= err]
+        UnregisterUserProtocolFailure protocolFailure ->
+            object ["unregisterUserProtocolFailure" .= protocolFailure]
 
 validateUnregisterUser
     :: Monad m
@@ -150,7 +161,10 @@ validateUnregisterUser
     change@( Change
                 (Key key@(RegisterUserKey{platform, username, githubIdentification}))
                 _v
-            ) =
+            ) = do
+        void
+            $ mapFailure UnregisterUserProtocolFailure
+            $ validatingProtocolVersion validation
         case platform of
             Platform "github" -> do
                 when (forUser forRole)

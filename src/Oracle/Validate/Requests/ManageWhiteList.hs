@@ -19,6 +19,8 @@ import Effects
     )
 import Lib.GitHub qualified as Github
 import Lib.JSON.Canonical.Extra (object, (.=))
+import Oracle.Config.Types (ProtocolFailure)
+import Oracle.Validate.Requests.Config (validatingProtocolVersion)
 import Oracle.Validate.Types
     ( Validate
     , Validated (..)
@@ -38,6 +40,7 @@ data UpdateWhiteListFailure
     | WhiteListAgentNotRecognized Owner
     | WhiteListConfigNotAvailable
     | WhiteListWalletError WalletError
+    | WhiteListProtocolFailure ProtocolFailure
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m UpdateWhiteListFailure where
@@ -61,6 +64,8 @@ instance Monad m => ToJSON m UpdateWhiteListFailure where
             ["error" .= ("Token configuration is not available yet" :: String)]
     toJSON (WhiteListWalletError err) =
         object ["error" .= ("Wallet error: " ++ show err)]
+    toJSON (WhiteListProtocolFailure protocolFailure) =
+        object ["error" .= ("Protocol failure: " ++ show protocolFailure)]
 
 validateAgent
     :: Monad m
@@ -85,6 +90,9 @@ validateAddWhiteListed
     agent
     submitter
     c@(Change (Key (WhiteListKey platform repo)) _) = do
+        void
+            $ mapFailure WhiteListProtocolFailure
+            $ validatingProtocolVersion v
         void $ validateAgent agent submitter
         mapFailure WhiteListRepositoryKeyValidation $ insertValidation v c
         void

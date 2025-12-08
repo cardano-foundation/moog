@@ -7,7 +7,7 @@ module Oracle.Validate.Requests.TestRun.Update
     , UpdateTestRunFailure (..)
     ) where
 
-import Control.Monad (when)
+import Control.Monad (void, when)
 import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic (Owner)
 import Core.Types.Change (Change (..), Key (..))
@@ -20,7 +20,9 @@ import Effects
     , updateValidation
     )
 import Lib.JSON.Canonical.Extra
+import Oracle.Config.Types (ProtocolFailure)
 import Oracle.Types (requestZooGetTestRunKey)
+import Oracle.Validate.Requests.Config (validatingProtocolVersion)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
 import Oracle.Validate.Types
     ( ForRole
@@ -49,6 +51,7 @@ data UpdateTestRunFailure
     | UpdateTestRunTestRunIdNotResolved
     | UpdateTestRunWrongPreviousState
     | UpdateTestRunKeyAlreadyPending TestRun
+    | UpdateTestRunProtocolFailure ProtocolFailure
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m UpdateTestRunFailure where
@@ -69,6 +72,8 @@ instance Monad m => ToJSON m UpdateTestRunFailure where
             toJSON ("Wrong previous state for test run" :: String)
         UpdateTestRunKeyAlreadyPending testRun ->
             object ["updateTestRunKeyAlreadyPending" .= testRun]
+        UpdateTestRunProtocolFailure protocolFailure ->
+            object ["updateTestRunProtocolFailure" .= protocolFailure]
 
 checkingOwner
     :: Monad m
@@ -105,6 +110,9 @@ validateToDoneUpdate
     agentPKH
     requester
     change@(Change (Key testRun) operation) = do
+        void
+            $ mapFailure UpdateTestRunProtocolFailure
+            $ validatingProtocolVersion validation
         when (forUser forRole)
             $ keyAlreadyPendingFailure
                 validation
@@ -155,6 +163,9 @@ validateToRunningUpdate
     agentPKH
     requester
     change@(Change (Key testRun) operation) = do
+        void
+            $ mapFailure UpdateTestRunProtocolFailure
+            $ validatingProtocolVersion validation
         when (forUser forRole)
             $ keyAlreadyPendingFailure
                 validation
