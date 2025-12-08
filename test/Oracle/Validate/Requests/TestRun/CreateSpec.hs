@@ -23,7 +23,14 @@ import Core.Types.Fact (JSFact, toJSFact)
 import Core.Types.Operation (Operation (..))
 import Lib.SSH.Public (encodeSSHPublicKey)
 import MockMPFS (mockMPFS, withFacts, withRequests)
-import Oracle.Config.Types (ConfigKey (..), mkCurrentConfig)
+import Oracle.Config.Types
+    ( Config (..)
+    , ConfigKey (..)
+    , ProtocolFailure (..)
+    , ProtocolVersion (..)
+    , currentProtocolVersion
+    , mkCurrentConfig
+    )
 import Oracle.Types (Request (..), RequestZoo (..))
 import Oracle.Validate.DownloadAssets
     ( AssetValidationFailure (..)
@@ -97,6 +104,7 @@ import Test.QuickCheck.EGen
     , genBlind
     )
 import Test.QuickCheck.JSString (genAscii)
+import Test.QuickCheck.Lib (withAPresence)
 import User.Agent.Types (WhiteListKey (..))
 import User.Types
     ( GithubIdentification (..)
@@ -200,6 +208,103 @@ spec = do
                             testRun
                             testRunState
                 mresult `shouldBe` ValidationSuccess Validated
+        it
+            "fail to validate a create-test-run if config is missing"
+            $ egenProperty
+            $ do
+                testRun <- testRunEGen
+                testConfig <- testConfigEGen
+                duration <-
+                    gen
+                        $ genDuration
+                            `suchThat` \d ->
+                                d >= testConfig.minDuration
+                                    && d <= testConfig.maxDuration
+                faultsEnabled <- FaultsEnabled <$> gen arbitrary
+                (sign, _pk) <- genBlind ed25519Gen
+                forRole <- genForRole
+                testRunState <-
+                    Pending duration faultsEnabled
+                        <$> signTestRun sign testRun
+                let validation =
+                        mkEffects
+                            (withRequests [] (withFacts [] mockMPFS))
+                            noValidation
+                pure
+                    $ do
+                        runValidate
+                            $ validateCreateTestRun
+                                testConfig
+                                validation
+                                forRole
+                                Change
+                                    { key = Key testRun
+                                    , operation = Insert testRunState
+                                    }
+                    `shouldReturn` ValidationFailure
+                        ( CreateTestRunProtocolFailure
+                            ConfigNotAvailable
+                        )
+        it
+            "fail to validate a create-test-run if protocol version is unsupported"
+            $ egenProperty
+            $ do
+                testRun <- testRunEGen
+                testConfig <- testConfigEGen
+                duration <-
+                    gen
+                        $ genDuration
+                            `suchThat` \d ->
+                                d >= testConfig.minDuration
+                                    && d <= testConfig.maxDuration
+                faultsEnabled <- FaultsEnabled <$> gen arbitrary
+                (sign, _pk) <- genBlind ed25519Gen
+                forRole <- genForRole
+                version <-
+                    gen
+                        $ withAPresence 0.5 currentProtocolVersion
+                        $ ProtocolVersion <$> arbitrary
+                config <-
+                    toJSFact
+                        ConfigKey
+                        ( Config
+                            (Owner "")
+                            testConfig
+                            version
+                        )
+                        0
+                testRunState <-
+                    Pending duration faultsEnabled
+                        <$> signTestRun sign testRun
+                let validation =
+                        mkEffects
+                            ( withRequests
+                                []
+                                ( withFacts
+                                    [ config
+                                    ]
+                                    mockMPFS
+                                )
+                            )
+                            noValidation
+                pure
+                    $ when (version /= currentProtocolVersion)
+                    $ do
+                        runValidate
+                            $ validateCreateTestRun
+                                testConfig
+                                validation
+                                forRole
+                                Change
+                                    { key = Key testRun
+                                    , operation = Insert testRunState
+                                    }
+                    `shouldReturn` ValidationFailure
+                        ( CreateTestRunProtocolFailure
+                            $ UnsupportedProtocolVersion
+                                version
+                                currentProtocolVersion
+                        )
         it
             "fail to validate a create-test-run if the test-run key is already pending"
             $ egenProperty
