@@ -5,6 +5,7 @@ module Cli
     , TokenInfoFailure (..)
     ) where
 
+import Control.Monad (void)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Class (MonadTrans (..))
 import Core.Context (askConfig, askMpfs, askValidation, withContext)
@@ -29,6 +30,7 @@ import MPFS.API
     , retractChange
     )
 import Oracle.Cli (OracleCommand (..), oracleCmd)
+import Oracle.Config.Types (ProtocolFailure)
 import Oracle.Types
     ( Token (..)
     , TokenState (..)
@@ -36,10 +38,12 @@ import Oracle.Types
     )
 import Oracle.Validate.Failure (RequestValidationFailure)
 import Oracle.Validate.Request (validateRequest)
+import Oracle.Validate.Requests.Config (validatingProtocolVersion)
 import Oracle.Validate.Types
     ( AValidationResult
     , ValidationResult
     , liftMaybe
+    , mapFailure
     , runValidate
     )
 import Submitting (Submission (..))
@@ -150,6 +154,9 @@ cmd = \case
                     mconfig <- askConfig tk
                     mpfs <- askMpfs
                     lift $ runValidate $ do
+                        void
+                            $ mapFailure TokenInfoProtocolFailure
+                            $ validatingProtocolVersion validation
                         mpendings <- lift $ fromJSON <$> mpfsGetToken mpfs tk
                         token <- liftMaybe (TokenInfoTokenNotParsable tk) mpendings
                         let oracle = tokenOwner $ tokenState token
@@ -161,12 +168,16 @@ cmd = \case
                         lift $ fmapMToken f token
     SSHSelectors sshClient -> sshKeySelectors sshClient
 
-newtype TokenInfoFailure = TokenInfoTokenNotParsable TokenId
+data TokenInfoFailure
+    = TokenInfoTokenNotParsable TokenId
+    | TokenInfoProtocolFailure ProtocolFailure
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m TokenInfoFailure where
     toJSON (TokenInfoTokenNotParsable tk) =
         object ["tokenNotParsable" .= tk]
+    toJSON (TokenInfoProtocolFailure protocolFailure) =
+        object ["protocolFailure" .= protocolFailure]
 
 data WithValidation x = WithValidation
     { validation :: ValidationResult RequestValidationFailure

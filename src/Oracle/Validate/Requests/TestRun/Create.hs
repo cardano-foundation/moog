@@ -7,7 +7,7 @@ module Oracle.Validate.Requests.TestRun.Create
     , CreateTestRunFailure (..)
     ) where
 
-import Control.Monad (when)
+import Control.Monad (void, when)
 import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic
     ( Commit (..)
@@ -36,11 +36,13 @@ import Effects
 import Lib.GitHub (GithubResponseError, GithubResponseStatusCodeError)
 import Lib.JSON.Canonical.Extra (object, stringJSON, (.=))
 import Lib.SSH.Public (decodeSSHPublicKey)
+import Oracle.Config.Types (ProtocolFailure)
 import Oracle.Types (requestZooGetTestRunKey)
 import Oracle.Validate.DownloadAssets
     ( AssetValidationFailure
     , validateAssets
     )
+import Oracle.Validate.Requests.Config (validatingProtocolVersion)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
@@ -76,6 +78,7 @@ data CreateTestRunFailure
     | CreateTestRunInvalidSSHKey
     | CreateTestRunKeyAlreadyPending TestRun
     | CreateTestRequesterNotRegistered
+    | CreateTestRunProtocolFailure ProtocolFailure
     deriving (Eq, Show)
 
 instance Monad m => ToJSON m CreateTestRunFailure where
@@ -91,6 +94,8 @@ instance Monad m => ToJSON m CreateTestRunFailure where
         object ["createTestRunKeyAlreadyPending" .= testRun]
     toJSON CreateTestRequesterNotRegistered =
         stringJSON "Test requester is not registered"
+    toJSON (CreateTestRunProtocolFailure protocolFailure) =
+        object ["createTestRunProtocolFailure" .= protocolFailure]
 
 validateCreateTestRun
     :: Monad m
@@ -104,6 +109,9 @@ validateCreateTestRun
     validation
     forRole
     change@(Change (Key testRun) (Insert testRunState)) = do
+        void
+            $ mapFailure CreateTestRunProtocolFailure
+            $ validatingProtocolVersion validation
         when (forUser forRole)
             $ keyAlreadyPendingFailure
                 validation

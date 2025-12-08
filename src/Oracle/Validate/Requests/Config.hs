@@ -2,24 +2,29 @@ module Oracle.Validate.Requests.Config
     ( validateInsertConfig
     , ConfigFailure (..)
     , validateUpdateConfig
+    , validatingProtocolVersion
     )
 where
 
 import Control.Monad (when)
+import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic (Owner)
 import Core.Types.Change (Change (..))
 import Core.Types.Duration (Duration)
+import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..), Operation (..))
 import Effects
-    ( Effects
+    ( Effects (mpfsGetFacts)
     , KeyFailure
     , insertValidation
     , updateValidation
     )
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Oracle.Config.Types
-    ( Config (Config, configTestRun)
+    ( Config (..)
     , ConfigKey
+    , ProtocolFailure (..)
+    , currentProtocolVersion
     )
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
@@ -116,3 +121,20 @@ validateUpdateConfig
             oracleOwner
             submitterOwner
             configTestRun
+
+validatingProtocolVersion
+    :: Monad m
+    => Effects m
+    -> Validate ProtocolFailure m Config
+validatingProtocolVersion effects = do
+    configs <- lift $ mpfsGetFacts effects
+    case configs of
+        [Fact _ config _ :: Fact ConfigKey Config] ->
+            if configProtocolVersion config == currentProtocolVersion
+                then pure config
+                else
+                    notValidated
+                        $ UnsupportedProtocolVersion
+                            (configProtocolVersion config)
+                            currentProtocolVersion
+        _ -> notValidated ConfigNotAvailable

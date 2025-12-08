@@ -5,7 +5,7 @@ module Oracle.Validate.Requests.RegisterRole
     , UnregisterRoleFailure (..)
     ) where
 
-import Control.Monad (when)
+import Control.Monad (void, when)
 import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic
     ( Platform (..)
@@ -25,7 +25,9 @@ import Effects.RegisterRole
     ( RepositoryRoleFailure (..)
     )
 import Lib.JSON.Canonical.Extra (object, (.=))
+import Oracle.Config.Types (ProtocolFailure)
 import Oracle.Types (requestZooGetRegisterRoleKey)
+import Oracle.Validate.Requests.Config (validatingProtocolVersion)
 import Oracle.Validate.Requests.Lib (keyAlreadyPendingFailure)
 import Oracle.Validate.Types
     ( ForRole
@@ -45,6 +47,7 @@ data RegisterRoleFailure
     | RegisterRolePlatformNotSupported String
     | RegisterRoleKeyFailure KeyFailure
     | RegisterRoleKeyChangeAlreadyPending RegisterRoleKey
+    | RegisterRoleProtocolFailure ProtocolFailure
     deriving (Eq, Show)
 
 instance Monad m => ToJSON m RegisterRoleFailure where
@@ -58,6 +61,8 @@ instance Monad m => ToJSON m RegisterRoleFailure where
             object ["registerRoleKeyFailure" .= keyFailure]
         RegisterRoleKeyChangeAlreadyPending key ->
             object ["registerRoleKeyChangeAlreadyPending" .= key]
+        RegisterRoleProtocolFailure protocolFailure ->
+            object ["registerRoleProtocolFailure" .= protocolFailure]
 
 validateRegisterRole
     :: Monad m
@@ -69,6 +74,9 @@ validateRegisterRole
     validation@Effects{githubEffects = GithubEffects{githubRepositoryRole}}
     forRole
     change@(Change (Key k) _) = do
+        void
+            $ mapFailure RegisterRoleProtocolFailure
+            $ validatingProtocolVersion validation
         when (forUser forRole)
             $ keyAlreadyPendingFailure
                 validation
@@ -91,6 +99,7 @@ data UnregisterRoleFailure
     | UnregisterRolePlatformNotSupported String
     | UnregisterRoleRoleIsStillValidInGithub
     | UnregisterRoleGithubGetError String
+    | UnregisterRoleProtocolFailure ProtocolFailure
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m UnregisterRoleFailure where
@@ -105,6 +114,8 @@ instance Monad m => ToJSON m UnregisterRoleFailure where
             object ["unregisterRoleRoleIsStillValidInGithub" .= ()]
         UnregisterRoleGithubGetError err ->
             object ["unregisterRoleGithubGetError" .= err]
+        UnregisterRoleProtocolFailure protocolFailure ->
+            object ["unregisterRoleProtocolFailure" .= protocolFailure]
 
 validateUnregisterRole
     :: Monad m
@@ -116,6 +127,9 @@ validateUnregisterRole
     validation@Effects{githubEffects = GithubEffects{githubRepositoryRole}}
     forRole
     change@(Change (Key k) _) = do
+        void
+            $ mapFailure UnregisterRoleProtocolFailure
+            $ validatingProtocolVersion validation
         when (forUser forRole)
             $ keyAlreadyPendingFailure
                 validation
