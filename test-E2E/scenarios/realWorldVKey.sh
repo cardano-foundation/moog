@@ -32,11 +32,28 @@ trap 'tokenEnd' EXIT INT TERM
 log "Push the oracle config on-chain"
 being_oracle
 result=$(moog oracle config set \
-    --min-test-duration 1 \
+    --min-test-duration 2 \
     --max-test-duration 4 \
     --agent-pkh "$MOOG_AGENT_PUBLIC_KEY_HASH")
 
 echo "$result"
+
+log "Include the config push"
+include_requests
+
+log "Change the oracle config to set min test duration to 1 hour"
+being_oracle
+
+result=$(moog oracle config set \
+    --min-test-duration 1 \
+    --max-test-duration 4 \
+    --agent-pkh "$MOOG_AGENT_PUBLIC_KEY_HASH"
+    )
+
+echo "$result"
+
+log "Include the config change"
+include_requests
 
 log "Register 'cfhal' as a GitHub user"
 being_requester
