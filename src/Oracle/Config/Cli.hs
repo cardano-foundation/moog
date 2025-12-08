@@ -5,7 +5,7 @@ module Oracle.Config.Cli
 where
 
 import Control.Monad.Trans.Class (lift)
-import Core.Context (WithContext, askMpfs, askSubmit)
+import Core.Context (WithContext, askMpfs, askSubmit, askValidation)
 import Core.Types.Basic (Success (..), TokenId)
 import Core.Types.Fact (Fact (..))
 import Core.Types.Tx (WithTxHash (..), setWithTxHashValue)
@@ -16,7 +16,10 @@ import MPFS.API
     , RequestInsertBody (RequestInsertBody, key, value)
     , RequestUpdateBody (RequestUpdateBody, key, newValue, oldValue)
     )
-import Oracle.Config.Types (Config, ConfigKey (ConfigKey))
+import Oracle.Config.Types
+    ( Config (..)
+    , ConfigKey (ConfigKey)
+    )
 import Submitting (Submission (..))
 import Text.JSON.Canonical (ToJSON (toJSON))
 
@@ -32,7 +35,8 @@ configCmd
 configCmd (SetConfig tokenId wallet config) = do
     mpfs <- askMpfs
     Submission submit <- askSubmit wallet
-    present <- lift $ factsCmd Nothing mpfs tokenId ConfigFact
+    validation <- askValidation $ Just tokenId
+    present <- lift $ factsCmd validation ConfigFact
     jkey <- toJSON ConfigKey
     jvalue <- toJSON config
     let run = lift . fmap (`setWithTxHashValue` Success) . submit
