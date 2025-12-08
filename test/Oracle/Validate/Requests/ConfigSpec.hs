@@ -9,7 +9,10 @@ import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Duration (Duration)
 import Core.Types.Operation (Operation (..))
 import MockMPFS (mockMPFS)
-import Oracle.Config.Types (Config (..), ConfigKey (..))
+import Oracle.Config.Types
+    ( ConfigKey (..)
+    , mkCurrentConfig
+    )
 import Oracle.Validate.Requests.Config
     ( ConfigFailure (..)
     , validateInsertConfig
@@ -59,13 +62,11 @@ spec = do
                 change =
                     Change (Key ConfigKey)
                         $ Insert
-                        $ Config
-                            { configAgent = agentOwner
-                            , configTestRun =
-                                TestRunValidationConfig
-                                    { minDuration
-                                    , maxDuration
-                                    }
+                        $ mkCurrentConfig
+                            agentOwner
+                        $ TestRunValidationConfig
+                            { minDuration
+                            , maxDuration
                             }
             let test =
                     validateInsertConfig
@@ -86,13 +87,11 @@ spec = do
                     change =
                         Change (Key ConfigKey)
                             $ Insert
-                            $ Config
-                                { configAgent = agentOwner
-                                , configTestRun =
-                                    TestRunValidationConfig
-                                        { minDuration
-                                        , maxDuration
-                                        }
+                            $ mkCurrentConfig
+                                agentOwner
+                            $ TestRunValidationConfig
+                                { minDuration
+                                , maxDuration
                                 }
                 let test =
                         validateInsertConfig
@@ -116,13 +115,11 @@ spec = do
                     change =
                         Change (Key ConfigKey)
                             $ Insert
-                            $ Config
-                                { configAgent = agentOwner
-                                , configTestRun =
-                                    TestRunValidationConfig
-                                        { minDuration
-                                        , maxDuration
-                                        }
+                            $ mkCurrentConfig
+                                agentOwner
+                            $ TestRunValidationConfig
+                                { minDuration
+                                , maxDuration
                                 }
                 let test =
                         validateInsertConfig
@@ -150,13 +147,11 @@ spec = do
                     change =
                         Change (Key ConfigKey)
                             $ Insert
-                            $ Config
-                                { configAgent = Owner "agent"
-                                , configTestRun =
-                                    TestRunValidationConfig
-                                        { minDuration
-                                        , maxDuration
-                                        }
+                            $ mkCurrentConfig
+                                (Owner "agent")
+                            $ TestRunValidationConfig
+                                { minDuration
+                                , maxDuration
                                 }
                 let test =
                         validateInsertConfig
