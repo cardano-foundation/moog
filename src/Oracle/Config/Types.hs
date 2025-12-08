@@ -44,7 +44,7 @@ instance (Alternative m, ReportSchemaErrors m) => FromJSON m ProtocolVersion whe
     fromJSON v = ProtocolVersion . fromIntegral @Int54 <$> fromJSON v
 
 currentProtocolVersion :: ProtocolVersion
-currentProtocolVersion = ProtocolVersion 0
+currentProtocolVersion = ProtocolVersion 1
 
 data Config = Config
     { configAgent :: Owner
