@@ -150,7 +150,6 @@ tokenCmdCore
 tokenCmdCore command = do
     mpfs <- askMpfs
     case command of
-        -- validateRequest oracle mconfig validation
         UpdateToken tk wallet wanted -> do
             Submission submit <- askSubmit wallet
             validation <- askValidation $ Just tk

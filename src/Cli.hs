@@ -133,9 +133,7 @@ cmd = \case
                     $ Just tokenId
         runMPFS
             $ factsCmd
-                (Just validation)
-                mpfsClient
-                tokenId
+                validation
                 factsCommand
     Wallet walletCommand -> liftIO $ walletCmd walletCommand
     GetToken

@@ -10,8 +10,8 @@ where
 
 import Control.Arrow (left)
 import Control.Monad (filterM, when)
-import Core.Types.Basic (GithubUsername, TokenId)
-import Core.Types.Fact (Fact (..), keyHash, parseFacts)
+import Core.Types.Basic (GithubUsername)
+import Core.Types.Fact (Fact (..), keyHash)
 import Core.Types.VKey (DecodeVKeyError, decodeVKey)
 import Core.Types.Wallet (Wallet, walletKeyPair)
 import Data.ByteString.Base64 qualified as Base64
@@ -25,7 +25,6 @@ import Lib.CryptoBox qualified as CB
 import Lib.JSON.Canonical.Extra (blakeHashOfJSON)
 import Lib.SSH.Private (KeyPair (..), SSHClient, WithSelector (..))
 import Lib.SSH.Public (decodeSSHPublicKey)
-import MPFS.API (MPFS, mpfsGetTokenFacts)
 import Oracle.Config.Types (Config, ConfigKey)
 import Text.JSON.Canonical (FromJSON (..), JSValue, ToJSON (..))
 import User.Agent.Types (TestRunId (..), WhiteListKey)
@@ -74,13 +73,6 @@ data FactsSelection a where
     WhiteListedFacts :: FactsSelection [Fact WhiteListKey ()]
     AllFacts :: FactsSelection [Fact JSValue JSValue]
 
-retrieveAnyFacts
-    :: (FromJSON Maybe k, FromJSON Maybe v, Functor m)
-    => MPFS m
-    -> TokenId
-    -> m [Fact k v]
-retrieveAnyFacts mpfs tokenId = parseFacts <$> mpfsGetTokenFacts mpfs tokenId
-
 filterFacts
     :: (Foldable t, ToJSON Identity k)
     => t TestRunId
@@ -102,29 +94,27 @@ whoseFilter whose facts = filterOn facts factKey
 factsCmd
     :: forall m a
      . Monad m
-    => Maybe (Effects m)
-    -> MPFS m
-    -> TokenId
+    => Effects m
     -> FactsSelection a
     -> m a
-factsCmd mValidation mpfs tokenId selection = do
+factsCmd effects selection = do
     let mkDecrypt mWallet mDecrypt = do
             decryption <-
-                tryDecryption . fmap factKey
-                    <$> retrieveAnyFacts @_ @() mpfs tokenId
-            case (,) <$> mDecrypt <*> mValidation of
+                tryDecryption . fmap (factKey @RegisterUserKey @())
+                    <$> mpfsGetFacts effects
+            case (,) <$> mDecrypt <*> pure effects of
                 Nothing -> pure $ decryption $ mWallet <&> walletKeyPair
-                Just (ssh, validation) ->
-                    decryption <$> decodePrivateSSHFile validation ssh
+                Just (ssh, _) ->
+                    decryption <$> decodePrivateSSHFile effects ssh
     let
         testRunCommon
             :: FromJSON Maybe x => [TestRunId] -> All -> m [Fact TestRun x]
         testRunCommon ids whose =
-            retrieveAnyFacts mpfs tokenId
+            mpfsGetFacts effects
                 <&> filterFacts ids . whoseFilter whose
 
-        core UserFacts = retrieveAnyFacts mpfs tokenId
-        core RoleFacts = retrieveAnyFacts mpfs tokenId
+        core UserFacts = mpfsGetFacts effects
+        core RoleFacts = mpfsGetFacts effects
         core (TestRunFacts (TestRunPending ids whose)) = do
             testRunCommon ids whose
         core (TestRunFacts (TestRunRunning ids whose)) = do
@@ -145,10 +135,10 @@ factsCmd mValidation mpfs tokenId selection = do
         core (TestRunFacts (AnyTestRuns mWallet mDecrypt ids whose)) = do
             decrypt <- mkDecrypt mWallet mDecrypt
             testRunCommon ids whose <&> fmap (parseDecrypt decrypt)
-        core ConfigFact = retrieveAnyFacts mpfs tokenId
-        core WhiteListedFacts = retrieveAnyFacts mpfs tokenId
+        core ConfigFact = mpfsGetFacts effects
+        core WhiteListedFacts = mpfsGetFacts effects
         core AllFacts =
-            retrieveAnyFacts mpfs tokenId
+            mpfsGetFacts effects
 
     core selection
 
