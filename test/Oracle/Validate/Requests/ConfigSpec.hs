@@ -6,6 +6,7 @@ where
 import Control.Monad (when)
 import Core.Types.Basic (Owner (..))
 import Core.Types.Change (Change (..), Key (..))
+import Core.Types.Duration (Duration)
 import Core.Types.Operation (Operation (..))
 import MockMPFS (mockMPFS)
 import Oracle.Config.Types (Config (..), ConfigKey (..))
@@ -17,7 +18,8 @@ import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
     )
 import Oracle.Validate.Requests.TestRun.Lib
-    ( mkEffects
+    ( genDuration
+    , mkEffects
     , noValidation
     )
 import Oracle.Validate.Types
@@ -33,18 +35,24 @@ import Test.Hspec
     )
 import Test.QuickCheck
     ( Arbitrary (arbitrary)
+    , Gen
     , suchThat
     )
 import Test.QuickCheck.EGen (egenProperty, gen)
 import Test.QuickCheck.JSString (genAscii)
 import Test.QuickCheck.Lib (withAPresence)
 
+genValidDurations :: Gen (Duration, Duration)
+genValidDurations = do
+    minDuration <- genDuration `suchThat` (> mempty)
+    maxDuration <- genDuration `suchThat` (> minDuration)
+    return (minDuration, maxDuration)
+
 spec :: Spec
 spec = do
     describe "validation of config management" $ do
         it "validates a config insertion" $ egenProperty $ do
-            minDuration <- gen $ arbitrary `suchThat` (> 0)
-            maxDuration <- gen $ arbitrary `suchThat` (> minDuration)
+            (minDuration, maxDuration) <- gen genValidDurations
             oracleOwner <- gen $ Owner <$> genAscii
             let
                 agentOwner = Owner "agent"
@@ -70,8 +78,8 @@ spec = do
             "fails to validate a config insertion with a minimum duration less than 1"
             $ egenProperty
             $ do
-                minDuration <- gen $ arbitrary `suchThat` (<= 0)
-                maxDuration <- gen $ arbitrary `suchThat` (> minDuration)
+                minDuration <- gen $ genDuration `suchThat` (<= mempty)
+                maxDuration <- gen $ genDuration `suchThat` (> minDuration)
                 oracleOwner <- gen $ Owner <$> genAscii
                 let
                     agentOwner = Owner "agent"
@@ -95,13 +103,13 @@ spec = do
                 pure
                     $ runValidate test
                     `shouldReturn` ValidationFailure
-                        (ConfigureMinLessThanOne minDuration)
+                        (ConfigureMinLessThanZero minDuration)
         it
             "fails to validate a config insertion with a maximum duration less than the minimum"
             $ egenProperty
             $ do
-                minDuration <- gen $ arbitrary `suchThat` (> 0)
-                maxDuration <- gen $ arbitrary `suchThat` (< minDuration)
+                minDuration <- gen $ genDuration `suchThat` (> mempty)
+                maxDuration <- gen $ genDuration `suchThat` (< minDuration)
                 oracleOwner <- gen $ Owner <$> genAscii
                 let
                     agentOwner = Owner "agent"
@@ -130,8 +138,7 @@ spec = do
             "fails to validate a config insertion if the submitter is not the oracle"
             $ egenProperty
             $ do
-                minDuration <- gen $ arbitrary `suchThat` (> 0)
-                maxDuration <- gen $ arbitrary `suchThat` (> minDuration)
+                (minDuration, maxDuration) <- gen genValidDurations
                 oracleOwner <- gen $ Owner <$> genAscii
                 attacker <-
                     gen

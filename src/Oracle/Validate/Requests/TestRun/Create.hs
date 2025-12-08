@@ -12,12 +12,12 @@ import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
-    , Duration (..)
     , GithubRepository (..)
     , GithubUsername (..)
     , Try (..)
     )
 import Core.Types.Change (Change (..), Key (..))
+import Core.Types.Duration (Duration)
 import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..), Operation (..))
 import Core.Types.VKey (decodeVKey)
@@ -120,7 +120,7 @@ validateCreateTestRun
                 testRunState
 
 data TestRunRejection
-    = UnacceptableDuration Int Int
+    = UnacceptableDuration Duration Duration
     | UnacceptableCommit GithubRepository Commit
     | UnacceptableTryIndex Try
     | UnacceptableRole RegisterRoleKey
@@ -179,7 +179,7 @@ instance Monad m => ToJSON m TestRunRejection where
 
 checkDuration
     :: TestRunValidationConfig -> Duration -> Maybe TestRunRejection
-checkDuration TestRunValidationConfig{maxDuration, minDuration} (Duration n)
+checkDuration TestRunValidationConfig{maxDuration, minDuration} n
     | n < minDuration || n > maxDuration =
         Just $ UnacceptableDuration minDuration maxDuration
     | otherwise = Nothing

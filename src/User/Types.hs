@@ -34,13 +34,13 @@ import Control.Monad (guard)
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
-    , Duration (..)
     , FaultsEnabled (..)
     , GithubRepository (..)
     , GithubUsername (..)
     , Platform (..)
     , Try (..)
     )
+import Core.Types.Duration (Duration (..))
 import Core.Types.VKey (decodeVKey)
 import Crypto.Error (CryptoFailable (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
@@ -223,10 +223,10 @@ deriving instance Eq (TestRunState a)
 deriving instance Show (TestRunState a)
 
 instance Monad m => ToJSON m (TestRunState a) where
-    toJSON (Pending (Duration d) faultsEnabled signature) =
+    toJSON (Pending d faultsEnabled signature) =
         object
             [ ("phase", stringJSON "pending")
-            , ("duration", intJSON d)
+            , ("duration", toJSON d)
             , ("signature", byteStringToJSON $ BA.convert signature)
             , "faults_enabled" .= faultsEnabled
             ]
@@ -245,25 +245,28 @@ instance Monad m => ToJSON m (TestRunState a) where
         object
             [ ("phase", stringJSON "finished")
             , ("from", toJSON running)
-            , ("duration", intJSON $ case duration of Duration d -> d)
+            , ("duration", toJSON duration)
             , ("url", stringJSON $ case url of URL u -> u)
             , ("outcome", toJSON outcome)
             ]
 
-instance (ReportSchemaErrors m) => FromJSON m (TestRunState PendingT) where
+instance
+    (ReportSchemaErrors m, Alternative m)
+    => FromJSON m (TestRunState PendingT)
+    where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
         phase <- getStringField "phase" mapping
         case phase of
             "pending" -> do
-                duration <- getIntegralField "duration" mapping
+                duration <- getField "duration" mapping >>= fromJSON
                 signatureJSValue <- getField "signature" mapping
                 signatureByteString <- byteStringFromJSON signatureJSValue
                 faultsEnabled <-
                     getFieldWithDefault "faults_enabled" (FaultsEnabled True) mapping
                 case Ed25519.signature signatureByteString of
                     CryptoPassed signature ->
-                        pure $ Pending (Duration duration) faultsEnabled signature
+                        pure $ Pending duration faultsEnabled signature
                     CryptoFailed e ->
                         expectedButGotValue
                             ("a valid Ed25519 signature " ++ show e)
@@ -277,7 +280,10 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState PendingT) where
             "an object representing a pending phase"
             other
 
-instance (ReportSchemaErrors m) => FromJSON m (TestRunState DoneT) where
+instance
+    (ReportSchemaErrors m, Alternative m)
+    => FromJSON m (TestRunState DoneT)
+    where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
         phase <- getStringField "phase" mapping
@@ -289,10 +295,11 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState DoneT) where
                 pure $ Rejected pending reasonList
             "finished" -> do
                 running <- getField "from" mapping >>= fromJSON
-                duration <- getIntegralField "duration" mapping
+                duration <- do
+                    getField "duration" mapping >>= fromJSON
                 url <- getStringField "url" mapping
                 outcome <- getFieldWithDefault "outcome" OutcomeUnknown mapping
-                pure $ Finished running (Duration duration) outcome (URL url)
+                pure $ Finished running duration outcome (URL url)
             _ ->
                 expectedButGotValue
                     "a rejected phase"
@@ -302,7 +309,10 @@ instance (ReportSchemaErrors m) => FromJSON m (TestRunState DoneT) where
             "an object representing a rejected phase"
             other
 
-instance (ReportSchemaErrors m) => FromJSON m (TestRunState RunningT) where
+instance
+    (ReportSchemaErrors m, Alternative m)
+    => FromJSON m (TestRunState RunningT)
+    where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
         phase <- getStringField "phase" mapping

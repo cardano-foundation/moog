@@ -9,6 +9,7 @@ where
 
 import Core.Options (tokenIdOption, walletOption)
 import Core.Types.Basic (Owner (..))
+import Core.Types.Duration (Duration (..))
 import Lib.Box (Box (..))
 import OptEnvConf
     ( Parser
@@ -32,22 +33,24 @@ import Oracle.Validate.Requests.TestRun.Config
 configOption :: Parser Config
 configOption = do
     minDuration <-
-        setting
-            [ long "min-test-duration"
-            , metavar "MIN_TEST_HOURS"
-            , help "Minimum duration of the tests in hours"
-            , option
-            , reader auto
-            ]
+        Minutes
+            <$> setting
+                [ long "min-test-duration"
+                , metavar "MINUTES"
+                , help "Minimum duration of the tests in minutes"
+                , option
+                , reader auto
+                ]
 
     maxDuration <-
-        setting
-            [ long "max-test-duration"
-            , metavar "MAX_TEST_HOURS"
-            , help "Maximum duration of the tests in hours"
-            , option
-            , reader auto
-            ]
+        Minutes
+            <$> setting
+                [ long "max-test-duration"
+                , metavar "MINUTES"
+                , help "Maximum duration of the tests in minutes"
+                , option
+                , reader auto
+                ]
     agent <-
         Owner
             <$> strOption

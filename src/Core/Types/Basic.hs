@@ -7,7 +7,6 @@ module Core.Types.Basic
     , Commit (..)
     , Directory (..)
     , FileName (..)
-    , Duration (..)
     , Host (..)
     , Owner (..)
     , Platform (..)
@@ -196,9 +195,6 @@ instance FromHttpApiData Address where
 
 instance ToHttpApiData Address where
     toUrlPiece (Address addr) = addr
-
-newtype Duration = Duration Int
-    deriving (Eq, Show)
 
 newtype FaultsEnabled = FaultsEnabled {getFaultsEnabled :: Bool}
     deriving (Eq, Show)
