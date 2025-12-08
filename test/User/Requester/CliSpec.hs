@@ -43,7 +43,10 @@ import Lib.SSH.Private
 import Lib.SSH.Public (makeSSHPublicKey)
 import MPFS.API (MPFS (..))
 import MockMPFS (mockMPFS, withFacts)
-import Oracle.Config.Types (Config (..), ConfigKey (..))
+import Oracle.Config.Types
+    ( ConfigKey (..)
+    , mkCurrentConfig
+    )
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
     )
@@ -128,14 +131,12 @@ facts = runIdentity $ do
     config <-
         toJSFact
             ConfigKey
-            ( Config
-                { configAgent = Owner "agent"
-                , configTestRun =
-                    TestRunValidationConfig
-                        { minDuration = Hours 1
-                        , maxDuration = Hours 10
-                        }
-                }
+            ( mkCurrentConfig
+                (Owner "agent")
+                $ TestRunValidationConfig
+                    { minDuration = Hours 1
+                    , maxDuration = Hours 10
+                    }
             )
             0
     role <-

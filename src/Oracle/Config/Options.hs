@@ -25,7 +25,7 @@ import OptEnvConf
     , strOption
     )
 import Oracle.Config.Cli (ConfigCmd (..))
-import Oracle.Config.Types (Config (..))
+import Oracle.Config.Types (Config (..), mkCurrentConfig)
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
     )
@@ -61,13 +61,11 @@ configOption = do
                 ]
 
     pure
-        $ Config
-            { configAgent = agent
-            , configTestRun =
-                TestRunValidationConfig
-                    { minDuration
-                    , maxDuration
-                    }
+        $ mkCurrentConfig
+            agent
+        $ TestRunValidationConfig
+            { minDuration
+            , maxDuration
             }
 
 configCommandParser

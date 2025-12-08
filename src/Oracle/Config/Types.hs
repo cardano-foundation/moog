@@ -3,19 +3,31 @@ module Oracle.Config.Types
     , ConfigKey (..)
     , SetConfigChange
     , UpdateConfigChange
+    , currentProtocolVersion
+    , mkCurrentConfig
+    , ProtocolVersion (..)
+    , ProtocolFailure (..)
     )
 where
 
-import Control.Applicative (Alternative)
+import Control.Applicative (Alternative, (<|>))
 import Core.Types.Basic (Owner)
 import Core.Types.Change (Change)
 import Core.Types.Operation (Op (OpI, OpU))
-import Lib.JSON.Canonical.Extra (object, withObject, (.:), (.=))
+import Lib.JSON.Canonical.Extra
+    ( intJSON
+    , object
+    , stringJSON
+    , withObject
+    , (.:)
+    , (.=)
+    )
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig
     )
 import Text.JSON.Canonical
     ( FromJSON (..)
+    , Int54
     , JSValue (JSString)
     , ReportSchemaErrors
     , ToJSON (..)
@@ -23,12 +35,31 @@ import Text.JSON.Canonical
     , toJSString
     )
 
+newtype ProtocolVersion = ProtocolVersion Int
+    deriving (Show, Eq, Ord)
+
+instance Monad m => ToJSON m ProtocolVersion where
+    toJSON (ProtocolVersion v) = intJSON v
+instance (Alternative m, ReportSchemaErrors m) => FromJSON m ProtocolVersion where
+    fromJSON v = ProtocolVersion . fromIntegral @Int54 <$> fromJSON v
+
+currentProtocolVersion :: ProtocolVersion
+currentProtocolVersion = ProtocolVersion 0
+
 data Config = Config
     { configAgent :: Owner
-    -- ^ Agent PKH
     , configTestRun :: TestRunValidationConfig
+    , configProtocolVersion :: ProtocolVersion
     }
     deriving (Show, Eq)
+
+mkCurrentConfig :: Owner -> TestRunValidationConfig -> Config
+mkCurrentConfig agent testRun =
+    Config
+        { configAgent = agent
+        , configTestRun = testRun
+        , configProtocolVersion = currentProtocolVersion
+        }
 
 data ConfigKey = ConfigKey
     deriving (Show, Eq)
@@ -48,10 +79,11 @@ instance ReportSchemaErrors m => FromJSON m ConfigKey where
             else pure ConfigKey
 
 instance Monad m => ToJSON m Config where
-    toJSON (Config agent testRun) =
+    toJSON (Config agent testRun protocolVersion) =
         object
             [ "agent" .= agent
             , "testRun" .= testRun
+            , "protocolVersion" .= protocolVersion
             ]
 
 instance (Alternative m, ReportSchemaErrors m) => FromJSON m Config where
@@ -59,6 +91,26 @@ instance (Alternative m, ReportSchemaErrors m) => FromJSON m Config where
         Config
             <$> o .: "agent"
             <*> o .: "testRun"
+            <*> ( (o .: "protocolVersion" >>= fromJSON)
+                    <|> pure (ProtocolVersion 0)
+                )
 
 type SetConfigChange = Change ConfigKey (OpI Config)
 type UpdateConfigChange = Change ConfigKey (OpU Config Config)
+
+data ProtocolFailure
+    = ConfigNotAvailable
+    | UnsupportedProtocolVersion ProtocolVersion ProtocolVersion
+    deriving (Show, Eq)
+
+instance Monad m => ToJSON m ProtocolFailure where
+    toJSON ConfigNotAvailable =
+        stringJSON "configNotAvailable"
+    toJSON (UnsupportedProtocolVersion found expected) =
+        object
+            [ (,) "unsupportedProtocolVersion"
+                $ object
+                    [ "found" .= found
+                    , "expected" .= expected
+                    ]
+            ]

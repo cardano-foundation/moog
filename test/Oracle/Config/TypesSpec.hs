@@ -5,7 +5,7 @@ module Oracle.Config.TypesSpec
 where
 
 import Core.Types.Basic (Owner (..))
-import Oracle.Config.Types (Config (..))
+import Oracle.Config.Types (Config (..), mkCurrentConfig)
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
     )
@@ -30,7 +30,7 @@ genConfig = do
                 { minDuration = minDuration
                 , maxDuration = maxDuration
                 }
-    return $ Config agent testRunValidationConfig
+    return $ mkCurrentConfig agent testRunValidationConfig
 
 spec :: Spec
 spec = do
