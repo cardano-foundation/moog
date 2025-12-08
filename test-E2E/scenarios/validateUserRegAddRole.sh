@@ -27,6 +27,13 @@ tokenEnd() {
 }
 trap 'tokenEnd' EXIT INT TERM
 
+moog oracle config set \
+    --min-test-duration 15 \
+    --max-test-duration 180 \
+    --agent-pkh "$MOOG_AGENT_PUBLIC_KEY_HASH" >/dev/null
+
+include_requests
+
 resultReg1=$(moog requester register-user \
     --platform github \
     --username cfhal \

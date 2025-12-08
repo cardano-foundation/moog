@@ -28,6 +28,7 @@ module Oracle.Validate.Requests.TestRun.Lib
     , aToken
     , gitAsset
     , genDuration
+    , testConfigFactGen
     )
 where
 
@@ -44,6 +45,7 @@ import Core.Types.Basic
     , FileName (..)
     , GithubRepository (..)
     , GithubUsername (GithubUsername)
+    , Owner
     , Platform (Platform)
     , TokenId
     , Try (Try)
@@ -89,6 +91,7 @@ import Lib.SSH.Public
     , renderSSHPublicKey
     )
 import MPFS.API (MPFS)
+import Oracle.Config.Types (ConfigKey (..), mkCurrentConfig)
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
     )
@@ -408,3 +411,8 @@ testConfigGen = do
 
 testConfigEGen :: EGen TestRunValidationConfig
 testConfigEGen = gen testConfigGen
+
+testConfigFactGen :: Owner -> EGen JSFact
+testConfigFactGen owner = do
+    testConfig <- testConfigEGen
+    toJSFact ConfigKey (mkCurrentConfig owner testConfig) 0

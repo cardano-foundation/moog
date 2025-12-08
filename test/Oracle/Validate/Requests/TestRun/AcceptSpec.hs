@@ -20,6 +20,7 @@ import Oracle.Validate.Requests.TestRun.Lib
     ( mkEffects
     , noValidation
     , signatureGen
+    , testConfigFactGen
     , testRunEGen
     )
 import Oracle.Validate.Requests.TestRun.Update
@@ -75,6 +76,7 @@ spec = do
                 forRole <- genForRole
                 anOwner <- gen $ Owner <$> genAscii
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
+                configFact <- testConfigFactGen anOwner
                 let pendingState = Pending (Hours 5) faultsEnabled signature
                     change = Change (Key testRun) (Update pendingState (Accepted pendingState))
                     pendingRequest =
@@ -82,7 +84,9 @@ spec = do
                             (Request{outputRefId = RequestRefId "", owner = anOwner, change})
                 db <- genBlind $ oneof [pure [], pure [pendingRequest]]
                 let validation =
-                        mkEffects (withRequests db mockMPFS) noValidation
+                        mkEffects
+                            (withRequests db (withFacts [configFact] mockMPFS))
+                            noValidation
                     test = validateToRunningUpdate validation forRole anOwner anOwner change
                 pure
                     $ when (not (null db) && forUser forRole)

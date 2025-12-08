@@ -23,6 +23,7 @@ import Core.Types.Fact (JSFact, toJSFact)
 import Core.Types.Operation (Operation (..))
 import Lib.SSH.Public (encodeSSHPublicKey)
 import MockMPFS (mockMPFS, withFacts, withRequests)
+import Oracle.Config.Types (ConfigKey (..), mkCurrentConfig)
 import Oracle.Types (Request (..), RequestZoo (..))
 import Oracle.Validate.DownloadAssets
     ( AssetValidationFailure (..)
@@ -238,8 +239,13 @@ spec = do
                                         }
                                 }
                 db <- genBlind $ oneof [pure [], pure [pendingRequest]]
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <-
+                    toJSFact ConfigKey (mkCurrentConfig anOwner testConfig) 0
                 let validation =
-                        mkEffects (withRequests db mockMPFS) noValidation
+                        mkEffects
+                            (withRequests db (withFacts [configFact] mockMPFS))
+                            noValidation
                 pure
                     $ when (not (null db) && forUser forRole)
                     $ do

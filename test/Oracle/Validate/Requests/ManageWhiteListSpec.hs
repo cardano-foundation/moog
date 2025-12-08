@@ -24,6 +24,7 @@ import Oracle.Validate.Requests.TestRun.Lib
     ( MockValidation (..)
     , mkEffects
     , noValidation
+    , testConfigFactGen
     )
 import Oracle.Validate.Types
     ( AValidationResult (..)
@@ -70,17 +71,18 @@ spec = do
     describe "validation of whitelist management" $ do
         it "validates a repository insertion" $ egenProperty $ do
             repo <- gen genRepository
-            agent <- gen genAscii
+            agent <- Owner <$> gen genAscii
+            configFact <- testConfigFactGen agent
             let validation =
-                    mkEffects mockMPFS
+                    mkEffects (withFacts [configFact] mockMPFS)
                         $ noValidation
                             { mockReposExists = [repo]
                             }
                 test =
                     validateAddWhiteListed
                         validation
-                        (Owner agent)
-                        (Owner agent)
+                        agent
+                        agent
                         $ addWhiteListKey (Platform "github") repo
             pure $ runValidate test `shouldReturn` ValidationSuccess Validated
 
@@ -89,18 +91,19 @@ spec = do
             $ egenProperty
             $ do
                 repo <- gen genRepository
-                agent <- gen genAscii
+                agent <- Owner <$> gen genAscii
                 platform <- gen $ withAPresence 0.5 "github" genAscii
+                configFact <- testConfigFactGen agent
                 let validation =
-                        mkEffects mockMPFS
+                        mkEffects (withFacts [configFact] mockMPFS)
                             $ noValidation
                                 { mockReposExists = [repo]
                                 }
                     test =
                         validateAddWhiteListed
                             validation
-                            (Owner agent)
-                            (Owner agent)
+                            agent
+                            agent
                             $ addWhiteListKey (Platform platform) repo
                 pure
                     $ when (platform /= "github")
@@ -113,18 +116,19 @@ spec = do
             $ egenProperty
             $ do
                 repo <- gen genRepository
-                agent <- gen genAscii
+                agent <- Owner <$> gen genAscii
                 presence <- gen $ withAPresenceInAList 0.5 repo genRepository
+                configFact <- testConfigFactGen agent
                 let validation =
-                        mkEffects mockMPFS
+                        mkEffects (withFacts [configFact] mockMPFS)
                             $ noValidation
                                 { mockReposExists = presence
                                 }
                     test =
                         validateAddWhiteListed
                             validation
-                            (Owner agent)
-                            (Owner agent)
+                            agent
+                            agent
                             $ addWhiteListKey (Platform "github") repo
                 pure
                     $ unless (repo `elem` presence)
@@ -136,7 +140,7 @@ spec = do
             $ egenProperty
             $ do
                 repo <- gen genRepository
-                agent <- gen genAscii
+                agent <- Owner <$> gen genAscii
                 presenceInGithub <-
                     gen
                         $ withAPresenceInAList
@@ -147,18 +151,19 @@ spec = do
                     insertion = addWhiteListKey platform repo
                     key = WhiteListKey platform repo
                 fact <- toJSFact key () 0
+                configFact <- testConfigFactGen agent
                 presenceInFacts <-
                     gen $ oneof [pure [], pure [fact]]
                 let validation =
-                        mkEffects (withFacts presenceInFacts mockMPFS)
+                        mkEffects (withFacts (configFact : presenceInFacts) mockMPFS)
                             $ noValidation
                                 { mockReposExists = presenceInGithub
                                 }
                     test =
                         validateAddWhiteListed
                             validation
-                            (Owner agent)
-                            (Owner agent)
+                            agent
+                            agent
                             insertion
                 pure
                     $ when (fact `elem` presenceInFacts)
@@ -170,23 +175,24 @@ spec = do
 
         it "validates a repository removal" $ egenProperty $ do
             repo <- gen genRepository
-            agent <- gen genAscii
+            agent <- Owner <$> gen genAscii
             let platform = Platform "github"
                 removal = removeWhiteListKey platform repo
                 key = WhiteListKey platform repo
             fact <- toJSFact key () 0
+            configFact <- testConfigFactGen agent
             presenceInGithub <-
                 gen $ withAPresenceInAList 0.5 repo genRepository
             let validation =
-                    mkEffects (withFacts [fact] mockMPFS)
+                    mkEffects (withFacts [configFact, fact] mockMPFS)
                         $ noValidation
                             { mockReposExists = presenceInGithub
                             }
                 test =
                     validateRemoveWhiteListed
                         validation
-                        (Owner agent)
-                        (Owner agent)
+                        agent
+                        agent
                         removal
             pure $ runValidate test `shouldReturn` ValidationSuccess Validated
 
@@ -195,25 +201,26 @@ spec = do
             $ egenProperty
             $ do
                 repo <- gen genRepository
-                agent <- gen genAscii
+                agent <- Owner <$> gen genAscii
                 presenceInGithub <-
                     gen $ withAPresenceInAList 0.5 repo genRepository
                 let platform = Platform "github"
                     removal = removeWhiteListKey platform repo
                     key = WhiteListKey platform repo
                 fact <- toJSFact key () 0
+                configFact <- testConfigFactGen agent
                 presenceInFacts <-
                     gen $ oneof [pure [], pure [fact]]
                 let validation =
-                        mkEffects (withFacts presenceInFacts mockMPFS)
+                        mkEffects (withFacts (configFact : presenceInFacts) mockMPFS)
                             $ noValidation
                                 { mockReposExists = presenceInGithub
                                 }
                     test =
                         validateRemoveWhiteListed
                             validation
-                            (Owner agent)
-                            (Owner agent)
+                            agent
+                            agent
                             removal
                 pure
                     $ unless (fact `elem` presenceInFacts)
@@ -227,22 +234,23 @@ spec = do
             $ egenProperty
             $ do
                 repo <- gen genRepository
-                agent <- gen genAscii
+                agent <- Owner <$> gen genAscii
                 platform <- gen $ withAPresence 0.5 "github" genAscii
                 let removal = removeWhiteListKey (Platform platform) repo
                     key = WhiteListKey (Platform platform) repo
                 fact <- toJSFact key () 0
+                configFact <- testConfigFactGen agent
                 presenceInGithub <- gen $ withAPresenceInAList 0.5 repo genRepository
                 let validation =
-                        mkEffects (withFacts [fact] mockMPFS)
+                        mkEffects (withFacts [configFact, fact] mockMPFS)
                             $ noValidation
                                 { mockReposExists = presenceInGithub
                                 }
                     test =
                         validateRemoveWhiteListed
                             validation
-                            (Owner agent)
-                            (Owner agent)
+                            agent
+                            agent
                             removal
                 pure
                     $ when (platform /= "github")
@@ -263,12 +271,13 @@ spec = do
                     removal = removeWhiteListKey platform repo
                     key = WhiteListKey platform repo
                 fact <- toJSFact key () 0
+                configFact <- testConfigFactGen agent
                 presenceInGithub <-
                     gen $ withAPresenceInAList 0.5 repo genRepository
                 presenceInFacts <-
                     gen $ oneof [pure [], pure [fact]]
                 let validation =
-                        mkEffects (withFacts presenceInFacts mockMPFS)
+                        mkEffects (withFacts (configFact : presenceInFacts) mockMPFS)
                             $ noValidation
                                 { mockReposExists = presenceInGithub
                                 }

@@ -20,6 +20,7 @@ import Oracle.Validate.Requests.TestRun.Lib
     ( mkEffects
     , noValidation
     , signatureGen
+    , testConfigFactGen
     , testRunEGen
     )
 import Oracle.Validate.Requests.TestRun.Update
@@ -105,9 +106,10 @@ spec = do
                         FinishedRequest
                             Request{outputRefId = RequestRefId "", owner = anOwner, change}
                 db <- genBlind $ oneof [pure [], pure [pendingRequest]]
+                configFact <- testConfigFactGen anOwner
                 let validation =
                         mkEffects
-                            (withRequests db mockMPFS)
+                            (withRequests db (withFacts [configFact] mockMPFS))
                             noValidation
                     test = validateToDoneUpdate validation forRole anOwner anOwner change
                 pure

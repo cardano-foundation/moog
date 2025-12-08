@@ -20,6 +20,7 @@ import Oracle.Validate.Requests.TestRun.Lib
     ( mkEffects
     , noValidation
     , signatureGen
+    , testConfigFactGen
     , testRunEGen
     )
 import Oracle.Validate.Requests.TestRun.Update
@@ -62,9 +63,11 @@ spec = do
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
             let pendingState = Pending (Hours 5) faultsEnabled signature
             testRunFact <- toJSFact testRun pendingState 0
+            agent <- Owner <$> gen genAscii
+            configFact <- testConfigFactGen agent
             let validation =
                     mkEffects
-                        (withFacts [testRunFact] mockMPFS)
+                        (withFacts [testRunFact, configFact] mockMPFS)
                         noValidation
                 newTestRunState = Rejected pendingState [BrokenInstructions]
                 test = validateToDoneCore validation testRun newTestRunState
@@ -78,6 +81,7 @@ spec = do
                 forRole <- genForRole
                 anOwner <- gen $ Owner <$> genAscii
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
+                configFact <- testConfigFactGen anOwner
                 let pendingState = Pending (Hours 5) faultsEnabled signature
                     change =
                         Change
@@ -93,7 +97,7 @@ spec = do
                 db <- genBlind $ oneof [pure [], pure [pendingRequest]]
                 let validation =
                         mkEffects
-                            (withRequests db mockMPFS)
+                            (withRequests db (withFacts [configFact] mockMPFS))
                             noValidation
                     test = validateToDoneUpdate validation forRole anOwner anOwner change
                 pure
@@ -108,11 +112,15 @@ spec = do
                 signature <- gen signatureGen
                 duration <- genA
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
+                let validation =
+                        mkEffects (withFacts [configFact] mockMPFS) noValidation
                 let pendingState = Pending (Hours duration) faultsEnabled signature
                     newTestRunState = Rejected pendingState [BrokenInstructions]
                     test =
                         validateToDoneCore
-                            (mkEffects mockMPFS noValidation)
+                            validation
                             testRun
                             newTestRunState
                 pure $ test `shouldReturn` Just PreviousStateWrong
@@ -126,6 +134,8 @@ spec = do
                 testRun <- testRunEGen
                 signature <- gen signatureGen
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
+                anOwner <- gen $ Owner <$> genAscii
+                configFact <- testConfigFactGen anOwner
                 differentSignature <- gen $ oneof [signatureGen, pure signature]
                 let fact = Pending (Hours duration) faultsEnabled signature
                     request =
@@ -133,7 +143,7 @@ spec = do
                 testRunFact <- toJSFact testRun fact 0
                 let validation =
                         mkEffects
-                            (withFacts [testRunFact] mockMPFS)
+                            (withFacts [configFact, testRunFact] mockMPFS)
                             noValidation
                     newTestRunState = Rejected request [BrokenInstructions]
                     test = validateToDoneCore validation testRun newTestRunState
