@@ -7,7 +7,8 @@ module User.Agent.Lib
 
 import Control.Applicative (Alternative (..))
 import Core.Context (WithContext, withMPFS)
-import Core.Types.Basic (Duration, FaultsEnabled, TokenId)
+import Core.Types.Basic (FaultsEnabled, TokenId)
+import Core.Types.Duration (Duration)
 import Core.Types.Fact (Fact (..), keyHash, parseFacts)
 import Data.Foldable (find)
 import MPFS.API (MPFS (..))

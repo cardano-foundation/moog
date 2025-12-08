@@ -8,6 +8,7 @@ where
 import Control.Monad (when)
 import Core.Types.Basic (Owner)
 import Core.Types.Change (Change (..))
+import Core.Types.Duration (Duration)
 import Core.Types.Operation (Op (..), Operation (..))
 import Effects
     ( Effects
@@ -29,13 +30,13 @@ import Oracle.Validate.Types
     , mapFailure
     , notValidated
     )
-import Text.JSON.Canonical (Int54, ToJSON (..))
+import Text.JSON.Canonical (ToJSON (..))
 
 data ConfigFailure
     = ConfigureKeyValidationFailure KeyFailure
     | ConfigureNotFromOracle Owner
-    | ConfigureMinLessThanOne Int
-    | ConfigureMaxLessThanMin Int Int
+    | ConfigureMinLessThanZero Duration
+    | ConfigureMaxLessThanMin Duration Duration
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m ConfigFailure where
@@ -43,14 +44,14 @@ instance Monad m => ToJSON m ConfigFailure where
         object ["configureKeyValidationFailure" .= keyFailure]
     toJSON (ConfigureNotFromOracle owner) =
         object ["configureNotFromOracle" .= show owner]
-    toJSON (ConfigureMinLessThanOne minD) =
-        object ["configureMinLessThanOne" .= fromIntegral @_ @Int54 minD]
+    toJSON (ConfigureMinLessThanZero minD) =
+        object ["configureMinLessThanZero" .= minD]
     toJSON (ConfigureMaxLessThanMin maxD minD) =
         object
             [ (,) "configureMaxLessThanMin"
                 $ object
-                    [ "max" .= fromIntegral @_ @Int54 maxD
-                    , "min" .= fromIntegral @_ @Int54 minD
+                    [ "max" .= maxD
+                    , "min" .= minD
                     ]
             ]
 
@@ -66,9 +67,9 @@ commonValidation oracleOwner submitterOwner configTestRun = do
         $ ConfigureNotFromOracle submitterOwner
     let minD = minDuration configTestRun
         maxD = maxDuration configTestRun
-    when (minD < 1)
+    when (minD <= mempty)
         $ notValidated
-        $ ConfigureMinLessThanOne minD
+        $ ConfigureMinLessThanZero minD
     when (maxD < minD)
         $ notValidated
         $ ConfigureMaxLessThanMin maxD minD

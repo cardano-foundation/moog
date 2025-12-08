@@ -19,7 +19,8 @@ import Core.Options
     , tokenIdOption
     , walletOption
     )
-import Core.Types.Basic (Duration (..), Success)
+import Core.Types.Basic (Success)
+import Core.Types.Duration (Duration (..))
 import Core.Types.Tx (WithTxHash)
 import Lib.Box (Box (..))
 import Lib.Options.Secrets (secretsParser)
@@ -60,7 +61,6 @@ import User.Agent.Cli
 import User.Agent.PublishResults.Email
     ( EmailPassword (..)
     , EmailUser (..)
-    , Minutes (..)
     , Result
     )
 import User.Agent.PushTest
@@ -126,7 +126,7 @@ agentEmailPasswordOption =
             "ask-agent-email-password"
             "agentEmailPassword"
 
-minutesOption :: Parser Minutes
+minutesOption :: Parser Duration
 minutesOption =
     Minutes
         <$> setting
@@ -348,11 +348,11 @@ reportTestOptions = do
     wallet <- walletOption
     outcome <- outcomeOption
     duration <-
-        Duration
+        Minutes
             <$> setting
                 [ long "duration"
-                , help "Duration of the test run in hours"
-                , metavar "DURATION_HOURS"
+                , help "Duration of the test run in minutes"
+                , metavar "MINUTES"
                 , reader auto
                 , option
                 ]
@@ -361,7 +361,7 @@ reportTestOptions = do
             <$> setting
                 [ long "url"
                 , help "URL of the test report"
-                , metavar "REPORT_URL"
+                , metavar "URL"
                 , reader str
                 , option
                 ]

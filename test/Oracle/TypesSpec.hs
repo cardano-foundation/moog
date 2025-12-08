@@ -23,9 +23,11 @@ import Data.CaseInsensitive (mk)
 import Data.Functor.Identity (Identity (..))
 import Data.Text qualified as T
 import Effects.RegisterUser (VKey (..))
+import Oracle.Config.Types (Config, ConfigKey (..))
+import Oracle.Config.TypesSpec (genConfig)
 import Oracle.Types
     ( Request (Request)
-    , RequestZoo (RegisterUserRequest, UnregisterUserRequest)
+    , RequestZoo (..)
     , Token (Token)
     , TokenState (TokenState)
     )
@@ -78,6 +80,10 @@ genRequestZoo =
             <$> genRequest genRegisterUserKey (pure (Insert ()))
         , UnregisterUserRequest
             <$> genRequest genRegisterUserKey (pure (Delete ()))
+        , InsertConfigRequest
+            <$> genRequest (pure ConfigKey) (Insert <$> genConfig)
+        , UpdateConfigRequest
+            <$> genRequest (pure ConfigKey) (Update <$> genConfig <*> genConfig)
         ]
 
 genRefId :: Gen RequestRefId

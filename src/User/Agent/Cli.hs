@@ -28,7 +28,6 @@ import Core.Context
     )
 import Core.Types.Basic
     ( Directory
-    , Duration
     , GithubRepository
     , GithubUsername (..)
     , Owner
@@ -37,6 +36,7 @@ import Core.Types.Basic
     , TokenId
     )
 import Core.Types.Change (Change (..), Key (..))
+import Core.Types.Duration (Duration)
 import Core.Types.Fact
     ( Fact (..)
     , keyHash
@@ -100,7 +100,6 @@ import User.Agent.PublishResults.Email
     ( EmailException
     , EmailPassword
     , EmailUser
-    , Minutes
     , Result (..)
     , readEmails
     )
@@ -368,12 +367,12 @@ data AgentCommand (phase :: IsReady) result where
         -> EmailUser
         -> EmailPassword
         -> TestRunId
-        -> Minutes
+        -> Duration
         -> AgentCommand phase (AValidationResult CheckResultsFailure Result)
     CheckAllResults
         :: EmailUser
         -> EmailPassword
-        -> Minutes
+        -> Duration
         -- ^ limit to last N minutes
         -> AgentCommand phase (AValidationResult CheckResultsFailure [Result])
     PushTest

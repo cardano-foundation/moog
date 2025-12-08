@@ -9,13 +9,13 @@ where
 import Core.Types.Basic
     ( Commit (Commit)
     , Directory (Directory)
-    , Duration (..)
     , FaultsEnabled (..)
     , GithubRepository (GithubRepository, organization, project)
     , GithubUsername (GithubUsername)
     , Platform (Platform)
     , Try (..)
     )
+import Core.Types.Duration (Duration (..))
 import Lib.SSH.Public (makeSSHPublicKey)
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Canonical (roundTrip)
@@ -74,7 +74,9 @@ spec = do
                (ASCIIString url) -> forAll (listOf testRunRejectionGen) $ \rejections -> do
                     forAllBlind ed25519Gen $ \(sign, _verify) -> do
                         let pending =
-                                Pending (Duration duration) (FaultsEnabled faultsEnabled)
+                                Pending
+                                    (Hours duration)
+                                    (FaultsEnabled faultsEnabled)
                                     $ sign message
                         roundTrip pending
                         let rejected =
@@ -87,7 +89,7 @@ spec = do
                         let finished =
                                 Finished
                                     accepted
-                                    (Duration duration)
+                                    (Hours duration)
                                     OutcomeSuccess
                                     (URL url)
                         roundTrip finished

@@ -5,12 +5,12 @@ where
 
 import Control.Monad (when)
 import Core.Types.Basic
-    ( Duration (..)
-    , FaultsEnabled (..)
+    ( FaultsEnabled (..)
     , Owner (..)
     , RequestRefId (..)
     )
 import Core.Types.Change (Change (..), Key (..))
+import Core.Types.Duration (Duration (Hours))
 import Core.Types.Fact (toJSFact)
 import Core.Types.Operation (Operation (..))
 import MockMPFS (mockMPFS, withFacts, withRequests)
@@ -64,7 +64,7 @@ spec = do
             actualDuration <- genA
             url <- gen genAscii
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
-            let acceptedState = Accepted $ Pending (Duration 5) faultsEnabled signature
+            let acceptedState = Accepted $ Pending (Hours 5) faultsEnabled signature
             testRunFact <- toJSFact testRun acceptedState 0
             let validation =
                     mkEffects
@@ -73,7 +73,7 @@ spec = do
                 newTestRunState =
                     Finished
                         acceptedState
-                        (Duration actualDuration)
+                        (Hours actualDuration)
                         OutcomeSuccess
                         (URL url)
                 test = validateToDoneCore validation testRun newTestRunState
@@ -86,14 +86,20 @@ spec = do
                 signature <- gen signatureGen
                 forRole <- genForRole
                 anOwner <- gen $ Owner <$> genAscii
-                let pendingState = Accepted (Pending (Duration 5) (FaultsEnabled True) signature)
+                let pendingState =
+                        Accepted
+                            ( Pending
+                                (Hours 5)
+                                (FaultsEnabled True)
+                                signature
+                            )
                     change =
                         Change
                             { key = Key testRun
                             , operation =
                                 Update
                                     pendingState
-                                    (Finished pendingState (Duration 1) OutcomeSuccess (URL ""))
+                                    (Finished pendingState (Hours 1) OutcomeSuccess (URL ""))
                             }
                     pendingRequest =
                         FinishedRequest
@@ -115,7 +121,11 @@ spec = do
                 testRun <- testRunEGen
                 signature <- gen signatureGen
                 duration <- genA
-                let pendingState = Pending (Duration duration) (FaultsEnabled True) signature
+                let pendingState =
+                        Pending
+                            (Hours duration)
+                            (FaultsEnabled True)
+                            signature
                     newTestRunState = Accepted pendingState
                     test =
                         validateToRunningCore
@@ -138,11 +148,11 @@ spec = do
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 url <- genA
                 let fact =
-                        Accepted $ Pending (Duration pendingDuration) faultsEnabled signature
+                        Accepted $ Pending (Hours pendingDuration) faultsEnabled signature
                     request =
                         Accepted
                             $ Pending
-                                (Duration differentPendingDuration)
+                                (Hours differentPendingDuration)
                                 faultsEnabled
                                 differentSignature
                 testRunFact <- toJSFact testRun fact 0
@@ -153,7 +163,7 @@ spec = do
                     newTestRunState =
                         Finished
                             request
-                            (Duration finishedDuration)
+                            (Hours finishedDuration)
                             OutcomeSuccess
                             (URL url)
                     test = validateToDoneCore validation testRun newTestRunState

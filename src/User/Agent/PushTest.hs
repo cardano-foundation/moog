@@ -26,11 +26,11 @@ import Core.Context
     )
 import Core.Types.Basic
     ( Directory (..)
-    , Duration (..)
     , FaultsEnabled (..)
     , GithubRepository (..)
     , TokenId
     )
+import Core.Types.Duration (Duration (..))
 import Core.Types.Fact (Fact (..))
 import Core.Types.Wallet (Wallet (..))
 import Data.Aeson qualified as Aeson
@@ -158,11 +158,13 @@ pushTestToAntithesisIO
         void $ throwLeft DockerPushFailure epush
         eimages <- liftIO $ collectImagesFromAssets dir
         images <- throwLeft DockerComposeFailure eimages
-        (tr, Duration duration, faultsEnabled) <- getTestRun tk testRunId
+        (tr, duration, faultsEnabled) <- getTestRun tk testRunId
         let body =
                 PostTestRunRequest
                     { description = renderTestRun testRunId tr
-                    , duration = realToFrac duration * 60
+                    , duration = case duration of
+                        Hours h -> realToFrac h * 60
+                        Minutes m -> realToFrac m
                     , config_image = tagString tag
                     , images
                     , recipients = ["antithesis@cardanofoundation.org"]

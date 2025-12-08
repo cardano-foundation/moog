@@ -23,7 +23,6 @@ import Control.Arrow (left)
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
-    , Duration (..)
     , FaultsEnabled (FaultsEnabled)
     , GithubRepository (..)
     , GithubUsername (..)
@@ -32,6 +31,7 @@ import Core.Types.Basic
     , TokenId (..)
     , Try (..)
     )
+import Core.Types.Duration (Duration (..))
 import Core.Types.Mnemonics.Options (mnemonicsParser)
 import Core.Types.Wallet
     ( Wallet
@@ -57,6 +57,7 @@ import OptEnvConf
     , strOption
     , switch
     , value
+    , (<|>)
     )
 import OptEnvConf.Reader (Reader (..))
 import Submitting (readWallet)
@@ -192,15 +193,24 @@ parseOutputReference = Reader $ \s -> do
 
 durationOption :: Parser Duration
 durationOption =
-    Duration
+    Hours
         <$> setting
-            [ long "duration"
-            , short 't'
-            , metavar "DURATION"
+            [ long "hours-duration"
+            , short 'h'
+            , metavar "HOURS"
             , help "The duration in hours for the test-run"
             , reader auto
             , option
             ]
+        <|> Minutes
+            <$> setting
+                [ long "minutes-duration"
+                , short 'm'
+                , metavar "MINUTES"
+                , help "The duration in minutes for the test-run"
+                , reader auto
+                , option
+                ]
 
 faultsEnabledOption :: Parser FaultsEnabled
 faultsEnabledOption =

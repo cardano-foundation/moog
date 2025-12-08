@@ -32,8 +32,8 @@ trap 'tokenEnd' EXIT INT TERM
 log "Push the oracle config on-chain"
 being_oracle
 result=$(moog oracle config set \
-    --min-test-duration 2 \
-    --max-test-duration 4 \
+    --min-test-duration 15 \
+    --max-test-duration 180 \
     --agent-pkh "$MOOG_AGENT_PUBLIC_KEY_HASH")
 
 echo "$result"
@@ -45,8 +45,8 @@ log "Change the oracle config to set min test duration to 1 hour"
 being_oracle
 
 result=$(moog oracle config set \
-    --min-test-duration 1 \
-    --max-test-duration 4 \
+    --min-test-duration 60 \
+    --max-test-duration 180 \
     --agent-pkh "$MOOG_AGENT_PUBLIC_KEY_HASH"
     )
 
@@ -64,8 +64,6 @@ result=$(moog requester register-user \
     )
 
 echo "$result"
-
-
 
 log "Include the user registration"
 include_requests
@@ -102,8 +100,8 @@ result=$(moog requester create-test \
     --directory antithesis-test \
     --commit a7741a44dfddfe05822e1a49862ceea43ecd657d \
     --try 1 \
-    --duration 1)
-
+    --hours-duration 1)
+echo $result
 testRunId=$(echo "$result" | jq -r '.value.testRunId')
 
 # Validate that testRunId is exactly 64 characters long
@@ -134,7 +132,7 @@ moog requester create-test \
     --directory antithesis-test \
     --commit a7741a44dfddfe05822e1a49862ceea43ecd657d \
     --try 2 \
-    --duration 1
+    --hours-duration 1
 
 log "Include the new test run request"
 include_requests

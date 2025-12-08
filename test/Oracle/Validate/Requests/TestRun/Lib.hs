@@ -22,12 +22,12 @@ module Oracle.Validate.Requests.TestRun.Lib
     , testRunGen
     , signatureGen
     , testConfigGen
-    , testConfigShrink
     , testConfigEGen
     , testRunEGen
     , MockValidation (..)
     , aToken
     , gitAsset
+    , genDuration
     )
 where
 
@@ -50,6 +50,7 @@ import Core.Types.Basic
     , organizationL
     , projectL
     )
+import Core.Types.Duration (Duration (..))
 import Core.Types.Fact
     ( JSFact
     , toJSFact
@@ -101,7 +102,7 @@ import Test.QuickCheck
     )
 import Test.QuickCheck.Commit (CommitValue (..))
 import Test.QuickCheck.Crypton ()
-import Test.QuickCheck.EGen (EGen, gen, genShrink)
+import Test.QuickCheck.EGen (EGen, gen)
 import Text.JSON.Canonical
     ( ToJSON (toJSON)
     , renderCanonicalJSON
@@ -375,6 +376,15 @@ gitAsset testRun filename content =
         )
     ]
 
+genDuration :: Gen Duration
+genDuration = do
+    hoursOrMinutes <- arbitrary
+    if hoursOrMinutes
+        then do
+            Hours <$> arbitrary
+        else do
+            Minutes <$> arbitrary
+
 signTestRun :: (Monad m, ToJSON m a) => (String -> b) -> a -> m b
 signTestRun sign testRun = do
     testRunJ <- toJSON testRun
@@ -387,25 +397,14 @@ signatureGen = do
 
 testConfigGen :: Gen TestRunValidationConfig
 testConfigGen = do
-    maxDuration <- arbitrary
-    Positive minDuration <- arbitrary `suchThat` (<= maxDuration)
+    minDuration <- genDuration `suchThat` (>= mempty)
+    maxDuration <- genDuration `suchThat` (> minDuration)
+
     pure
         $ TestRunValidationConfig
-            { maxDuration = getPositive maxDuration
+            { maxDuration
             , minDuration
             }
 
-testConfigShrink
-    :: TestRunValidationConfig -> [TestRunValidationConfig]
-testConfigShrink config
-    | config.maxDuration == config.minDuration = []
-    | otherwise =
-        [ TestRunValidationConfig
-            { maxDuration = config.maxDuration
-            , minDuration = minDuration'
-            }
-        | minDuration' <- [config.minDuration + 1 .. config.maxDuration]
-        ]
-
 testConfigEGen :: EGen TestRunValidationConfig
-testConfigEGen = genShrink testConfigGen testConfigShrink
+testConfigEGen = gen testConfigGen

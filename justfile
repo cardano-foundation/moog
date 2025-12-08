@@ -46,10 +46,6 @@ integration match="":
         echo "Please set MOOG_GITHUB_PAT environment variable, this is a valid GitHub personal access token with access to the public github API"
         exit 1
     fi
-    if [ -z "${MOOG_SSH_PASSWORD:-}" ]; then
-        echo "Please set MOOG_SSH_PASSWORD environment variable, this is the passphrase for the cfhal encrypted SSH private key"
-        exit 1
-    fi
     if ! test -f  tmp/test.json; then
         echo "E2E tests expect wallet definition in tmp/test.json file"
         exit 1
@@ -117,10 +113,6 @@ E2E match="":
     export PATH="$PWD/tmp:$PATH"
     if [ -z "${MOOG_GITHUB_PAT:-}" ]; then
         echo "Please set MOOG_GITHUB_PAT environment variable, this is a valid GitHub personal access token with access to the public github API"
-        exit 1
-    fi
-    if [ -z "${MOOG_SSH_PASSWORD:-}" ]; then
-        echo "Please set MOOG_SSH_PASSWORD environment variable, this is the passphrase for the cfhal encrypted SSH private key"
         exit 1
     fi
     if ! test -f  tmp/test.json; then

@@ -6,14 +6,22 @@ module Oracle.Config.Types
     )
 where
 
+import Control.Applicative (Alternative)
 import Core.Types.Basic (Owner)
 import Core.Types.Change (Change)
-import Core.Types.Operation
-import Lib.JSON.Canonical.Extra
+import Core.Types.Operation (Op (OpI, OpU))
+import Lib.JSON.Canonical.Extra (object, withObject, (.:), (.=))
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig
     )
 import Text.JSON.Canonical
+    ( FromJSON (..)
+    , JSValue (JSString)
+    , ReportSchemaErrors
+    , ToJSON (..)
+    , expectedButGotValue
+    , toJSString
+    )
 
 data Config = Config
     { configAgent :: Owner
@@ -46,7 +54,7 @@ instance Monad m => ToJSON m Config where
             , "testRun" .= testRun
             ]
 
-instance ReportSchemaErrors m => FromJSON m Config where
+instance (Alternative m, ReportSchemaErrors m) => FromJSON m Config where
     fromJSON = withObject "Config" $ \o -> do
         Config
             <$> o .: "agent"

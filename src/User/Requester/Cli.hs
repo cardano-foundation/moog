@@ -19,13 +19,13 @@ import Core.Context
     )
 import Core.Types.Basic
     ( Directory (..)
-    , Duration
     , FaultsEnabled
     , GithubRepository (..)
     , Success (..)
     , TokenId
     )
 import Core.Types.Change (Change (..), Key (..), deleteKey, insertKey)
+import Core.Types.Duration (Duration)
 import Core.Types.Fact (Fact (..), keyHash)
 import Core.Types.Operation (Operation (..))
 import Core.Types.Tx (TxHash, WithTxHash (..), setWithTxHashValue)
