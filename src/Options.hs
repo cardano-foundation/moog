@@ -124,6 +124,9 @@ commandParser =
                 <*> tokenIdOption
         , command "ssh-selectors" "List key selectors for an SSH key file"
             $ Box . SSHSelectors <$> sshClientOptionWithoutSelector
+        , command "protocol-version" "Get the current protocol version"
+            $ pure
+            $ Box Protocol
         ]
 
 factsSelectionParser :: Parser (Box FactsSelection)

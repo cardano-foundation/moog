@@ -29,7 +29,11 @@ import MPFS.API
     , retractChange
     )
 import Oracle.Cli (OracleCommand (..), oracleCmd)
-import Oracle.Config.Types (ProtocolFailure)
+import Oracle.Config.Types
+    ( ProtocolFailure
+    , ProtocolVersion
+    , currentProtocolVersion
+    )
 import Oracle.Types
     ( Token (..)
     , TokenState (..)
@@ -77,6 +81,7 @@ data Command a where
         -> Command
             (AValidationResult TokenInfoFailure (Token WithValidation))
     SSHSelectors :: SSHClient 'WithoutSelector -> Command [Selection]
+    Protocol :: Command ProtocolVersion
 
 deriving instance Show (Token WithValidation)
 deriving instance Eq (Token WithValidation)
@@ -161,6 +166,7 @@ cmd = \case
                                 pure $ WithValidation r req
                         lift $ fmapMToken f token
     SSHSelectors sshClient -> sshKeySelectors sshClient
+    Protocol -> pure currentProtocolVersion
 
 data TokenInfoFailure
     = TokenInfoTokenNotParsable TokenId
