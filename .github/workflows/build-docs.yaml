@@ -10,14 +10,8 @@ jobs:
     name: Build docs
     runs-on: ubuntu-latest
     steps:
-
-    - name: 📥 Checkout repository
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 1
-
-    - name: Build documentation
-      working-directory: docs
-      run: |
-        yarn
-        yarn build
+      - uses: actions/checkout@v4
+      - uses: paolino/dev-assets/setup-nix@v0.0.1
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - run: nix develop github:paolino/dev-assets?dir=mkdocs -c mkdocs build --strict
