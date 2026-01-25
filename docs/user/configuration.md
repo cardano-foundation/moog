@@ -1,5 +1,3 @@
-import AsciinemaEmbed from '@site/src/components/AsciinemaEmbed';
-
 # Configuration
 
 ## Prerequisites
@@ -28,10 +26,12 @@ Currently the Moog CLI works only by reading a wallet file containing a mnemonic
 
 The `moog` command will read the wallet file from the `MOOG_WALLET_FILE` environment variable.
 
-<AsciinemaEmbed
-  src="/moog/video/wallet-create.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/wallet-create.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 ```bash
 export MOOG_WALLET_FILE=wallet.json
@@ -85,12 +85,11 @@ moog wallet decrypt path/to/decrypted/secret/file
 
 For the both cases `MOOG_WALLET_FILE` is set as before.
 
-:::warning
-Store a copy of your encrypted/plaintext wallet file in a password manager.
-Think twice before storing a plaintext wallet file. Store your passphrase in a
-password manager too. Currently we do not support hardware wallets like Ledger
-or Trezor.
-:::
+!!! warning
+    Store a copy of your encrypted/plaintext wallet file in a password manager.
+    Think twice before storing a plaintext wallet file. Store your passphrase in a
+    password manager too. Currently we do not support hardware wallets like Ledger
+    or Trezor.
 
 Fund your wallet with some tAda tokens on preprod, for example using the
 [Cardano Testnet
@@ -143,10 +142,12 @@ This will show
 
 ### Querying facts of the Antithesis token
 
-<AsciinemaEmbed
-  src="/moog/video/facts-querying.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/facts-querying.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 
 You can always query the Antithesis token and all its facts

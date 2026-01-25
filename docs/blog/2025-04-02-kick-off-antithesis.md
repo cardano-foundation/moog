@@ -1,15 +1,18 @@
 ---
+date: 2025-04-02
 slug: kick-off-antithesis
 title: Cardano / Antithesis Project Kick-off
-authors: [abailly]
-tags: [infra]
+authors:
+  - abailly
+categories:
+  - infra
 ---
 
 Already involved in testing and monitoring the Cardano network infrastructure, the [Cardano Foundation](https://cardanofoundation.org) has decided to dedicate resources to evaluate if and how [Antithesis](https://antithesis.com) could increase the reach and level of quality assurance the network needs.
 
 This post introduces the project, its motivations, scope, ambitions, and timeline.
 
-<!-- truncate -->
+<!-- more -->
 
 ## Why this project?
 
@@ -55,7 +58,7 @@ Concretely, this means that we expect from _you_ as a Cardano enthusiast to help
 
 * Improving infrastructure code (eg. docker images, containers, compose files) we use to run tests, and defining particular setups to test,
 * Defining and designing [test](https://antithesis.com/docs/test_templates/) that explore "interesting" scenarios,
-* Stating and refining properties that need to old, in specific or generic cases,
-* Documenting the expected behaviour in such a way that can easily lead to test generations, for example under the umbrella of teh [Cardano Blueprint](https://github.com/cardano-scaling/cardano-blueprint) project,
+* Stating and refining properties that need to hold, in specific or generic cases,
+* Documenting the expected behaviour in such a way that can easily lead to test generations, for example under the umbrella of the [Cardano Blueprint](https://github.com/cardano-scaling/cardano-blueprint) project,
 * Troubleshooting bugs and security vulnerabilities, following our [Security policy](https://github.com/cardano-foundation/moog/security/policy),
 * ...

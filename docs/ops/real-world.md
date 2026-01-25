@@ -10,7 +10,7 @@ The following scenario assumes that each role has fulfilled its pre-requisites, 
 * wallet created and funded
 * environment variables have been set
 
-For details of how to achieve this, see [configuration](user/configuration.md).
+For details of how to achieve this, see [configuration](../user/configuration.md).
 
 ## The Scenario
 
@@ -23,7 +23,7 @@ moog oracle token boot
 
 ```
 
-This token is unique for a system. It enables all the actors to collaborate. It needs to be shared by some means with users. For example, the one that has been created (currently on preprod) for this project (an interface the the moogthesis instance managed by Cardano Foundation) is provided in the [configuration](user/configuration.md). In order to "connect" to this interface all roles need to set the MOOG_TOKEN_ID environment variable to the value that was returned by the above command.
+This token is unique for a system. It enables all the actors to collaborate. It needs to be shared by some means with users. For example, the one that has been created (currently on preprod) for this project (an interface the the moogthesis instance managed by Cardano Foundation) is provided in the [configuration](../user/configuration.md). In order to "connect" to this interface all roles need to set the MOOG_TOKEN_ID environment variable to the value that was returned by the above command.
 
 Then, the agent must configure this interface on-chain, in particular test durations and the public key hash of the agent:
 

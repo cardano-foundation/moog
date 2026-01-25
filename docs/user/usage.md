@@ -1,5 +1,3 @@
-import AsciinemaEmbed from '@site/src/components/AsciinemaEmbed';
-
 # Usage
 
 This describes Moog's usage for a user who wants to run tests using the Antithesis platform.
@@ -22,10 +20,12 @@ To register yourself as a user, you can use the `moog requester register-user` c
 
 It's required that you publish an ed25519 public key in your GitHub account.
 
-<AsciinemaEmbed
-  src="/moog/video/register-user.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/register-user.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 First collect your wallet `vkey`
 ```bash
@@ -81,10 +81,12 @@ Currently the oracle is not able to justify a request rejection. But moog cli wi
 
 To unregister a user, you can use the `moog requester unregister-user` command.
 
-<AsciinemaEmbed
-  src="/moog/video/unregister-user.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/unregister-user.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 ```bash
 moog requester unregister-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
@@ -106,10 +108,12 @@ moog requester unregister-user --platform github --username ${GITHUB_USERNAME} -
 
 This is necessary to register a user as a GitHub repository antithesis test requester.
 
-<AsciinemaEmbed
-  src="/moog/video/register-role.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/register-role.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 Before you do this make sure your repository CODEOWNERS file contains a line like this:
 
@@ -131,10 +135,12 @@ moog requester register-role --platform github --username alice --repository you
 
 ### Unregistering a role
 
-<AsciinemaEmbed
-  src="/moog/video/unregister-role.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/unregister-role.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 
 ```bash
@@ -148,10 +154,12 @@ moog requester unregister-role --platform github --username alice --repository y
 
 Once you are registered as a user and a role, you can request test-runs.
 
-<AsciinemaEmbed
-  src="/moog/video/test-quick-prep.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/test-quick-prep.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 Before doing that make sure you have a commit in your repository containing a directory with "valid" test assets inside.
 
@@ -163,10 +171,12 @@ If you are in your repository directory, you can run:
 moog requester generate-assets -D ./path/to/your/test/directory
 ```
 
-Once you modified them you can try to run them locally  with the `moog requester test-run` command.
+Once you modified them you can validate them locally using docker compose:
 
 ```bash
-moog agent test-run -D ./path/to/your/test/directory (TBD)
+cd ./path/to/your/test/directory
+docker compose config  # Validate the compose file
+docker compose up --build  # Run locally to test
 ```
 
 Then commit and push the changes to your repository so you will have a commit hash to use when requesting the test-run.
@@ -185,10 +195,12 @@ i.e. if you have an asset file `myconfig.json` in the test directory, it will be
 
 To request a test-run, you can use the `moog requester create-test` command.
 
-<AsciinemaEmbed
-  src="/moog/video/submit-test.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/submit-test.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 
 ```bash

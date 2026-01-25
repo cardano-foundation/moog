@@ -1,4 +1,4 @@
-{ CHaP, indexState, pkgs, cardano-cli, ... }:
+{ CHaP, indexState, pkgs, cardano-cli, mkdocs, asciinema, ... }:
 
 let
   libOverlay = { lib, pkgs, ... }: {
@@ -30,7 +30,14 @@ let
       project.hsPkgs.cardano-addresses.components.exes.cardano-address
       project.hsPkgs.bech32.components.exes.bech32
       pkgs.nixfmt-classic
-
+      pkgs.mkdocs
+      mkdocs.from-nixpkgs
+      mkdocs.asciinema-plugin
+      mkdocs.markdown-callouts
+      mkdocs.markdown-graphviz
+      asciinema.compress
+      asciinema.resize
+      pkgs.asciinema
     ];
     shellHook = ''
       echo "Entering shell for moog CLI development"

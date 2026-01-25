@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
 ```
 
-We need to define a number of environment variables that will be used by Moog _requester_ to request tests run. The detailed meaning of these variables is explained in the [usage](./usage) section of the documentation:
+We need to define a number of environment variables that will be used by Moog _requester_ to request tests run. The detailed meaning of these variables is explained in the [usage](usage.md) section of the documentation:
 
 ```
     env:
@@ -36,7 +36,7 @@ We need to define a number of environment variables that will be used by Moog _r
 * `MOOG_MPFS_HOST` is the URL of the [_Merkle-Patricia Forestry Service_](https://cardano-foundation.github.io/mpfs/) Moog shall use to retrieve information about the system's state
 * `MOOG_TOKEN_ID` is the identifier of the particular "database" Moog will be using (a 32-bytes hash denoting a Cardano native asset name)
 * `MOOG_PLATFORM` is hardcoded to `github` as this is currently the only supported source forge
-* `MOOG_REQUESTER` is the username under which the tests will be run. Note this name must both exist in the _platform_ and be [registered](./usage) with Moog
+* `MOOG_REQUESTER` is the username under which the tests will be run. Note this name must both exist in the _platform_ and be [registered](usage.md) with Moog
 * `MOOG_TEST_DIRECTORY` points at a directory in the source code which contains a valid Antithesis `docker-compose.yaml` configuration file for tests submission
 
 We also need to set some _secrets_ that will be used by Moog to authenticate and authorize the requests:
@@ -46,7 +46,7 @@ We also need to set some _secrets_ that will be used by Moog to authenticate and
       MOOG_REQUESTER_WALLET: ${{ secrets.MOOG_REQUESTER_WALLET }}
 ```
 
-* `MOOG_REQUESTER_WALLET` is the base64-encoded JSON content of the wallet file created by `moog wallet create`, typically the _mnemonics_ (see [Configuration](./configuration))
+* `MOOG_REQUESTER_WALLET` is the base64-encoded JSON content of the wallet file created by `moog wallet create`, typically the _mnemonics_ (see [Configuration](configuration.md))
 * `MOOG_GITHUB_PAT` is obviously specific to `github` platform and is a _Personal Authentication Token_ used to query Github API
 
 We set a timeout of 10 hours for this job as we'll be waiting for test execution result, adjust accordingly

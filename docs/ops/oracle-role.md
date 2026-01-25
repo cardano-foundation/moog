@@ -30,7 +30,7 @@ docker run ghcr.io/cardano-foundation/moog/moog-oracle:$version
 
 ## Running oracle commands manually
 
-Alternatively, oracle commands can be run manually, using the `moog` CLI. See the [Installation instructions](user/installation.md) for how to install it.
+Alternatively, oracle commands can be run manually, using the `moog` CLI. See the [Installation instructions](../user/installation.md) for how to install it.
 
 ## Creating the moog token (only once)
 

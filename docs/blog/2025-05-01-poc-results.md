@@ -1,16 +1,19 @@
 ---
+date: 2025-05-01
 slug: poc-results
 title: Antithesis Proof-of-Concept Results
-subtitle: A summary of our findings and some next steps
-authors: [abailly]
-tags: [infra]
+description: A summary of our findings and some next steps
+authors:
+  - abailly
+categories:
+  - infra
 ---
 
 Since the [start](./2025-04-02-kick-off-antithesis.md) of our project, Cardano Foundation and Antithesis have been busy working on a Proof-of-Concept aimed at evaluating Antithesis's capability to enhance Cardano's testing infrastructure. The results have been promising, with the platform successfully identifying both previously known and new unknown bugs in the cardano-node.
 
 This blog post outlines our journey and findings so far, and sketches out plans for the short and medium term in order to ensure this project delivers the most value for the Cardano community.
 
-<!-- truncate -->
+<!-- more -->
 
 ## Overview
 
@@ -38,12 +41,12 @@ This initiative brought together expertise from both organizations:
 
 When measured against our initial objectives, the PoC delivered significantly positive results. Some objectives were not fully completed but they mostly relate to our stated stretch goal. Most importantly, the main goal of this Proof-of-Concept period, namely to demonstrate Antithesis' capabilities to find issues in Cardano network was achieved.
 
-* ✅ **Learn how to run tests with Haskell node**: Successfully achieved
-* ✅ **Reproduce already known bugs**: Successfully achieved
-* ✅ **Find new and unknown bugs**: Successfully achieved
-* 🟠 **Engage with other teams to gather early feedback**: Partially achieved
-* 🟠 **Learn how to best use AT platform for Cardano**: Partially achieved
-* 🔴 **Engage with community to ensure interest and funding**: Not achieved
+* :white_check_mark: **Learn how to run tests with Haskell node**: Successfully achieved
+* :white_check_mark: **Reproduce already known bugs**: Successfully achieved
+* :white_check_mark: **Find new and unknown bugs**: Successfully achieved
+* :orange_circle: **Engage with other teams to gather early feedback**: Partially achieved
+* :orange_circle: **Learn how to best use AT platform for Cardano**: Partially achieved
+* :red_circle: **Engage with community to ensure interest and funding**: Not achieved
 
 ## More details about our findings
 
@@ -83,7 +86,7 @@ It's great to find bugs but once one is found, it's even better to be able to in
 
 Being a deterministic simulation testing platform, AT can explore various "multiverses", travelling to the past and trying different configurations and fault injections, to better understand how easily a bug is triggered and what kind of circumstances lead to it. The following picture is an example _Bug likelihood graph_ that is generated from the history of executions
 
-![Bug likelihood graph](/img/bug-likelihood-graph.png)
+![Bug likelihood graph](../assets/img/bug-likelihood-graph.png)
 
 But the most powerful tool at our disposal is the so-called [_Multiverse Debugger_](https://antithesis.com/docs/multiverse_debugging/overview/) which provides an environment, similar to Notebook, where one can interact with the System-Under-Test using any tool available in the Docker images and more importantly where it's possible to travel back in time and _branch_ execution of the SUT in order to investigate various hypothesis on the origin of a bug.
 
