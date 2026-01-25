@@ -21,10 +21,12 @@
     cardano-node-runtime = {
       url = "github:IntersectMBO/cardano-node?ref=10.1.4";
     };
+    mkdocs.url = "github:paolino/dev-assets?dir=mkdocs";
+    asciinema.url = "github:paolino/dev-assets?dir=asciinema";
   };
 
   outputs = inputs@{ self, nixpkgs, flake-utils, haskellNix, CHaP, iohkNix
-    , cardano-node-runtime, ... }:
+    , cardano-node-runtime, mkdocs, asciinema, ... }:
     let
       lib = nixpkgs.lib;
       version = self.dirtyShortRev or self.shortRev;
@@ -62,6 +64,8 @@
             inherit CHaP;
             inherit pkgs;
             inherit cardano-cli;
+            mkdocs = mkdocs.packages.${system};
+            asciinema = asciinema.packages.${system};
           };
 
           linux-artifacts = import ./nix/moog-linux-artifacts.nix {

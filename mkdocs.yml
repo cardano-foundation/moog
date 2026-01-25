@@ -1,0 +1,94 @@
+site_name: Moog Documentation
+site_url: https://cardano-foundation.github.io/moog/
+site_description: Testing Cardano on Cardano with Antithesis
+repo_url: https://github.com/cardano-foundation/moog
+repo_name: cardano-foundation/moog
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  logo: assets/img/cardano-ada-logo.svg
+  favicon: assets/img/cardano-ada-logo.svg
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.indexes
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - toc.integrate
+    - content.code.copy
+    - content.action.edit
+
+plugins:
+  - search
+  - asciinema-player
+  - blog:
+      blog_dir: blog
+      post_date_format: long
+      post_url_format: "{slug}"
+      authors_file: blog/.authors.yml
+
+markdown_extensions:
+  - admonition
+  - tables
+  - footnotes
+  - def_list
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/cardano-foundation/moog
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/quVqGUrW
+
+nav:
+  - Home: index.md
+  - User Manual:
+    - Introduction: user/intro.md
+    - Installation: user/installation.md
+    - Configuration: user/configuration.md
+    - Usage: user/usage.md
+    - CI: user/ci.md
+    - Secrets Management: user/secrets-management.md
+  - Operations Manual:
+    - Introduction: ops/intro.md
+    - Architecture: ops/architecture.md
+    - Protocol: ops/protocol.md
+    - Oracle Role: ops/oracle-role.md
+    - Agent Role: ops/agent-role.md
+    - Real World: ops/real-world.md
+    - Security: ops/security.md
+  - Developers:
+    - Code Design: dev/code-design.md
+  - Blog:
+    - blog/index.md

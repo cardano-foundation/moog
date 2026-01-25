@@ -22,13 +22,13 @@ sequenceDiagram
     Alice->>+GitHub: Add an Ed25519 SSH key to github profile
     Alice->>+Token: moog requester register-user
     Oracle->>+GitHub: Validate alice credentials
-    Oracle->>+Token: moog oracle update-token
+    Oracle->>+Token: moog oracle token update
 
     %% Step 2: Alice registers role as an antithesis test runner
     Alice->>+GitHub: Add herself under Antithesis key in CODEOWNERS file in her repository
     Alice->>+Token: moog requester register-role
     Oracle->>+GitHub: Validate alice role in CODEOWNERS
-    Oracle->>+Token: moog oracle update-token
+    Oracle->>+Token: moog oracle token update
 
     %% Step 3: Agent white-list alice repository
     Antithesis->>+Token: moog agent white-list
@@ -40,24 +40,24 @@ sequenceDiagram
     Oracle->>+Token: Check alice is maintainer
     Oracle->>+Token: Check platform/repo/commit prefix and run-index
     Oracle->>+Token: Validate alice SSH signature of the request
-    Oracle->>+Token: moog oracle update-token
+    Oracle->>+Token: moog oracle token update
 
     %% Step 5: Antithesis processes test run request
     alt Antithesis rejects request
         Antithesis->>+Token: moog agent reject-test
         Oracle->>+Token: Validate antithesis identity and test state
-        Oracle->>+Token: moog oracle update-token
+        Oracle->>+Token: moog oracle token update
     else Antithesis accepts request
         Antithesis->>+AntithesisPlatform: Start test run
         Antithesis->>+Oracle: moog agent accept-test
         Oracle->>+Token: Validate antithesis identity and test state
-        Oracle->>+Token: moog oracle update-token
+        Oracle->>+Token: moog oracle token update
     end
 
     %% Step 6: Antithesis updates test run results
     Antithesis->>+AntithesisPlatform: Poll platform for test results
-    Antithesis->>+Token: moog agent finish-test
+    Antithesis->>+Token: moog agent report-test
     Oracle->>+Token: Validate antithesis identity and test state
-    Oracle->>+Token: moog oracle update-token
+    Oracle->>+Token: moog oracle token update
     end
 ```

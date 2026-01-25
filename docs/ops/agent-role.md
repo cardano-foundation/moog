@@ -1,5 +1,3 @@
-import AsciinemaEmbed from '@site/src/components/AsciinemaEmbed';
-
 # Agent role manual
 
 ## White-list repositories
@@ -10,10 +8,12 @@ Two commands are available
 
 ### White-list a repository
 
-<AsciinemaEmbed
-  src="/moog/video/whitelist-repo.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/whitelist-repo.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 This will only work if the repository is not already white-listed and the repository is in GitHub.
 ```bash
@@ -25,10 +25,12 @@ The format of the repository is `<owner>/<repository>`, e.g. `cardano-foundation
 
 ### Black-list a repository
 
-<AsciinemaEmbed
-  src="/moog/video/blacklist-repo.cast"
-  options={{ autoplay: false, theme: 'asciinema', speed: 1.0 }}
-/>
+```asciinema-player
+{ "file": "assets/video/blacklist-repo.cast"
+, "mkap_theme": "none"
+, "cols": 100
+}
+```
 
 This will only work if the repository is white-listed.
 ```bash
@@ -49,7 +51,7 @@ will report all the pending test runs in a human friendly format.
 Once a test-run is pending the agent can download the assets for the test-run.
 
 ```bash
-moog agent download -i <test-run-id> -D <directory>
+moog agent download-assets -i <test-run-id> -D <directory>
 ```
 
 This will download the assets for the test-run with id `<test-run-id>` into the directory `<directory>`.
@@ -106,17 +108,15 @@ export MOOG_AGENT_EMAIL="<your-email>"
 Then you can check for the completion of a test-run via
 
 ```bash
-moog agent collect-results-for --test-run-id <test-run-id> --days <n> --ask-agent-email-password
+moog agent collect-results-for --test-run-id <test-run-id> --minutes <n> --ask-agent-email-password
 ```
 
-> HAL Team
->
-> To use your CF email you have to use an app password. If you use your password you  will get an error like
->
-> `LoginFailed user error (NO: Application-specific password required: https://support.google.com/accounts/answer/185833 (Failure))`
->
-> Just go to https://myaccount.google.com/apppasswords and create an app password.
->
+!!! note "HAL Team"
+    To use your CF email you have to use an app password. If you use your password you  will get an error like
+
+    `LoginFailed user error (NO: Application-specific password required: https://support.google.com/accounts/answer/185833 (Failure))`
+
+    Just go to https://myaccount.google.com/apppasswords and create an app password.
 
 ## Report the completion of a test-run on-chain
 

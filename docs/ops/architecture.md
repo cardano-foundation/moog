@@ -10,7 +10,7 @@ First-class participation would imply access to a Cardano node. However, the sys
 
 To improve component reusability, the backend service has no knowledge of project-specific goals and is developed in a separate repository: [MPFS](https://github.com/cardano-foundation/MPFS).
 
-In a perfect setup, each actor should run both the CLI tool and the MPFS service locally. However, for practical reasons, we expect most users to run only the CLI tool while relying on remote shared instances of the MPFS service. [Security considerations](ops/security.md) should be taken into account when choosing between local or shared MPFS service instances.
+In a perfect setup, each actor should run both the CLI tool and the MPFS service locally. However, for practical reasons, we expect most users to run only the CLI tool while relying on remote shared instances of the MPFS service. [Security considerations](security.md) should be taken into account when choosing between local or shared MPFS service instances.
 
 ## Systems
 
