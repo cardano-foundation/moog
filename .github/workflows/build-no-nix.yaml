@@ -60,8 +60,8 @@ jobs:
           ./ghcup set ghc 9.8.4
           ./ghcup install cabal 3.12.1.0
           ./ghcup set cabal 3.12.1.0
-          ./ghcup rm ghc 9.12.2
-          ./ghcup rm ghc 9.10.3
+          ./ghcup rm ghc 9.12.2 || true
+          ./ghcup rm ghc 9.10.3 || true
           which ghc
           ls -la $HOME/.ghcup/bin/ghc
           ghc --version
