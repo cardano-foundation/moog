@@ -17,14 +17,14 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build oracle docker image
-        run: nix build .#moog-oracle-docker-image -o moog-oracle-image
+        run: nix --quiet build .#moog-oracle-docker-image -o moog-oracle-image
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: moog-oracle-image
           path: ./moog-oracle-image
       - name: Build agent docker image
-        run: nix build .#moog-agent-docker-image -o moog-agent-image
+        run: nix --quiet build .#moog-agent-docker-image -o moog-agent-image
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

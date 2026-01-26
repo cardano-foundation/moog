@@ -24,7 +24,7 @@ jobs:
           name: paolino
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build oracle docker image
-        run: nix build -L .#linux64.tarball -o linux-tarball
+        run: nix --quiet build -L .#linux64.tarball -o linux-tarball
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -47,7 +47,7 @@ jobs:
           name: paolino
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build macOS tarball
-        run: nix build .#darwin64.tarball -o darwin-tarball
+        run: nix --quiet build .#darwin64.tarball -o darwin-tarball
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
