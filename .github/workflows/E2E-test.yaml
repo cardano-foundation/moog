@@ -51,8 +51,8 @@ jobs:
 
       - name: Fund the wallet
         run: |
-          nix shell -c moog wallet create -w "$MOOG_WALLET_FILE"
-          address=$(nix shell -c moog wallet info | jq -r '.address')
+          nix --quiet shell -c moog wallet create -w "$MOOG_WALLET_FILE"
+          address=$(nix --quiet shell -c moog wallet info | jq -r '.address')
           topup(){
               curl -s -X 'POST' \
                   "$MOOG_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
@@ -73,11 +73,11 @@ jobs:
 
       - name: Export agent PKH
         run: |
-          owner=$(nix shell -c moog wallet info | jq -r '.owner')
+          owner=$(nix --quiet shell -c moog wallet info | jq -r '.owner')
           echo "MOOG_AGENT_PUBLIC_KEY_HASH=$owner" >> $GITHUB_ENV
 
       - name: Run E2E tests
-        run: nix shell -c nix run .#e2e-tests
+        run: nix --quiet shell -c nix --quiet run .#e2e-tests
 
       - name: Tear down
         if: always()

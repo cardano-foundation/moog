@@ -20,4 +20,4 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Run moog unit tests
-        run: nix run .#unit-tests
+        run: nix --quiet run .#unit-tests
