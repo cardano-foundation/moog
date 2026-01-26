@@ -24,7 +24,7 @@ jobs:
           name: paolino
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build linux tarball
-        run: nix build -L .#linux64.tarball -o linux-tarball
+        run: nix --quiet build -L .#linux64.tarball -o linux-tarball
       - name: Smoke test tarball binaries
         run: |
           mkdir -p /tmp/tarball-test
@@ -54,7 +54,7 @@ jobs:
           name: paolino
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build ARM64 linux tarball
-        run: nix build -L .#linux-aarch64.tarball -o linux-aarch64-tarball
+        run: nix --quiet build -L .#linux-aarch64.tarball -o linux-aarch64-tarball
       - name: Smoke test tarball binaries
         run: |
           mkdir -p /tmp/tarball-test
@@ -84,7 +84,7 @@ jobs:
           name: paolino
           authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build macOS tarball
-        run: nix build .#darwin64.tarball -o darwin-tarball
+        run: nix --quiet build .#darwin64.tarball -o darwin-tarball
       - name: Smoke test tarball binaries
         run: |
           mkdir -p /tmp/tarball-test
