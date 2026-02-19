@@ -32,7 +32,7 @@ First collect your wallet `vkey`
 export MYPK=$(moog wallet info --no-pretty | jq -r '.publicKey')
 ```
 
-Now make sure you already have a Github repository for your user under [your-profile-repo](https://github.com/your-username/your-username) and add an `moog-cli.vkey` file in the root of the repository containing your wallet public key (the `vkey` you just collected above).
+Now make sure you already have a Github repository for your user under [your-profile-repo](https://github.com/your-username/your-username) and add an `moog.vkey` file in the root of the repository containing your wallet public key (the `vkey` you just collected above).
 
 ```bash
 export GITHUB_USERNAME=your-github-username
@@ -42,8 +42,8 @@ export GITHUB_USERNAME=your-github-username
 set -e
 git clone git@github.com:${GITHUB_USERNAME}/${GITHUB_USERNAME}.git
 cd ${GITHUB_USERNAME}
-echo $MYPK > moog-cli.vkey
-git add moog-cli.vkey
+echo $MYPK > moog.vkey
+git add moog.vkey
 git commit -m "Add Antithesis wallet vkey"
 git push origin main
 cd ..
@@ -92,7 +92,7 @@ To unregister a user, you can use the `moog requester unregister-user` command.
 moog requester unregister-user --platform github --username ${GITHUB_USERNAME} --vkey $MYPK
 ```
 
-> Unregistering will not work if the user is correcly registered. To unregister you need to falsify the registration, i.e. remove the file `moog-cli.vkey` from your GitHub repository or change its content to a different key.
+> Unregistering will not work if the user is correcly registered. To unregister you need to falsify the registration, i.e. remove the file `moog.vkey` from your GitHub repository or change its content to a different key.
 
 ## Unregistering the legacy SSH public key.
 
