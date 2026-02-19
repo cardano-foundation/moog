@@ -84,10 +84,12 @@ nav:
     - Introduction: ops/intro.md
     - Architecture: ops/architecture.md
     - Protocol: ops/protocol.md
+    - Deployment: ops/deployment.md
     - Oracle Role: ops/oracle-role.md
     - Agent Role: ops/agent-role.md
     - Real World: ops/real-world.md
     - Security: ops/security.md
+    - Troubleshooting: ops/troubleshooting.md
   - Developers:
     - Code Design: dev/code-design.md
   - Blog:

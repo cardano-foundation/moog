@@ -2,6 +2,21 @@
 
 This is the role of the user that wants to run a service to control access to the Antithesis platform. There will be only one token and so there will be only one oracle service running at a time, but we document it here for completeness.
 
+## Oracle Processing Loop
+
+```mermaid
+flowchart TB
+    sleep[Sleep MOOG_WAIT seconds] --> poll[Query MPFS for pending requests]
+    poll --> validate[Validate each request against GitHub]
+    validate --> submit[Submit batch state update transaction]
+    submit --> sleep
+
+    validate -->|user profile check| GH[GitHub API]
+    validate -->|CODEOWNERS check| GH
+    validate -->|repo contents check| GH
+    submit --> MPFS[(MPFS Service)]
+```
+
 ## Running the oracle service
 
 You can build an executable that will continuously check for pending requests and include them in the Antithesis token.
@@ -28,6 +43,10 @@ version=$(nix eval .#version --raw)
 docker run ghcr.io/cardano-foundation/moog/moog-oracle:$version
 ```
 
+### Running as Docker Service
+
+For production deployment, use Docker Compose. See the [Deployment Guide](deployment.md#oracle-deployment) for full setup instructions including secrets, docker-compose configuration, and startup verification.
+
 ## Running oracle commands manually
 
 Alternatively, oracle commands can be run manually, using the `moog` CLI. See the [Installation instructions](../user/installation.md) for how to install it.
@@ -42,15 +61,17 @@ You can create a wallet with the `moog wallet create` command.
 moog wallet create
 ```
 
-The current oracle wallet reports
+You can check the wallet info with:
 
 ```bash
 moog wallet info
 ```
 
+Example output:
+
 ```json
 {
-  "address": "addr_test1vq04e6lvknx3ettppz5xq9x7nk8j87w5gaammke7z2ymyfqtkl4vv",
+  "address": "addr_test1...",
   "filePath": "tmp/oracle.json",
   "owner": "1f5cebecb4cd1cad6108a86014de9d8f23f9d4477bbddb3e1289b224"
 }

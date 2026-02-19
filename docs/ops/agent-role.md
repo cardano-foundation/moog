@@ -1,8 +1,71 @@
 # Agent role manual
 
+## Agent Service Architecture
+
+```mermaid
+flowchart TB
+    subgraph Agent Automation Loop
+        poll[Poll for pending test runs]
+        check[Check pending requests]
+        download[Download test assets from GitHub]
+        validate[Local docker compose validation]
+        push[Push to Antithesis platform]
+        accept[Report acceptance on-chain]
+        email[Check email for results]
+        report[Report completion on-chain]
+    end
+
+    poll --> check --> download --> validate --> push --> accept
+    poll --> email --> report
+
+    MPFS[(MPFS)] <--> poll
+    GH[GitHub] --> download
+    AT[Antithesis] <--> push
+    MPFS <--> accept
+    MPFS <--> report
+```
+
+## Running as Docker Service
+
+The agent can run as an automated Docker service that continuously polls for and processes test runs.
+
+See the [Deployment Guide](deployment.md#agent-deployment) for full setup instructions including secrets, docker-compose configuration, and startup.
+
+### Automation flags
+
+| Flag | Description | Default |
+|---|---|---|
+| `--poll-interval` | Seconds between polling cycles | 60 |
+| `--minutes` | Time window (in minutes) to search for email results | — |
+| `--trust-all-requesters` | Accept test runs from any requester (skip trusted list check) | disabled |
+
+!!! note "Deprecated flag"
+    The `--days` flag was replaced by `--minutes` in v0.4.1.1. Use `--minutes 1440` instead of `--days 1`.
+
+### Environment variables
+
+| Variable | Description |
+|---|---|
+| `MOOG_MPFS_HOST` | URL of the MPFS service |
+| `MOOG_WALLET_FILE` | Path to the agent wallet JSON file |
+| `MOOG_TOKEN_ID` | The moog token asset ID |
+| `MOOG_SECRETS_FILE` | Path to `secrets.yaml` |
+| `MOOG_WAIT` | Seconds between polling cycles (alternative to `--poll-interval`) |
+| `MOOG_ANTITHESIS_USER` | Antithesis platform username |
+| `DOCKER_CONFIG` | Path to Docker config directory (for private registries) |
+
+### Docker socket and privileged mode
+
+The agent container requires:
+
+- **Docker socket** (`/var/run/docker.sock`) — the agent runs `docker compose up --build` to validate test assets locally before pushing them to Antithesis.
+- **Privileged mode** — required for Docker-in-Docker operations.
+
+See [Security](security.md#docker-security) for the security implications of this setup.
+
 ## White-list repositories
 
-In the interest of avoiding spam the agenthas to white-list repositories before the oracle will accept test-runs for them.
+In the interest of avoiding spam the agent has to white-list repositories before the oracle will accept test-runs for them.
 
 Two commands are available
 
