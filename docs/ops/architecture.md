@@ -69,7 +69,7 @@ graph TD
 
 Any GitHub user can register themselves against the system state by deploying a file containing a Cardano public key in their personal GitHub repository.
 - GitHub docs: [profile repository](https://docs.github.com/en/account-and-profile/how-tos/profile-customization/managing-your-profile-readme).
-- Example: [moog-cli.vkey](https://github.com/cfhal/cfhal/blob/main/moog-cli.vkey).
+- Example: [moog.vkey](https://github.com/paolino/paolino/blob/main/moog.vkey).
 
 #### Github as Antithesis role management
 
