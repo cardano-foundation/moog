@@ -16,7 +16,7 @@ services:
       - DOCKER_CONFIG=/run/secrets/docker
     restart: always
     privileged: true
-    command: "--poll-interval 60 --days 1 --trust-all-requesters"
+    command: "--poll-interval 60 --minutes 1440 --trust-all-requesters"
     volumes:
       - tmp:/tmp
         # Mount CA certificates, curl seems not to find them when the pkgs.cacert is included in the image
