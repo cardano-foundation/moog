@@ -152,6 +152,8 @@ spec = do
                 $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
             it "outcomeSuccess2"
                 $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
+            it "outcomeErrorReport"
+                $ outcomeErrorReport `shouldHaveOutcome` OutcomeFailure
 
 genTime :: Gen UTCTime
 genTime = do
@@ -347,4 +349,30 @@ onvergence/eventually_converged.sh</li></ul>
    =20
    =20
    =20
+|]
+
+outcomeErrorReport :: B.ByteString
+outcomeErrorReport =
+    [s|
+From: "'Antithesis Reports' via list_antithesis_external" <antithesis@cardanofoundation.org>
+Subject: 2026-02-20 Cardano Foundation Test
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+Date: Fri, 20 Feb 2026 07:38:30 +0000
+
+Run by cardano on 2026-02-20 07:30 UTC<br> Description: {"testRun":{"commit=
+Id":"12977dbcfcde7baf4e6863a11ab831a8780ebe9c","directory":"testnets/cardan=
+o_node_master","platform":"github","repository":{"organization":"cardano-fo=
+undation","repo":"cardano-node-antithesis"},"requester":"cfhal","try":200,"=
+type":"test-run"},"testRunId":"b230d9e819eaccf3c428193e94d1052031e720fd9cc6=
+690724cc700439f2a234"}<br/>Run ID: 177d0f6376698b084afd2e063c04b970-46-12<b=
+r/><br/><b>webhook/cardano.nb2</b> failed or timed out.<br/><br/><b>Session=
+ errors:</b><br/>Container setup failure<br/><br/><a href=3Dhttps://cardano=
+.antithesis.com/report/2unWGOExp0_0ndU4_mxk1Ksy/HyqaArHUnbe6fr1I6Gl08Mf9Jdi=
+yH53TTWJaR_599mM.html?auth=3Dv2.public.eyJzY29wZSI6eyJSZXBvcnRTY29wZVYxIjp7=
+ImFzc2V0IjoiSHlxYUFySFVuYmU2ZnIxSTZHbDA4TWY5SmRpeUg1M1RUV0phUl81OTltTS5odG1=
+sIiwicmVwb3J0X2lkIjoiMnVuV0dPRXhwMF8wbmRVNF9teGsxS3N5In19LCJuYmYiOiIyMDI2LT=
+AyLTIwVDA2OjM4OjMwLjg2MzQxNTkxNVoifbhUDB0kdP-l8hQTthHnYv2_JyVMnlbDvJAoQJsQY=
+oA4u0zgJG4kquQVo8LNrt0qINFC1SqSoWvFclJMazysMQs>Propagated error report</a>
 |]

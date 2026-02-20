@@ -305,19 +305,26 @@ parseEmail content = do
                 $ ParsingError ("Expected one entity, got " ++ show (length es)) ""
 
 findOutcome :: [Token] -> Outcome
-findOutcome tokens = do
-    let
-        findFirst :: (T.Text -> Maybe a) -> Maybe a
-        findFirst f = asum $ map f contentTexts
+findOutcome tokens
+    | any isErrorIndicator contentTexts = OutcomeFailure
+    | otherwise = do
+        let
+            findFirst :: (T.Text -> Maybe a) -> Maybe a
+            findFirst f = asum $ map f contentTexts
 
-        failIfNonZero 0 = OutcomeSuccess
-        failIfNonZero _ = OutcomeFailure
+            failIfNonZero 0 = OutcomeSuccess
+            failIfNonZero _ = OutcomeFailure
 
-    case (findFirst findNew, findFirst findOngoing) of
-        (Just new, Just ongoing) -> failIfNonZero (new + ongoing)
-        (Nothing, Just ongoing) -> failIfNonZero ongoing
-        (_, Nothing) -> OutcomeUnknown
+        case (findFirst findNew, findFirst findOngoing) of
+            (Just new, Just ongoing) -> failIfNonZero (new + ongoing)
+            (Nothing, Just ongoing) -> failIfNonZero ongoing
+            (_, Nothing) -> OutcomeUnknown
   where
+    isErrorIndicator :: T.Text -> Bool
+    isErrorIndicator t =
+        "failed or timed out" `T.isInfixOf` t
+            || "Session errors:" `T.isInfixOf` t
+
     findNew :: T.Text -> Maybe Word
     findNew "No findings introduced this run." = pure 0
     findNew t = case T.breakOn " " t of
