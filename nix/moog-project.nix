@@ -1,4 +1,4 @@
-{ CHaP, indexState, pkgs, cardano-cli, mkdocs, asciinema, ... }:
+{ CHaP, indexState, pkgs, cardano-cli ? null, mkdocs, asciinema, ... }:
 
 let
   libOverlay = { lib, pkgs, ... }: {
@@ -26,7 +26,7 @@ let
     buildInputs = [
       pkgs.gitAndTools.git
       pkgs.just
-      cardano-cli
+    ] ++ pkgs.lib.optional (cardano-cli != null) cardano-cli ++ [
       project.hsPkgs.cardano-addresses.components.exes.cardano-address
       project.hsPkgs.bech32.components.exes.bech32
       pkgs.nixfmt-classic
@@ -79,4 +79,5 @@ in {
     project.hsPkgs.moog.components.tests.integration-tests;
   packages.e2e-tests = project.hsPkgs.moog.components.tests.e2e-tests;
   musl64 = project.projectCross.musl64.hsPkgs;
+  aarch64-musl = project.projectCross.aarch64-multiplatform-musl.hsPkgs;
 }

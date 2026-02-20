@@ -42,10 +42,16 @@
 
       perSystem = system:
         let
-          node-project = cardano-node-runtime.project.${system};
-          cardano-node = node-project.pkgs.cardano-node;
-          cardano-cli = node-project.pkgs.cardano-cli;
-          cardano-submit-api = node-project.pkgs.cardano-submit-api;
+          isLinux = builtins.match ".*-linux" system != null;
+          isDarwin = builtins.match ".*-darwin" system != null;
+
+          node-project =
+            if builtins.hasAttr system (cardano-node-runtime.project or { })
+            then cardano-node-runtime.project.${system}
+            else null;
+          cardano-cli =
+            if node-project != null then node-project.pkgs.cardano-cli
+            else null;
           pkgs = import nixpkgs {
             overlays = [
               iohkNix.overlays.crypto # modified crypto libs
@@ -54,10 +60,6 @@
               fix-blst
             ];
             inherit system;
-          };
-          rewrite-libs = import ./CI/rewrite-libs/rewrite-libs.nix {
-            inherit system;
-            inherit (inputs) nixpkgs flake-utils haskellNix;
           };
           project = import ./nix/moog-project.nix {
             indexState = "2025-08-07T00:00:00Z";
@@ -68,43 +70,56 @@
             asciinema = asciinema.packages.${system};
           };
 
-          linux-artifacts = import ./nix/moog-linux-artifacts.nix {
-            inherit pkgs node-project version project;
-          };
-          macos-artifacts = import ./nix/moog-macos-artifacts.nix {
-            inherit pkgs project node-project version;
-            rewrite-libs = rewrite-libs.packages.default;
-          };
-          moog-docker-light-image = import ./nix/moog-docker-light.nix {
-            inherit pkgs;
-            inherit version;
-            inherit project;
-          };
-          moog-docker-image = import ./nix/moog-docker.nix {
-            inherit pkgs;
-            inherit version;
-            inherit project;
-          };
-          moog-oracle-docker-image = import ./nix/moog-oracle-docker.nix {
-            inherit pkgs;
-            inherit version;
-            inherit project;
-          };
-          moog-agent-docker-image = import ./nix/moog-agent-docker.nix {
-            inherit pkgs;
-            inherit version;
-            inherit project;
-          };
-          docker.packages = {
-            inherit moog-oracle-docker-image;
-            inherit moog-agent-docker-image;
-            inherit moog-docker-image;
-            inherit moog-docker-light-image;
-          };
+          linux-artifacts =
+            if system == "x86_64-linux"
+            then import ./nix/moog-linux-artifacts.nix {
+              inherit pkgs node-project version project;
+            }
+            else { packages = { }; };
+
+          linux-aarch64-artifacts =
+            if system == "aarch64-linux"
+            then import ./nix/moog-linux-aarch64-artifacts.nix {
+              inherit pkgs version project;
+            }
+            else { packages = { }; };
+
+          macos-artifacts =
+            if isDarwin
+            then
+              let
+                rewrite-libs = import ./CI/rewrite-libs/rewrite-libs.nix {
+                  inherit system;
+                  inherit (inputs) nixpkgs flake-utils haskellNix;
+                };
+              in import ./nix/moog-macos-artifacts.nix {
+                inherit pkgs project node-project version;
+                rewrite-libs = rewrite-libs.packages.default;
+              }
+            else { packages = { }; };
+
+          docker = if isLinux then {
+            packages = {
+              moog-oracle-docker-image = import ./nix/moog-oracle-docker.nix {
+                inherit pkgs version project;
+              };
+              moog-agent-docker-image = import ./nix/moog-agent-docker.nix {
+                inherit pkgs project version;
+              };
+              moog-docker-image = import ./nix/moog-docker.nix {
+                inherit pkgs version project;
+              };
+              moog-docker-light-image = import ./nix/moog-docker-light.nix {
+                inherit pkgs version project;
+              };
+            };
+          } else { packages = { }; };
+
           info.packages = { inherit version; };
           fullPackages = lib.mergeAttrsList [
             project.packages
             linux-artifacts.packages
+            linux-aarch64-artifacts.packages
             macos-artifacts.packages
             info.packages
             docker.packages
@@ -116,5 +131,6 @@
           inherit (project) devShells;
         };
 
-    in flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-darwin" ] perSystem;
+    in flake-utils.lib.eachSystem
+      [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] perSystem;
 }
