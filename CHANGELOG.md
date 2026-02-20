@@ -1,5 +1,16 @@
 # Changelog for moog-cli
 
+### v0.5.0.0 - 2025-12-10
+
+#### Breaking Changes
+
+- The config fact now includes `min-test-duration` and `max-test-duration` expressed in minutes. Old versions of moog cannot parse them any more.
+- From this version on any data format change will be reflected in a protocol version bump. The current protocol version is now 1.
+
+#### Changes
+
+- Test durations now can be expressed in minutes.
+
 ### v0.4.1.2 - 2025-12-02
 
 #### Added
