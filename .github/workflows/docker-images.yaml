@@ -20,8 +20,8 @@ jobs:
         run: nix build .#moog-oracle-docker-image -o moog-oracle-image
       - name: Smoke test oracle docker image
         run: |
-          docker load < moog-oracle-image
-          docker run --rm ghcr.io/cardano-foundation/moog/moog-oracle --help
+          IMAGE=$(docker load < moog-oracle-image | grep "Loaded image:" | awk '{print $3}')
+          docker run --rm "$IMAGE" --help
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -31,8 +31,8 @@ jobs:
         run: nix build .#moog-agent-docker-image -o moog-agent-image
       - name: Smoke test agent docker image
         run: |
-          docker load < moog-agent-image
-          docker run --rm ghcr.io/cardano-foundation/moog/moog-agent --help
+          IMAGE=$(docker load < moog-agent-image | grep "Loaded image:" | awk '{print $3}')
+          docker run --rm "$IMAGE" --help
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -51,8 +51,8 @@ jobs:
         run: nix build .#moog-oracle-docker-image -o moog-oracle-image-aarch64
       - name: Smoke test oracle docker image
         run: |
-          docker load < moog-oracle-image-aarch64
-          docker run --rm ghcr.io/cardano-foundation/moog/moog-oracle --help
+          IMAGE=$(docker load < moog-oracle-image-aarch64 | grep "Loaded image:" | awk '{print $3}')
+          docker run --rm "$IMAGE" --help
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -62,8 +62,8 @@ jobs:
         run: nix build .#moog-agent-docker-image -o moog-agent-image-aarch64
       - name: Smoke test agent docker image
         run: |
-          docker load < moog-agent-image-aarch64
-          docker run --rm ghcr.io/cardano-foundation/moog/moog-agent --help
+          IMAGE=$(docker load < moog-agent-image-aarch64 | grep "Loaded image:" | awk '{print $3}')
+          docker run --rm "$IMAGE" --help
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
