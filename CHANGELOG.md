@@ -1,5 +1,26 @@
 # Changelog for moog-cli
 
+### v0.5.0.0 - 2026-02-24
+
+#### Breaking Changes
+
+- **Duration wire format**: Duration fields (`maxDuration`, `minDuration`, `duration`) are now serialized as `{"hours": N}` or `{"minutes": N}` instead of plain integers. Older moog versions (< 0.5.0.0) cannot parse facts written by this version.
+- **Configuration**: Oracle config `--min-test-duration` and `--max-test-duration` now accept minutes instead of hours.
+
+#### Added
+
+- Sub-hour test run support via new `Duration` type (hours and minutes granularity).
+- Protocol version field in oracle config fact for forward-compatible version checking.
+- MkDocs documentation (migrated from Docusaurus).
+- E2E and integration tests run via Nix in CI.
+
+#### Fixed
+
+- Handle Antithesis error/failure emails in outcome parser.
+- Configuration update bug.
+
+---
+
 ### v0.4.1.2 - 2025-12-02
 
 #### Added
