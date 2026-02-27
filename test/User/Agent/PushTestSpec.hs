@@ -11,7 +11,6 @@ import Core.Types.Basic
     , Platform (..)
     , Try (..)
     )
-import Docker (collectImagesFromAssets)
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 import User.Agent.PushTest
     ( AntithesisAuth (..)
@@ -27,17 +26,6 @@ import User.Types (TestRun (..))
 
 spec :: Spec
 spec = do
-    describe "collectImagesFromAssets" $ do
-        it "should collect images from a docker-compose file" $ do
-            -- Here you would write tests for the collectImagesFromAssets function
-            collectImagesFromAssets (Directory "test/data")
-                `shouldReturn` Right
-                    [ "ghcr.io/cardano-foundation/moog/configurator:latest"
-                    , "ghcr.io/cardano-foundation/moog/sidecar:latest"
-                    , "ghcr.io/cardano-foundation/moog/tracer-sidecar:latest"
-                    , "ghcr.io/cardano-foundation/moog/tracer:latest"
-                    , "ghcr.io/intersectmbo/cardano-node:latest"
-                    ]
     describe "buildConfigImage" $ do
         it "should build the Dockerfile for the cardano_node_master" $ do
             buildConfigImage
@@ -48,8 +36,6 @@ spec = do
                     (Tag "registry/cardano-moog-config:dummy")
     describe "renderPostToAntithesis" $ do
         it "should render the curl command for pushing to Antithesis" $ do
-            Right images <-
-                collectImagesFromAssets (Directory "test/data")
             Right configTag <-
                 buildConfigImage
                     (Registry "registry")
@@ -72,7 +58,6 @@ spec = do
                         { description = renderTestRun testRunId testRun
                         , duration = 3600
                         , config_image = tagString configTag
-                        , images = images
                         , recipients = ["hal@cardanofoundation.org"]
                         , source = "dummy"
                         , slack = Nothing
@@ -90,5 +75,5 @@ spec = do
                            , "-H"
                            , "Content-Type: application/json"
                            , "-d"
-                           , "{\"params\":{\"antithesis.config_image\":\"registry/cardano-moog-config:dummy\",\"antithesis.description\":\"{\\\"testRun\\\":{\\\"commitId\\\":\\\"abcdef1234567890\\\",\\\"directory\\\":\\\"tests\\\",\\\"platform\\\":\\\"github\\\",\\\"repository\\\":{\\\"organization\\\":\\\"cardano-foundation\\\",\\\"repo\\\":\\\"moog\\\"},\\\"requester\\\":\\\"alice\\\",\\\"try\\\":1,\\\"type\\\":\\\"test-run\\\"},\\\"testRunId\\\":\\\"test-run-001\\\"}\",\"antithesis.duration\":3600,\"antithesis.images\":\"ghcr.io/cardano-foundation/moog/configurator:latest;ghcr.io/cardano-foundation/moog/sidecar:latest;ghcr.io/cardano-foundation/moog/tracer-sidecar:latest;ghcr.io/cardano-foundation/moog/tracer:latest;ghcr.io/intersectmbo/cardano-node:latest\",\"antithesis.report.recipients\":\"hal@cardanofoundation.org\",\"antithesis.source\":\"dummy\",\"custom.faults_enabled\":true}}"
+                           , "{\"params\":{\"antithesis.config_image\":\"registry/cardano-moog-config:dummy\",\"antithesis.description\":\"{\\\"testRun\\\":{\\\"commitId\\\":\\\"abcdef1234567890\\\",\\\"directory\\\":\\\"tests\\\",\\\"platform\\\":\\\"github\\\",\\\"repository\\\":{\\\"organization\\\":\\\"cardano-foundation\\\",\\\"repo\\\":\\\"moog\\\"},\\\"requester\\\":\\\"alice\\\",\\\"try\\\":1,\\\"type\\\":\\\"test-run\\\"},\\\"testRunId\\\":\\\"test-run-001\\\"}\",\"antithesis.duration\":3600,\"antithesis.report.recipients\":\"hal@cardanofoundation.org\",\"antithesis.source\":\"dummy\",\"custom.faults_enabled\":true}}"
                            ]
