@@ -40,7 +40,6 @@ import Data.Functor (($>), (<&>))
 import Data.Functor.Identity (Identity (..))
 import Data.List (intercalate)
 import Data.String.QQ (s)
-import Docker (collectImagesFromAssets)
 import Lib.JSON.Canonical.Extra (object, withObject, (.:), (.=))
 import Lib.System (runSystemCommand)
 import Oracle.Validate.Types
@@ -87,7 +86,6 @@ data PostTestRunRequest = PostTestRunRequest
     { description :: String
     , duration :: Float
     , config_image :: String
-    , images :: [String]
     , recipients :: [String]
     , source :: String
     , slack :: Maybe String
@@ -102,7 +100,6 @@ instance Aeson.ToJSON PostTestRunRequest where
             { description
             , duration
             , config_image
-            , images
             , recipients
             , source
             , slack
@@ -117,7 +114,6 @@ instance Aeson.ToJSON PostTestRunRequest where
                 [ "antithesis.description" Aeson..= description
                 , "antithesis.duration" Aeson..= duration
                 , "antithesis.config_image" Aeson..= config_image
-                , "antithesis.images" Aeson..= intercalate ";" images
                 , "antithesis.report.recipients"
                     Aeson..= intercalate ";" recipients
                 , "antithesis.source" Aeson..= source
@@ -156,8 +152,6 @@ pushTestToAntithesisIO
         tag <- throwLeft DockerBuildFailure etag
         epush <- liftIO $ pushConfigImage tag
         void $ throwLeft DockerPushFailure epush
-        eimages <- liftIO $ collectImagesFromAssets dir
-        images <- throwLeft DockerComposeFailure eimages
         (tr, duration, faultsEnabled) <- getTestRun tk testRunId
         let body =
                 PostTestRunRequest
@@ -166,7 +160,6 @@ pushTestToAntithesisIO
                         Hours h -> realToFrac h * 60
                         Minutes m -> realToFrac m
                     , config_image = tagString tag
-                    , images
                     , recipients = ["antithesis@cardanofoundation.org"]
                     , source = renderSource tr
                     , slack = fmap unSlackWebhook slack
@@ -298,7 +291,6 @@ buildConfigImage (Registry registry) (Directory context) (TestRunId trId) =
 data PushFailure
     = DockerBuildFailure String
     | DockerPushFailure String
-    | DockerComposeFailure String
     | Couldn'tResolveTestRunId TestRunId
     | PostToAntithesisFailure String
     deriving (Show, Eq)
@@ -311,10 +303,6 @@ instance Monad m => ToJSON m PushFailure where
     toJSON (DockerPushFailure msg) =
         object
             [ "dockerPushFailure" .= msg
-            ]
-    toJSON (DockerComposeFailure msg) =
-        object
-            [ "dockerComposeFailure" .= msg
             ]
     toJSON (Couldn'tResolveTestRunId (TestRunId trId)) =
         object
