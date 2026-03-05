@@ -21,6 +21,7 @@ import Core.Types.Basic
     ( Directory (..)
     , FaultsEnabled
     , GithubRepository (..)
+    , HasInstrumentation
     , Success (..)
     , TokenId
     )
@@ -118,6 +119,7 @@ data RequesterCommand a where
         -> TestRun
         -> Duration
         -> FaultsEnabled
+        -> HasInstrumentation
         -> RequesterCommand
             ( AValidationResult
                 CreateTestRunFailure
@@ -148,14 +150,22 @@ requesterCmd command = do
             registerRole tokenId wallet request
         UnregisterRole tokenId wallet request ->
             unregisterRole tokenId wallet request
-        RequestTest tokenId wallet mSshClient testRun duration faultsEnabled ->
-            createCommand
-                tokenId
-                wallet
-                mSshClient
-                testRun
-                duration
-                faultsEnabled
+        RequestTest
+            tokenId
+            wallet
+            mSshClient
+            testRun
+            duration
+            faultsEnabled
+            hasInstrumentation ->
+                createCommand
+                    tokenId
+                    wallet
+                    mSshClient
+                    testRun
+                    duration
+                    faultsEnabled
+                    hasInstrumentation
         GenerateAssets directory -> generateAssets directory
 
 generateAssets
@@ -206,6 +216,7 @@ createCommand
     -> TestRun
     -> Duration
     -> FaultsEnabled
+    -> HasInstrumentation
     -> WithContext
         m
         ( AValidationResult
@@ -218,7 +229,8 @@ createCommand
     mSshClient
     testRun
     duration
-    faultsEnabled = do
+    faultsEnabled
+    hasInstrumentation = do
         mconfig <- askConfig tokenId
         validation <- askValidation $ Just tokenId
         Submission submit <- askSubmit wallet
@@ -238,7 +250,7 @@ createCommand
                         liftMaybe CreateTestRunInvalidSSHKey
                             =<< decodePrivateSSHFile (hoistValidation validation) sshClient
                     lift $ signKey sshKeyPair testRun
-            let newState = Pending duration faultsEnabled signature
+            let newState = Pending duration faultsEnabled hasInstrumentation signature
             Config{configTestRun} <-
                 liftMaybe CreateTestConfigNotAvailable mconfig
             void

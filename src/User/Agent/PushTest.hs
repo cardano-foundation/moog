@@ -28,6 +28,7 @@ import Core.Types.Basic
     ( Directory (..)
     , FaultsEnabled (..)
     , GithubRepository (..)
+    , HasInstrumentation (..)
     , TokenId
     )
 import Core.Types.Duration (Duration (..))
@@ -60,6 +61,7 @@ import User.Agent.Lib
     ( resolveTestRunId
     , testRunDuration
     , testRunFaultsEnabled
+    , testRunHasInstrumentation
     , withState
     )
 import User.Agent.Types
@@ -90,6 +92,7 @@ data PostTestRunRequest = PostTestRunRequest
     , source :: String
     , slack :: Maybe String
     , faults_enabled :: Bool
+    , is_haskell :: Bool
     }
     deriving (Show, Eq)
 
@@ -104,6 +107,7 @@ instance Aeson.ToJSON PostTestRunRequest where
             , source
             , slack
             , faults_enabled
+            , is_haskell
             } =
             Aeson.object
                 [ "params"
@@ -118,6 +122,7 @@ instance Aeson.ToJSON PostTestRunRequest where
                     Aeson..= intercalate ";" recipients
                 , "antithesis.source" Aeson..= source
                 , "custom.faults_enabled" Aeson..= faults_enabled
+                , "custom.is_haskell" Aeson..= is_haskell
                 ]
                     <> maybe
                         []
@@ -152,7 +157,8 @@ pushTestToAntithesisIO
         tag <- throwLeft DockerBuildFailure etag
         epush <- liftIO $ pushConfigImage tag
         void $ throwLeft DockerPushFailure epush
-        (tr, duration, faultsEnabled) <- getTestRun tk testRunId
+        (tr, duration, faultsEnabled, hasInstrumentation) <-
+            getTestRun tk testRunId
         let body =
                 PostTestRunRequest
                     { description = renderTestRun testRunId tr
@@ -164,6 +170,7 @@ pushTestToAntithesisIO
                     , source = renderSource tr
                     , slack = fmap unSlackWebhook slack
                     , faults_enabled = getFaultsEnabled faultsEnabled
+                    , is_haskell = not (getHasInstrumentation hasInstrumentation)
                     }
             post = renderPostToAntithesis auth body
         epost <- liftIO $ curl post
@@ -204,13 +211,19 @@ getTestRun
     -> Validate
         PushFailure
         (WithContext m)
-        (TestRun, Duration, FaultsEnabled)
+        (TestRun, Duration, FaultsEnabled, HasInstrumentation)
 getTestRun tk testRunId = do
     mts <- lift $ resolveTestRunId tk testRunId
     Fact tr v _ <- liftMaybe (Couldn'tResolveTestRunId testRunId) mts
     liftMaybe (Couldn'tResolveTestRunId testRunId)
         $ withState
-            (\state -> (tr, testRunDuration state, testRunFaultsEnabled state))
+            ( \state ->
+                ( tr
+                , testRunDuration state
+                , testRunFaultsEnabled state
+                , testRunHasInstrumentation state
+                )
+            )
             v
 
 data AntithesisAuth = AntithesisAuth

@@ -6,6 +6,7 @@ where
 import Control.Monad (when)
 import Core.Types.Basic
     ( FaultsEnabled (..)
+    , HasInstrumentation (HasInstrumentation)
     , Owner (..)
     , RequestRefId (..)
     )
@@ -60,7 +61,7 @@ spec = do
             testRun <- testRunEGen
             signature <- gen signatureGen
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
-            let pendingState = Pending (Hours 5) faultsEnabled signature
+            let pendingState = Pending (Hours 5) faultsEnabled (HasInstrumentation True) signature
             testRunFact <- toJSFact testRun pendingState 0
             let validation =
                     mkEffects (withFacts [testRunFact] mockMPFS) noValidation
@@ -77,7 +78,7 @@ spec = do
                 anOwner <- gen $ Owner <$> genAscii
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 configFact <- testConfigFactGen anOwner
-                let pendingState = Pending (Hours 5) faultsEnabled signature
+                let pendingState = Pending (Hours 5) faultsEnabled (HasInstrumentation True) signature
                     change = Change (Key testRun) (Update pendingState (Accepted pendingState))
                     pendingRequest =
                         AcceptRequest
@@ -100,7 +101,12 @@ spec = do
                 signature <- gen signatureGen
                 duration <- genA
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
-                let pendingState = Pending (Hours duration) faultsEnabled signature
+                let pendingState =
+                        Pending
+                            (Hours duration)
+                            faultsEnabled
+                            (HasInstrumentation True)
+                            signature
                     newTestRunState = Accepted pendingState
                     test =
                         validateToRunningCore
@@ -119,9 +125,18 @@ spec = do
                 signature <- gen signatureGen
                 differentSignature <- gen $ oneof [signatureGen, pure signature]
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
-                let fact = Pending (Hours duration) faultsEnabled signature
+                let fact =
+                        Pending
+                            (Hours duration)
+                            faultsEnabled
+                            (HasInstrumentation True)
+                            signature
                     request =
-                        Pending (Hours differentDuration) faultsEnabled differentSignature
+                        Pending
+                            (Hours differentDuration)
+                            faultsEnabled
+                            (HasInstrumentation True)
+                            differentSignature
                 testRunFact <- toJSFact testRun fact 0
                 let validation =
                         mkEffects (withFacts [testRunFact] mockMPFS) noValidation

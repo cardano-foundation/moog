@@ -37,6 +37,7 @@ import Core.Types.Basic
     , FaultsEnabled (..)
     , GithubRepository (..)
     , GithubUsername (..)
+    , HasInstrumentation (..)
     , Platform (..)
     , Try (..)
     )
@@ -206,6 +207,7 @@ data TestRunState a where
     Pending
         :: Duration
         -> FaultsEnabled
+        -> HasInstrumentation
         -> Ed25519.Signature
         -> TestRunState PendingT
     Rejected
@@ -223,12 +225,13 @@ deriving instance Eq (TestRunState a)
 deriving instance Show (TestRunState a)
 
 instance Monad m => ToJSON m (TestRunState a) where
-    toJSON (Pending d faultsEnabled signature) =
+    toJSON (Pending d faultsEnabled hasInstrumentation signature) =
         object
             [ ("phase", stringJSON "pending")
             , ("duration", toJSON d)
             , ("signature", byteStringToJSON $ BA.convert signature)
             , "faults_enabled" .= faultsEnabled
+            , "has_instrumentation" .= hasInstrumentation
             ]
     toJSON (Rejected pending reasons) =
         object
@@ -264,9 +267,19 @@ instance
                 signatureByteString <- byteStringFromJSON signatureJSValue
                 faultsEnabled <-
                     getFieldWithDefault "faults_enabled" (FaultsEnabled True) mapping
+                hasInstrumentation <-
+                    getFieldWithDefault
+                        "has_instrumentation"
+                        (HasInstrumentation True)
+                        mapping
                 case Ed25519.signature signatureByteString of
                     CryptoPassed signature ->
-                        pure $ Pending duration faultsEnabled signature
+                        pure
+                            $ Pending
+                                duration
+                                faultsEnabled
+                                hasInstrumentation
+                                signature
                     CryptoFailed e ->
                         expectedButGotValue
                             ("a valid Ed25519 signature " ++ show e)
