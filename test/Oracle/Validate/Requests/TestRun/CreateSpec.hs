@@ -12,6 +12,7 @@ import Control.Monad (when)
 import Core.Types.Basic
     ( FaultsEnabled (..)
     , FileName (..)
+    , HasInstrumentation (HasInstrumentation)
     , Owner (..)
     , RequestRefId (RequestRefId)
     , organization
@@ -170,7 +171,7 @@ spec = do
                     n -> do
                         let previousTestRun = testRun{tryIndex = n - 1}
                         previousState <-
-                            Pending duration faultsEnabled
+                            Pending duration faultsEnabled (HasInstrumentation True)
                                 <$> signTestRun
                                     sign
                                     previousTestRun
@@ -197,7 +198,7 @@ spec = do
                             , mockAssets = files
                             }
             testRunState <-
-                Pending duration faultsEnabled
+                Pending duration faultsEnabled (HasInstrumentation True)
                     <$> signTestRun sign testRun
             pure $ do
                 mresult <-
@@ -224,7 +225,7 @@ spec = do
                 (sign, _pk) <- genBlind ed25519Gen
                 forRole <- genForRole
                 testRunState <-
-                    Pending duration faultsEnabled
+                    Pending duration faultsEnabled (HasInstrumentation True)
                         <$> signTestRun sign testRun
                 let validation =
                         mkEffects
@@ -274,7 +275,7 @@ spec = do
                         )
                         0
                 testRunState <-
-                    Pending duration faultsEnabled
+                    Pending duration faultsEnabled (HasInstrumentation True)
                         <$> signTestRun sign testRun
                 let validation =
                         mkEffects
@@ -327,10 +328,10 @@ spec = do
                 (sign, _pk) <- genBlind ed25519Gen
                 forRole <- genForRole
                 testRunState <-
-                    Pending duration faultsEnabled
+                    Pending duration faultsEnabled (HasInstrumentation True)
                         <$> signTestRun sign testRun
                 otherTestRunState <-
-                    Pending otherDuration faultsEnabled
+                    Pending otherDuration faultsEnabled (HasInstrumentation True)
                         <$> signTestRun sign testRun
                 let pendingRequest =
                         CreateTestRequest
@@ -371,7 +372,7 @@ spec = do
             testConfig <- testConfigEGen
             signature <- gen signatureGen
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
-            let testRunState = Pending duration faultsEnabled signature
+            let testRunState = Pending duration faultsEnabled (HasInstrumentation True) signature
             pure $ do
                 mresult <-
                     runValidate
@@ -408,7 +409,12 @@ spec = do
                     mkEffects
                         (withFacts [roleFact] mockMPFS)
                         noValidation
-                testRunState = Pending (Hours duration) faultsEnabled signature
+                testRunState =
+                    Pending
+                        (Hours duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
+                        signature
             pure $ do
                 mresult <-
                     runValidate
@@ -450,7 +456,12 @@ spec = do
                         ]
             let mkTestRunFact :: Monad m => TestRunState x -> m JSFact
                 mkTestRunFact s = toJSFact testRunDB s 0
-                pending = Pending (Hours duration) faultsEnabled signature
+                pending =
+                    Pending
+                        (Hours duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
+                        signature
                 accepted = Accepted pending
             rejections <-
                 gen $ listOf $ elements [BrokenInstructions, UnclearIntent]
@@ -476,7 +487,12 @@ spec = do
                     mkEffects
                         (withFacts [testRunFact | testRunDB.tryIndex > 0] mockMPFS)
                         noValidation
-            let testRunState = Pending (Hours duration) faultsEnabled signature
+            let testRunState =
+                    Pending
+                        (Hours duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
+                        signature
             pure
                 $ counterexample (show testRunDB)
                 $ cover
@@ -507,7 +523,12 @@ spec = do
             signature <- gen signatureGen
             testRun <- testRunEGen
             testRun' <- gen $ oneof [changeDirectory testRun, pure testRun]
-            let testRunState = Pending (Hours duration) faultsEnabled signature
+            let testRunState =
+                    Pending
+                        (Hours duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
+                        signature
             testRunFact <- toJSFact testRun' testRunState 0
             let validation =
                     mkEffects (withFacts [testRunFact] mockMPFS)
@@ -534,7 +555,12 @@ spec = do
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
             signature <- gen signatureGen
             testRun <- testRunEGen
-            let testRunState = Pending (Hours duration) faultsEnabled signature
+            let testRunState =
+                    Pending
+                        (Hours duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
+                        signature
                 key =
                     WhiteListKey
                         { platform = testRun.platform

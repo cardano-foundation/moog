@@ -14,6 +14,7 @@ import Core.Types.Basic
     , FileName (..)
     , GithubRepository (..)
     , GithubUsername (..)
+    , HasInstrumentation (HasInstrumentation)
     , Owner (..)
     , Platform (..)
     , TokenId (..)
@@ -200,10 +201,14 @@ testDuration = Hours 3
 faultsEnabled :: FaultsEnabled
 faultsEnabled = FaultsEnabled True
 
+hasInstrumentation :: HasInstrumentation
+hasInstrumentation = HasInstrumentation True
+
 pendingState :: TestRunState 'PendingT
 pendingState = case signKey keyPair testRun of
     Nothing -> error "Failed to sign testRun"
-    Just (_, signature) -> Pending testDuration faultsEnabled signature
+    Just (_, signature) ->
+        Pending testDuration faultsEnabled hasInstrumentation signature
 
 spec :: Spec
 spec = describe "User.Requester.Cli" $ do
@@ -217,6 +222,7 @@ spec = describe "User.Requester.Cli" $ do
                     testRun
                     testDuration
                     faultsEnabled
+                    hasInstrumentation
 
         withContext
             mockMPFS{mpfsGetTokenFacts = const . pure $ renderFacts facts}

@@ -3,11 +3,12 @@ module User.Agent.Lib
     , withState
     , testRunDuration
     , testRunFaultsEnabled
+    , testRunHasInstrumentation
     ) where
 
 import Control.Applicative (Alternative (..))
 import Core.Context (WithContext, withMPFS)
-import Core.Types.Basic (FaultsEnabled, TokenId)
+import Core.Types.Basic (FaultsEnabled, HasInstrumentation, TokenId)
 import Core.Types.Duration (Duration)
 import Core.Types.Fact (Fact (..), keyHash, parseFacts)
 import Data.Foldable (find)
@@ -58,7 +59,10 @@ fromPending f = \case
     (Finished accepted _ _ _) -> fromPending f accepted
 
 testRunDuration :: TestRunState v -> Duration
-testRunDuration = fromPending $ \(Pending d _ _) -> d
+testRunDuration = fromPending $ \(Pending d _ _ _) -> d
 
 testRunFaultsEnabled :: TestRunState v -> FaultsEnabled
-testRunFaultsEnabled = fromPending $ \(Pending _ faultsEnabled _) -> faultsEnabled
+testRunFaultsEnabled = fromPending $ \(Pending _ faultsEnabled _ _) -> faultsEnabled
+
+testRunHasInstrumentation :: TestRunState v -> HasInstrumentation
+testRunHasInstrumentation = fromPending $ \(Pending _ _ hi _) -> hi

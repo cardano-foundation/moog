@@ -13,6 +13,7 @@ import Core.Options
     , downloadAssetsDirectoryOption
     , durationOption
     , faultsEnabledOption
+    , hasInstrumentationOption
     , platformOption
     , repositoryOption
     , sshPublicKeyHashParser
@@ -208,3 +209,4 @@ requestTestOptions =
             )
         <*> durationOption
         <*> faultsEnabledOption
+        <*> hasInstrumentationOption

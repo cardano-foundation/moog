@@ -6,6 +6,7 @@ where
 import Control.Monad (when)
 import Core.Types.Basic
     ( FaultsEnabled (..)
+    , HasInstrumentation (HasInstrumentation)
     , Owner (..)
     , RequestRefId (..)
     )
@@ -65,7 +66,13 @@ spec = do
             actualDuration <- genA
             url <- gen genAscii
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
-            let acceptedState = Accepted $ Pending (Hours 5) faultsEnabled signature
+            let acceptedState =
+                    Accepted
+                        $ Pending
+                            (Hours 5)
+                            faultsEnabled
+                            (HasInstrumentation True)
+                            signature
             testRunFact <- toJSFact testRun acceptedState 0
             let validation =
                     mkEffects
@@ -92,6 +99,7 @@ spec = do
                             ( Pending
                                 (Hours 5)
                                 (FaultsEnabled True)
+                                (HasInstrumentation True)
                                 signature
                             )
                     change =
@@ -127,6 +135,7 @@ spec = do
                         Pending
                             (Hours duration)
                             (FaultsEnabled True)
+                            (HasInstrumentation True)
                             signature
                     newTestRunState = Accepted pendingState
                     test =
@@ -150,12 +159,18 @@ spec = do
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 url <- genA
                 let fact =
-                        Accepted $ Pending (Hours pendingDuration) faultsEnabled signature
+                        Accepted
+                            $ Pending
+                                (Hours pendingDuration)
+                                faultsEnabled
+                                (HasInstrumentation True)
+                                signature
                     request =
                         Accepted
                             $ Pending
                                 (Hours differentPendingDuration)
                                 faultsEnabled
+                                (HasInstrumentation True)
                                 differentSignature
                 testRunFact <- toJSFact testRun fact 0
                 let validation =

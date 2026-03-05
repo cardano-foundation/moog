@@ -18,6 +18,7 @@ module Core.Types.Basic
     , GithubUsername (..)
     , Success (..)
     , FaultsEnabled (..)
+    , HasInstrumentation (..)
     , organizationL
     , projectL
     )
@@ -207,6 +208,20 @@ instance ReportSchemaErrors m => FromJSON m FaultsEnabled where
 
 instance Monad m => ToJSON m FaultsEnabled where
     toJSON (FaultsEnabled b) = pure $ JSBool b
+
+newtype HasInstrumentation = HasInstrumentation
+    { getHasInstrumentation :: Bool
+    }
+    deriving (Eq, Show)
+    deriving newtype (Aeson.FromJSON)
+    deriving newtype (Aeson.ToJSON)
+
+instance ReportSchemaErrors m => FromJSON m HasInstrumentation where
+    fromJSON (JSBool b) = pure $ HasInstrumentation b
+    fromJSON v = expectedButGotValue "Bool" v
+
+instance Monad m => ToJSON m HasInstrumentation where
+    toJSON (HasInstrumentation b) = pure $ JSBool b
 
 newtype Try = Try Int
     deriving (Eq, Show, Ord, Enum, Num, Generic)

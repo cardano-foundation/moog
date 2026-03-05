@@ -16,6 +16,7 @@ module Core.Options
     , walletOption
     , outcomeOption
     , faultsEnabledOption
+    , hasInstrumentationOption
     )
 where
 
@@ -26,6 +27,7 @@ import Core.Types.Basic
     , FaultsEnabled (FaultsEnabled)
     , GithubRepository (..)
     , GithubUsername (..)
+    , HasInstrumentation (HasInstrumentation)
     , Platform (..)
     , RequestRefId (..)
     , TokenId (..)
@@ -219,6 +221,17 @@ faultsEnabledOption =
             [ switch False
             , long "no-faults"
             , help "Disable faults injection for the test-run"
+            , reader auto
+            , value True
+            ]
+
+hasInstrumentationOption :: Parser HasInstrumentation
+hasInstrumentationOption =
+    HasInstrumentation
+        <$> setting
+            [ switch False
+            , long "no-instrumentation"
+            , help "Declare that the project has no instrumentation"
             , reader auto
             , value True
             ]
