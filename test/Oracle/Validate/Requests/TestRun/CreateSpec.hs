@@ -58,6 +58,7 @@ import Oracle.Validate.Requests.TestRun.Lib
     , changeProject
     , changeRequester
     , changeTry
+    , dummyAntithesisId
     , genDuration
     , gitAsset
     , gitCommit
@@ -462,7 +463,7 @@ spec = do
                         faultsEnabled
                         (HasInstrumentation True)
                         signature
-                accepted = Accepted pending
+                accepted = Accepted pending dummyAntithesisId
             rejections <-
                 gen $ listOf $ elements [BrokenInstructions, UnclearIntent]
             let rejected = Rejected pending rejections

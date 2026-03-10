@@ -18,7 +18,8 @@ import MockMPFS (mockMPFS, withFacts, withRequests)
 import Oracle.Types (Request (..), RequestZoo (FinishedRequest))
 import Oracle.Validate.Requests.RegisterUserSpec (genForRole)
 import Oracle.Validate.Requests.TestRun.Lib
-    ( mkEffects
+    ( dummyAntithesisId
+    , mkEffects
     , noValidation
     , signatureGen
     , testConfigFactGen
@@ -68,11 +69,13 @@ spec = do
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
             let acceptedState =
                     Accepted
-                        $ Pending
+                        ( Pending
                             (Hours 5)
                             faultsEnabled
                             (HasInstrumentation True)
                             signature
+                        )
+                        dummyAntithesisId
             testRunFact <- toJSFact testRun acceptedState 0
             let validation =
                     mkEffects
@@ -102,6 +105,7 @@ spec = do
                                 (HasInstrumentation True)
                                 signature
                             )
+                            dummyAntithesisId
                     change =
                         Change
                             { key = Key testRun
@@ -137,7 +141,7 @@ spec = do
                             (FaultsEnabled True)
                             (HasInstrumentation True)
                             signature
-                    newTestRunState = Accepted pendingState
+                    newTestRunState = Accepted pendingState dummyAntithesisId
                     test =
                         validateToRunningCore
                             (mkEffects mockMPFS noValidation)
@@ -160,18 +164,22 @@ spec = do
                 url <- genA
                 let fact =
                         Accepted
-                            $ Pending
+                            ( Pending
                                 (Hours pendingDuration)
                                 faultsEnabled
                                 (HasInstrumentation True)
                                 signature
+                            )
+                            dummyAntithesisId
                     request =
                         Accepted
-                            $ Pending
+                            ( Pending
                                 (Hours differentPendingDuration)
                                 faultsEnabled
                                 (HasInstrumentation True)
                                 differentSignature
+                            )
+                            dummyAntithesisId
                 testRunFact <- toJSFact testRun fact 0
                 let validation =
                         mkEffects

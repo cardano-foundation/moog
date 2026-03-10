@@ -186,4 +186,4 @@ validateToRunningCore
 validateToRunningCore
     validation
     testRun = \case
-        Accepted pending -> checkPastState validation testRun pending
+        Accepted pending _ -> checkPastState validation testRun pending

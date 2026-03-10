@@ -27,7 +27,8 @@ import Core.Context
     , withMPFS
     )
 import Core.Types.Basic
-    ( Directory
+    ( AntithesisId (..)
+    , Directory
     , GithubRepository
     , GithubUsername (..)
     , Owner
@@ -206,10 +207,10 @@ agentCmd = \case
         blackList tokenId wallet platform repo
     DownloadAssets tokenId key dir ->
         ($> Success) <$> downloadAssets tokenId key dir
-    Accept tokenId wallet key () -> runValidate
+    Accept tokenId wallet key () antithesisId -> runValidate
         $ updateTestRunState tokenId key
         $ \fact ->
-            acceptCommand tokenId wallet fact
+            acceptCommand tokenId wallet fact antithesisId
     Reject tokenId wallet key () reason -> runValidate
         $ updateTestRunState tokenId key
         $ \fact ->
@@ -306,6 +307,7 @@ data AgentCommand (phase :: IsReady) result where
         -> Wallet
         -> ResolveId phase
         -> IfReady phase (TestRunState PendingT)
+        -> AntithesisId
         -> AgentCommand
             phase
             ( AValidationResult
@@ -554,16 +556,17 @@ acceptCommand
     => TokenId
     -> Wallet
     -> Fact TestRun (TestRunState PendingT)
+    -> AntithesisId
     -> ValidateWithContext
         m
         (WithTxHash (TestRunState RunningT))
-acceptCommand tokenId wallet fact =
+acceptCommand tokenId wallet fact antithesisId =
     signAndSubmitAnUpdate
         (`validateToRunningUpdate` ForUser)
         tokenId
         wallet
         fact
-        $ Accepted (factValue fact)
+        $ Accepted (factValue fact) antithesisId
 
 reportCommand
     :: Monad m

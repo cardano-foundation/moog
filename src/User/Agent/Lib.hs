@@ -55,7 +55,7 @@ fromPending :: (TestRunState 'PendingT -> a) -> TestRunState v -> a
 fromPending f = \case
     p@(Pending{}) -> f p
     (Rejected pending _) -> f pending
-    (Accepted pending) -> f pending
+    (Accepted pending _) -> f pending
     (Finished accepted _ _ _) -> fromPending f accepted
 
 testRunDuration :: TestRunState v -> Duration

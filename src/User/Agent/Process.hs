@@ -26,7 +26,8 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Except (runExceptT, throwE)
 import Core.Options (tokenIdOption, walletOption)
 import Core.Types.Basic
-    ( Directory (..)
+    ( AntithesisId (..)
+    , Directory (..)
     , GithubUsername (..)
     , Success (..)
     , TokenId
@@ -313,7 +314,11 @@ agentProcess
                                         $ "Pushed test-run "
                                             ++ trId
                                             ++ " to Antithesis."
-                        eres <- liftIO $ submitRunning opts testId
+                        let antithesisId =
+                                AntithesisId $ testRunId testId
+                        eres <-
+                            liftIO
+                                $ submitRunning opts testId antithesisId
                         case eres of
                             ValidationFailure err -> do
                                 loggin
@@ -453,6 +458,7 @@ submitDone
 submitRunning
     :: ProcessOptions
     -> TestRunId
+    -> AntithesisId
     -> IO
         ( AValidationResult
             UpdateTestRunFailure
@@ -460,7 +466,8 @@ submitRunning
         )
 submitRunning
     ProcessOptions{poAuth, poMPFSClient, poWallet, poTokenId}
-    testId =
+    testId
+    antithesisId =
         cmd
             $ AgentCommand poAuth poMPFSClient
             $ Accept
@@ -468,6 +475,7 @@ submitRunning
                 poWallet
                 testId
                 ()
+                antithesisId
 
 downloadAssets
     :: ProcessOptions

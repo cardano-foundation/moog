@@ -32,7 +32,8 @@ import Control.Applicative (Alternative, (<|>))
 import Control.Lens (makeLensesFor)
 import Control.Monad (guard)
 import Core.Types.Basic
-    ( Commit (..)
+    ( AntithesisId (..)
+    , Commit (..)
     , Directory (..)
     , FaultsEnabled (..)
     , GithubRepository (..)
@@ -212,7 +213,10 @@ data TestRunState a where
         -> TestRunState PendingT
     Rejected
         :: TestRunState PendingT -> [TestRunRejection] -> TestRunState DoneT
-    Accepted :: TestRunState PendingT -> TestRunState RunningT
+    Accepted
+        :: TestRunState PendingT
+        -> AntithesisId
+        -> TestRunState RunningT
     Finished
         :: TestRunState RunningT
         -> Duration
@@ -239,10 +243,11 @@ instance Monad m => ToJSON m (TestRunState a) where
             , ("from", toJSON pending)
             , ("reasons", traverse toJSON reasons >>= toJSON)
             ]
-    toJSON (Accepted pending) =
+    toJSON (Accepted pending antithesisId) =
         object
             [ ("phase", stringJSON "accepted")
             , ("from", toJSON pending)
+            , "antithesis_id" .= antithesisId
             ]
     toJSON (Finished running duration outcome url) =
         object
@@ -332,7 +337,12 @@ instance
         case phase of
             "accepted" -> do
                 pending <- getField "from" mapping >>= fromJSON
-                pure $ Accepted pending
+                antithesisId <-
+                    getFieldWithDefault
+                        "antithesis_id"
+                        (AntithesisId "")
+                        mapping
+                pure $ Accepted pending antithesisId
             _ ->
                 expectedButGotValue
                     "an accepted phase"
