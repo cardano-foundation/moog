@@ -14,8 +14,13 @@ import Control.Applicative (Alternative, (<|>))
 import Core.Types.Basic (Owner)
 import Core.Types.Change (Change)
 import Core.Types.Operation (Op (OpI, OpU))
+import Core.Types.WireVersion
+    ( readWireVersion
+    , wireVersionField
+    )
 import Lib.JSON.Canonical.Extra
-    ( intJSON
+    ( getField
+    , intJSON
     , object
     , stringJSON
     , withObject
@@ -24,6 +29,7 @@ import Lib.JSON.Canonical.Extra
     )
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig
+    , testRunValidationConfigFromV0
     )
 import Text.JSON.Canonical
     ( FromJSON (..)
@@ -81,19 +87,34 @@ instance ReportSchemaErrors m => FromJSON m ConfigKey where
 instance Monad m => ToJSON m Config where
     toJSON (Config agent testRun protocolVersion) =
         object
-            [ "agent" .= agent
+            [ wireVersionField
+            , "agent" .= agent
             , "testRun" .= testRun
             , "protocolVersion" .= protocolVersion
             ]
 
 instance (Alternative m, ReportSchemaErrors m) => FromJSON m Config where
     fromJSON = withObject "Config" $ \o -> do
-        Config
-            <$> o .: "agent"
-            <*> o .: "testRun"
-            <*> ( (o .: "protocolVersion" >>= fromJSON)
-                    <|> pure (ProtocolVersion 0)
-                )
+        version <- readWireVersion o
+        case version of
+            0 -> do
+                agent <- o .: "agent"
+                testRunV <- getField "testRun" o
+                testRun <-
+                    testRunValidationConfigFromV0
+                        testRunV
+                pure
+                    $ Config
+                        agent
+                        testRun
+                        (ProtocolVersion 0)
+            _ ->
+                Config
+                    <$> o .: "agent"
+                    <*> o .: "testRun"
+                    <*> ( (o .: "protocolVersion" >>= fromJSON)
+                            <|> pure (ProtocolVersion 0)
+                        )
 
 type SetConfigChange = Change ConfigKey (OpI Config)
 type UpdateConfigChange = Change ConfigKey (OpU Config Config)

@@ -3,6 +3,7 @@ module Core.Types.Duration
     , durationToTimeDiff
     , negateDuration
     , durationToNominalDiffTime
+    , durationFromV0
     )
 where
 
@@ -52,16 +53,33 @@ instance Monad m => ToJSON m Duration where
     toJSON (Hours h) = object [("hours", intJSON h)]
     toJSON (Minutes m) = object [("minutes", intJSON m)]
 
-instance (Alternative m, ReportSchemaErrors m) => FromJSON m Duration where
-    fromJSON v = directHours v <|> specific v
+-- | Symmetric decoder: only accepts the object format
+-- @{"hours": n}@ or @{"minutes": n}@.
+instance
+    (Alternative m, ReportSchemaErrors m)
+    => FromJSON m Duration
+    where
+    fromJSON obj = do
+        mapping <- fromJSON obj
+        hours mapping <|> minutes mapping
       where
-        directHours (JSNum n) = pure $ Hours (fromIntegral n)
-        directHours w = expectedButGotValue "Duration as number of hours" w
-        specific obj = do
-            mapping <- fromJSON obj
-            hours mapping <|> minutes mapping
-        hours mapping = Hours <$> getIntegralField "hours" mapping
-        minutes mapping = Minutes <$> getIntegralField "minutes" mapping
+        hours mapping =
+            Hours <$> getIntegralField "hours" mapping
+        minutes mapping =
+            Minutes
+                <$> getIntegralField "minutes" mapping
+
+-- | Parse a v0 wire format duration (plain number of
+-- hours). Used by versioned decoders to handle old
+-- on-chain facts.
+durationFromV0
+    :: ReportSchemaErrors m => JSValue -> m Duration
+durationFromV0 (JSNum n) =
+    pure $ Hours (fromIntegral n)
+durationFromV0 w =
+    expectedButGotValue
+        "Duration as number of hours (v0)"
+        w
 
 durationToTimeDiff :: Duration -> TimeDiff
 durationToTimeDiff (Hours h) = noTimeDiff{tdHour = h}
