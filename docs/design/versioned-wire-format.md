@@ -43,28 +43,36 @@ Types that are unaffected (no format changes):
 - `()` — trivial value for registrations/whitelist
 - `TestRun` — key type, no Duration fields
 
-### Implementation approach
+### Implementation
 
-A `Versioned` wrapper type that handles the dispatch:
+Three helpers in `Core.Types.WireVersion`:
 
 ```haskell
--- The version tag
-newtype WireVersion = WireVersion Int
-
--- Typeclass for versioned on-chain types
-class VersionedJSON a where
-    currentWireVersion :: WireVersion
-    encodeVersioned :: a -> JSValue  -- always current version
-    decodeVersioned :: WireVersion -> JSValue -> Maybe a
-
--- ToJSON writes current version + payload
--- FromJSON reads "v" field, dispatches to decodeVersioned
+currentWireVersion :: Int54        -- 1
+readWireVersion    :: Map String JSValue -> m Int54
+wireVersionField   :: (String, m JSValue)
 ```
 
-The `FromJSON Duration` becomes symmetric (object format only).
-The v0 migration logic moves into `decodeVersioned` for `TestRunState`
-and `Config`, where it converts `JSNum` durations to `Duration` values
-before constructing the Haskell type.
+- `wireVersionField` is added to every `ToJSON` object.
+- `readWireVersion` is called in `FromJSON` to get the version
+  (defaults to `0` when absent).
+
+Version dispatch is inline in each `FromJSON` instance — no
+typeclass needed. The only version-dependent logic is which
+duration decoder to use:
+
+```haskell
+durationForVersion :: Int54 -> JSValue -> m Duration
+durationForVersion 0 = durationFromV0  -- plain JSNum
+durationForVersion _ = fromJSON        -- {"hours":n}
+```
+
+`Duration`'s `FromJSON` is now symmetric (object format only).
+`durationFromV0` handles the legacy `JSNum` format and is called
+by the v0 branches of `TestRunState` and `Config` decoders.
+
+`Config` v0 also uses `testRunValidationConfigFromV0` to parse
+nested `TestRunValidationConfig` with plain-number durations.
 
 ### What does NOT change
 
@@ -74,10 +82,17 @@ before constructing the Haskell type.
 - The `ProtocolVersion` in `Config` — separate concern (client/oracle
   handshake), orthogonal to wire format versioning
 
-### Migration path
+### Modules changed
 
-1. Add `"v"` field support to `TestRunState` and `Config` codecs
-2. Make `Duration` codecs symmetric (object format only)
-3. Move the `directHours` fallback into versioned decoders for v0
-4. Existing golden tests continue passing (old data parses as v0)
-5. New round-trip tests verify symmetry at each version
+| Module | Change |
+|--------|--------|
+| `Core.Types.WireVersion` | New — version helpers |
+| `Core.Types.Duration` | Symmetric `FromJSON`, new `durationFromV0` |
+| `User.Types` | `ToJSON`/`FromJSON` for `TestRunState` write/read `"v"` |
+| `Oracle.Config.Types` | `ToJSON`/`FromJSON` for `Config` write/read `"v"` |
+| `Oracle.Validate.Requests.TestRun.Config` | New `testRunValidationConfigFromV0` |
+
+### Test coverage
+
+- Existing golden tests (v0 on-chain data) continue passing
+- Existing round-trip tests verify v1 symmetry
