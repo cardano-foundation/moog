@@ -29,6 +29,7 @@ module Oracle.Validate.Requests.TestRun.Lib
     , gitAsset
     , genDuration
     , testConfigFactGen
+    , dummyAntithesisId
     )
 where
 
@@ -40,7 +41,8 @@ import Control.Lens
     , (^.)
     )
 import Core.Types.Basic
-    ( Commit (..)
+    ( AntithesisId (..)
+    , Commit (..)
     , Directory (..)
     , FileName (..)
     , GithubRepository (..)
@@ -416,3 +418,8 @@ testConfigFactGen :: Owner -> EGen JSFact
 testConfigFactGen owner = do
     testConfig <- testConfigEGen
     toJSFact ConfigKey (mkCurrentConfig owner testConfig) 0
+
+-- | Placeholder 'AntithesisId' for tests. Will be
+-- replaced by the real Antithesis API ID in Phase 2.
+dummyAntithesisId :: AntithesisId
+dummyAntithesisId = AntithesisId ""

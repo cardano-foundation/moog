@@ -18,7 +18,8 @@ import MockMPFS (mockMPFS, withFacts, withRequests)
 import Oracle.Types (Request (..), RequestZoo (AcceptRequest))
 import Oracle.Validate.Requests.RegisterUserSpec (genForRole)
 import Oracle.Validate.Requests.TestRun.Lib
-    ( mkEffects
+    ( dummyAntithesisId
+    , mkEffects
     , noValidation
     , signatureGen
     , testConfigFactGen
@@ -65,7 +66,7 @@ spec = do
             testRunFact <- toJSFact testRun pendingState 0
             let validation =
                     mkEffects (withFacts [testRunFact] mockMPFS) noValidation
-                newTestRunState = Accepted pendingState
+                newTestRunState = Accepted pendingState dummyAntithesisId
                 test = validateToRunningCore validation testRun newTestRunState
             pure $ test `shouldReturn` Nothing
         it
@@ -79,7 +80,10 @@ spec = do
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 configFact <- testConfigFactGen anOwner
                 let pendingState = Pending (Hours 5) faultsEnabled (HasInstrumentation True) signature
-                    change = Change (Key testRun) (Update pendingState (Accepted pendingState))
+                    change =
+                        Change
+                            (Key testRun)
+                            (Update pendingState (Accepted pendingState dummyAntithesisId))
                     pendingRequest =
                         AcceptRequest
                             (Request{outputRefId = RequestRefId "", owner = anOwner, change})
@@ -107,7 +111,7 @@ spec = do
                             faultsEnabled
                             (HasInstrumentation True)
                             signature
-                    newTestRunState = Accepted pendingState
+                    newTestRunState = Accepted pendingState dummyAntithesisId
                     test =
                         validateToRunningCore
                             (mkEffects mockMPFS noValidation)
@@ -140,7 +144,7 @@ spec = do
                 testRunFact <- toJSFact testRun fact 0
                 let validation =
                         mkEffects (withFacts [testRunFact] mockMPFS) noValidation
-                    newTestRunState = Accepted request
+                    newTestRunState = Accepted request dummyAntithesisId
                     test = validateToRunningCore validation testRun newTestRunState
                 pure
                     $ counterexample (show (fact, request))
