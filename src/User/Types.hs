@@ -41,7 +41,11 @@ import Core.Types.Basic
     , Platform (..)
     , Try (..)
     )
-import Core.Types.Duration (Duration (..))
+import Core.Types.Duration (Duration (..), durationFromV0)
+import Core.Types.WireVersion
+    ( readWireVersion
+    , wireVersionField
+    )
 import Core.Types.VKey (decodeVKey)
 import Crypto.Error (CryptoFailable (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
@@ -73,6 +77,7 @@ import Lib.SSH.Public
     )
 import Text.JSON.Canonical
     ( FromJSON (..)
+    , Int54
     , JSValue (..)
     , ReportSchemaErrors
     , ToJSON (..)
@@ -203,6 +208,17 @@ instance (ReportSchemaErrors m) => FromJSON m TestRunRejection where
 newtype URL = URL String
     deriving (Show, Eq)
 
+-- | Select the appropriate duration decoder based on
+-- the wire version: v0 uses plain numbers, v1+ uses
+-- the standard object format.
+durationForVersion
+    :: (Alternative m, ReportSchemaErrors m)
+    => Int54
+    -> JSValue
+    -> m Duration
+durationForVersion 0 = durationFromV0
+durationForVersion _ = fromJSON
+
 data TestRunState a where
     Pending
         :: Duration
@@ -227,7 +243,8 @@ deriving instance Show (TestRunState a)
 instance Monad m => ToJSON m (TestRunState a) where
     toJSON (Pending d faultsEnabled hasInstrumentation signature) =
         object
-            [ ("phase", stringJSON "pending")
+            [ wireVersionField
+            , ("phase", stringJSON "pending")
             , ("duration", toJSON d)
             , ("signature", byteStringToJSON $ BA.convert signature)
             , "faults_enabled" .= faultsEnabled
@@ -235,18 +252,21 @@ instance Monad m => ToJSON m (TestRunState a) where
             ]
     toJSON (Rejected pending reasons) =
         object
-            [ ("phase", stringJSON "rejected")
+            [ wireVersionField
+            , ("phase", stringJSON "rejected")
             , ("from", toJSON pending)
             , ("reasons", traverse toJSON reasons >>= toJSON)
             ]
     toJSON (Accepted pending) =
         object
-            [ ("phase", stringJSON "accepted")
+            [ wireVersionField
+            , ("phase", stringJSON "accepted")
             , ("from", toJSON pending)
             ]
     toJSON (Finished running duration outcome url) =
         object
-            [ ("phase", stringJSON "finished")
+            [ wireVersionField
+            , ("phase", stringJSON "finished")
             , ("from", toJSON running)
             , ("duration", toJSON duration)
             , ("url", stringJSON $ case url of URL u -> u)
@@ -259,10 +279,13 @@ instance
     where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
+        version <- readWireVersion mapping
         phase <- getStringField "phase" mapping
         case phase of
             "pending" -> do
-                duration <- getField "duration" mapping >>= fromJSON
+                duration <-
+                    getField "duration" mapping
+                        >>= durationForVersion version
                 signatureJSValue <- getField "signature" mapping
                 signatureByteString <- byteStringFromJSON signatureJSValue
                 faultsEnabled <-
@@ -299,6 +322,7 @@ instance
     where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
+        version <- readWireVersion mapping
         phase <- getStringField "phase" mapping
         case phase of
             "rejected" -> do
@@ -308,8 +332,9 @@ instance
                 pure $ Rejected pending reasonList
             "finished" -> do
                 running <- getField "from" mapping >>= fromJSON
-                duration <- do
-                    getField "duration" mapping >>= fromJSON
+                duration <-
+                    getField "duration" mapping
+                        >>= durationForVersion version
                 url <- getStringField "url" mapping
                 outcome <- getFieldWithDefault "outcome" OutcomeUnknown mapping
                 pure $ Finished running duration outcome (URL url)
