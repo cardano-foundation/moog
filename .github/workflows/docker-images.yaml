@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: sudo rm -rf /opt&
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: paolino/dev-assets/setup-nix@v0.0.1
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
@@ -23,7 +23,7 @@ jobs:
           IMAGE=$(docker load < moog-oracle-image | grep "Loaded image:" | awk '{print $3}')
           docker run --rm "$IMAGE" --help
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: moog-oracle-image
           path: ./moog-oracle-image
@@ -34,7 +34,7 @@ jobs:
           IMAGE=$(docker load < moog-agent-image | grep "Loaded image:" | awk '{print $3}')
           docker run --rm "$IMAGE" --help
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: moog-agent-image
           path: ./moog-agent-image
@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - run: sudo rm -rf /opt&
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: paolino/dev-assets/setup-nix@v0.0.1
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
@@ -54,7 +54,7 @@ jobs:
           IMAGE=$(docker load < moog-oracle-image-aarch64 | grep "Loaded image:" | awk '{print $3}')
           docker run --rm "$IMAGE" --help
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: moog-oracle-image-aarch64
           path: ./moog-oracle-image-aarch64
@@ -65,7 +65,7 @@ jobs:
           IMAGE=$(docker load < moog-agent-image-aarch64 | grep "Loaded image:" | awk '{print $3}')
           docker run --rm "$IMAGE" --help
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: moog-agent-image-aarch64
           path: ./moog-agent-image-aarch64
