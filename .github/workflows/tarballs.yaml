@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: sudo rm -rf /opt&
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
@@ -33,7 +33,7 @@ jobs:
           /tmp/tarball-test/moog-oracle --help
           /tmp/tarball-test/moog-agent --help
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: linux-tarball
           path: ./linux-tarball
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - run: sudo rm -rf /opt&
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
@@ -63,7 +63,7 @@ jobs:
           /tmp/tarball-test/moog-oracle --help
           /tmp/tarball-test/moog-agent --help
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: linux-aarch64-tarball
           path: ./linux-aarch64-tarball
@@ -72,7 +72,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - run: sudo rm -rf /opt&
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v31
         with:
           extra_nix_config: |
@@ -92,7 +92,7 @@ jobs:
           /tmp/tarball-test/moog --help
           /tmp/tarball-test/moog-oracle --help
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: darwin-tarball
           path: ./darwin-tarball
