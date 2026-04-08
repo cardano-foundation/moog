@@ -19,7 +19,7 @@ import Core.Options
     , tokenIdOption
     , walletOption
     )
-import Core.Types.Basic (Success)
+import Core.Types.Basic (AntithesisId (..), Success)
 import Core.Types.Duration (Duration (..))
 import Core.Types.Tx (WithTxHash)
 import Lib.Box (Box (..))
@@ -300,6 +300,21 @@ acceptTestOptions =
         <*> walletOption
         <*> testRunIdOption "accept"
         <*> pure ()
+        <*> antithesisIdOption
+
+antithesisIdOption :: Parser AntithesisId
+antithesisIdOption =
+    AntithesisId
+        <$> setting
+            [ long "antithesis-id"
+            , metavar "ANTITHESIS_ID"
+            , help
+                "External test run ID assigned by \
+                \Antithesis. Stored on-chain in the \
+                \Running state."
+            , option
+            , reader str
+            ]
 
 testRejectionParser :: Parser TestRunRejection
 testRejectionParser =

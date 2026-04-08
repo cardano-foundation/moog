@@ -19,6 +19,7 @@ module Core.Types.Basic
     , Success (..)
     , FaultsEnabled (..)
     , HasInstrumentation (..)
+    , AntithesisId (..)
     , organizationL
     , projectL
     )
@@ -233,3 +234,21 @@ data Success = Success
 
 instance Monad m => ToJSON m Success where
     toJSON Success = pure $ JSString "OK"
+
+-- | External test run identifier, assigned by the
+-- testing service (Antithesis). Stored on-chain in
+-- the 'Running' state so results can be queried by
+-- ID.
+newtype AntithesisId = AntithesisId
+    { getAntithesisId :: String
+    }
+    deriving (Eq, Show)
+
+instance Monad m => ToJSON m AntithesisId where
+    toJSON (AntithesisId aid) = stringJSON aid
+
+instance ReportSchemaErrors m => FromJSON m AntithesisId where
+    fromJSON (JSString s) =
+        pure $ AntithesisId (fromJSString s)
+    fromJSON v =
+        expectedButGotValue "AntithesisId string" v

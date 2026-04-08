@@ -8,7 +8,8 @@ module User.TypesSpec
 where
 
 import Core.Types.Basic
-    ( Commit (Commit)
+    ( AntithesisId (..)
+    , Commit (Commit)
     , Directory (Directory)
     , FaultsEnabled (..)
     , GithubRepository (GithubRepository, organization, project)
@@ -91,7 +92,7 @@ spec = do
                                     pending
                                     rejections
                         roundTrip rejected
-                        let accepted = Accepted pending
+                        let accepted = Accepted pending (AntithesisId "test-id")
                         roundTrip accepted
                         let finished =
                                 Finished
