@@ -99,6 +99,7 @@ library
     Core.Types.Change
     Core.Types.Duration
     Core.Types.Fact
+    Core.Types.WireVersion
     Core.Types.Mnemonics
     Core.Types.Mnemonics.Options
     Core.Types.MPFS
