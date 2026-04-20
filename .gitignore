@@ -27,3 +27,8 @@ docs/yarn.lock
 tmp
 result
 site
+
+# spec-kit / claude agent local state
+.claude/settings.local.json
+WIP.md
+.llm/
