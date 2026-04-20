@@ -28,6 +28,7 @@ tmp
 result
 site
 
-# resolve-ticket worktree scratch
+# resolve-ticket worktree scratch + spec-kit / claude agent local state
+.claude/settings.local.json
 WIP.md
 .llm/
