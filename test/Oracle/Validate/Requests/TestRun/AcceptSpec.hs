@@ -5,13 +5,13 @@ where
 
 import Control.Monad (when)
 import Core.Types.Basic
-    ( FaultsEnabled (..)
+    ( Duration (..)
+    , FaultsEnabled (..)
     , HasInstrumentation (HasInstrumentation)
     , Owner (..)
     , RequestRefId (..)
     )
 import Core.Types.Change (Change (..), Key (..))
-import Core.Types.Duration (Duration (Hours))
 import Core.Types.Fact (toJSFact)
 import Core.Types.Operation (Operation (..))
 import MockMPFS (mockMPFS, withFacts, withRequests)
@@ -61,7 +61,8 @@ spec = do
             testRun <- testRunEGen
             signature <- gen signatureGen
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
-            let pendingState = Pending (Hours 5) faultsEnabled (HasInstrumentation True) signature
+            let pendingState =
+                    Pending (Duration 5) faultsEnabled (HasInstrumentation True) signature
             testRunFact <- toJSFact testRun pendingState 0
             let validation =
                     mkEffects (withFacts [testRunFact] mockMPFS) noValidation
@@ -78,7 +79,8 @@ spec = do
                 anOwner <- gen $ Owner <$> genAscii
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 configFact <- testConfigFactGen anOwner
-                let pendingState = Pending (Hours 5) faultsEnabled (HasInstrumentation True) signature
+                let pendingState =
+                        Pending (Duration 5) faultsEnabled (HasInstrumentation True) signature
                     change = Change (Key testRun) (Update pendingState (Accepted pendingState))
                     pendingRequest =
                         AcceptRequest
@@ -103,7 +105,7 @@ spec = do
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 let pendingState =
                         Pending
-                            (Hours duration)
+                            (Duration duration)
                             faultsEnabled
                             (HasInstrumentation True)
                             signature
@@ -127,13 +129,13 @@ spec = do
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 let fact =
                         Pending
-                            (Hours duration)
+                            (Duration duration)
                             faultsEnabled
                             (HasInstrumentation True)
                             signature
                     request =
                         Pending
-                            (Hours differentDuration)
+                            (Duration differentDuration)
                             faultsEnabled
                             (HasInstrumentation True)
                             differentSignature

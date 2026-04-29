@@ -75,8 +75,7 @@ in {
   packages.cardano-address =
     project.hsPkgs.cardano-addresses.components.exes.cardano-address;
   packages.unit-tests = project.hsPkgs.moog.components.tests.unit-tests;
-  packages.integration-tests =
-    project.hsPkgs.moog.components.tests.integration-tests;
+  packages.integration-tests = project.hsPkgs.moog.components.tests.integration-tests;
   packages.e2e-tests = project.hsPkgs.moog.components.tests.e2e-tests;
   musl64 = project.projectCross.musl64.hsPkgs;
   aarch64-musl = project.projectCross.aarch64-multiplatform-musl.hsPkgs;

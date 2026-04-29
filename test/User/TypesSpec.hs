@@ -10,6 +10,7 @@ where
 import Core.Types.Basic
     ( Commit (Commit)
     , Directory (Directory)
+    , Duration (..)
     , FaultsEnabled (..)
     , GithubRepository (GithubRepository, organization, project)
     , GithubUsername (GithubUsername)
@@ -17,7 +18,6 @@ import Core.Types.Basic
     , Platform (Platform)
     , Try (..)
     )
-import Core.Types.Duration (Duration (..))
 import Data.ByteString.Lazy qualified as BL
 import Lib.SSH.Public (makeSSHPublicKey)
 import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe)
@@ -81,7 +81,7 @@ spec = do
                     forAllBlind ed25519Gen $ \(sign, _verify) -> do
                         let pending =
                                 Pending
-                                    (Hours duration)
+                                    (Duration duration)
                                     (FaultsEnabled faultsEnabled)
                                     (HasInstrumentation hasInstrumentation)
                                     $ sign message
@@ -96,7 +96,7 @@ spec = do
                         let finished =
                                 Finished
                                     accepted
-                                    (Hours duration)
+                                    (Duration duration)
                                     OutcomeSuccess
                                     (URL url)
                         roundTrip finished
@@ -141,7 +141,7 @@ spec = do
                     tryIndex testRun `shouldBe` Try 1
                     case done of
                         Finished _ dur outcome _ -> do
-                            dur `shouldBe` Hours 1
+                            dur `shouldBe` Duration 1
                             outcome `shouldBe` OutcomeUnknown
                         _ -> expectationFailure "expected Finished state"
 
@@ -155,7 +155,7 @@ spec = do
                         `shouldBe` Commit "03e14eab93d2bc008e1be4deb75430c1a8d98948"
                     case done of
                         Finished _ dur outcome _ -> do
-                            dur `shouldBe` Hours 1
+                            dur `shouldBe` Duration 1
                             outcome `shouldBe` OutcomeFailure
                         _ -> expectationFailure "expected Finished state"
 
@@ -170,7 +170,7 @@ spec = do
                         tryIndex testRun `shouldBe` Try 2
                         case done of
                             Finished _ dur outcome _ -> do
-                                dur `shouldBe` Hours 1
+                                dur `shouldBe` Duration 1
                                 outcome `shouldBe` OutcomeSuccess
                             _ -> expectationFailure "expected Finished state"
 
@@ -181,5 +181,5 @@ spec = do
                 Left err -> expectationFailure err
                 Right (_testRun, done) -> do
                     case done of
-                        Finished _ dur _ _ -> dur `shouldBe` Hours 3
+                        Finished _ dur _ _ -> dur `shouldBe` Duration 3
                         _ -> expectationFailure "expected Finished state"
