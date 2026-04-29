@@ -132,10 +132,10 @@ minutesOption =
         <$> setting
             [ long "minutes"
             , help
-                "Number of minutes in the past to check for test results (default: 7)"
+                "Number of minutes in the past to check for test results (default: 1440)"
             , metavar "MINUTES"
             , reader auto
-            , value 10
+            , value 1440
             , option
             ]
 
