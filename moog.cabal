@@ -97,7 +97,6 @@ library
     Core.Types.Basic
     Core.Types.CageDatum
     Core.Types.Change
-    Core.Types.Duration
     Core.Types.Fact
     Core.Types.Mnemonics
     Core.Types.Mnemonics.Options
@@ -338,7 +337,6 @@ test-suite unit-tests
   -- Modules included in this executable, other than Main.
   other-modules:
     Core.EncryptionSpec
-    Core.Types.DurationSpec
     Core.Types.FactSpec
     Core.Types.VKeySpec
     Lib.CryptoBoxSpec
@@ -391,7 +389,6 @@ test-suite unit-tests
     , memory
     , moog
     , moog:test-lib
-    , old-time
     , QuickCheck
     , scientific
     , string-qq

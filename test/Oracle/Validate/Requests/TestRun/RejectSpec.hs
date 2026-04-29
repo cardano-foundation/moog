@@ -5,13 +5,13 @@ where
 
 import Control.Monad (when)
 import Core.Types.Basic
-    ( FaultsEnabled (..)
+    ( Duration (..)
+    , FaultsEnabled (..)
     , HasInstrumentation (HasInstrumentation)
     , Owner (..)
     , RequestRefId (..)
     )
 import Core.Types.Change (Change (..), Key (..))
-import Core.Types.Duration (Duration (Hours))
 import Core.Types.Fact (toJSFact)
 import Core.Types.Operation (Operation (..))
 import MockMPFS (mockMPFS, withFacts, withRequests)
@@ -62,7 +62,8 @@ spec = do
             testRun <- testRunEGen
             signature <- gen signatureGen
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
-            let pendingState = Pending (Hours 5) faultsEnabled (HasInstrumentation True) signature
+            let pendingState =
+                    Pending (Duration 5) faultsEnabled (HasInstrumentation True) signature
             testRunFact <- toJSFact testRun pendingState 0
             agent <- Owner <$> gen genAscii
             configFact <- testConfigFactGen agent
@@ -83,7 +84,8 @@ spec = do
                 anOwner <- gen $ Owner <$> genAscii
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 configFact <- testConfigFactGen anOwner
-                let pendingState = Pending (Hours 5) faultsEnabled (HasInstrumentation True) signature
+                let pendingState =
+                        Pending (Duration 5) faultsEnabled (HasInstrumentation True) signature
                     change =
                         Change
                             { key = Key testRun
@@ -119,7 +121,7 @@ spec = do
                         mkEffects (withFacts [configFact] mockMPFS) noValidation
                 let pendingState =
                         Pending
-                            (Hours duration)
+                            (Duration duration)
                             faultsEnabled
                             (HasInstrumentation True)
                             signature
@@ -145,13 +147,13 @@ spec = do
                 differentSignature <- gen $ oneof [signatureGen, pure signature]
                 let fact =
                         Pending
-                            (Hours duration)
+                            (Duration duration)
                             faultsEnabled
                             (HasInstrumentation True)
                             signature
                     request =
                         Pending
-                            (Hours differentDuration)
+                            (Duration differentDuration)
                             faultsEnabled
                             (HasInstrumentation True)
                             differentSignature

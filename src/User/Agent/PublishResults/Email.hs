@@ -14,6 +14,7 @@ module User.Agent.PublishResults.Email
     , WithDateError (..)
     , EmailUser (..)
     , EmailPassword (..)
+    , Minutes (..)
     )
 where
 
@@ -28,12 +29,6 @@ import Control.Monad.Trans.Except
     , except
     , runExceptT
     , withExceptT
-    )
-import Core.Types.Duration
-    ( Duration (..)
-    , durationToNominalDiffTime
-    , durationToTimeDiff
-    , negateDuration
     )
 import Data.ByteString qualified as B
 import Data.ByteString.Lazy qualified as BL
@@ -109,6 +104,12 @@ newtype EmailUser = EmailUser String
 newtype EmailPassword = EmailPassword String
     deriving (Show, Eq)
 
+newtype Hours = Hours Int
+    deriving (Show, Eq)
+
+newtype Minutes = Minutes Int
+    deriving (Show, Eq, Num, Enum, Ord, Real, Integral)
+
 tryX :: Exception e' => (e' -> e) -> IO c -> ExceptT e IO c
 tryX f a = withExceptT f $ lift (try a) >>= except
 
@@ -178,7 +179,7 @@ keepInLimit limit = takeWhile $ not . isOld
 
 data Parameters
     = Parameters
-    { paramDuration :: Duration
+    { paramHours :: Hours
     , paramFrom :: String
     }
     deriving (Show, Eq)
@@ -186,7 +187,7 @@ data Parameters
 parameters :: Parameters
 parameters =
     Parameters
-        { paramDuration = Hours 24
+        { paramHours = Hours 24
         , paramFrom = "antithesis@cardanofoundation.org"
         }
 
@@ -201,7 +202,7 @@ printEmails emails = runExceptT $ S.mapM_ (liftIO . print) emails
 readEmails
     :: EmailUser
     -> EmailPassword
-    -> Duration
+    -> Minutes
     -- ^ limit to emails since this time
     -> Stream
         (Of (Either ParsingError Result))
@@ -214,7 +215,7 @@ readEmails (EmailUser username) (EmailPassword password) past = do
     now <- liftIO getCurrentTime
     let limit =
             addUTCTime
-                (negate $ durationToNominalDiffTime past)
+                (negate $ secondsToNominalDiffTime $ fromIntegral $ past * 60)
                 now
     let clockLimit = utcTimeToClockTime limit
     tz <- liftIO getCurrentTimeZone -- wrong, should be the email server's timezone
@@ -222,7 +223,7 @@ readEmails (EmailUser username) (EmailPassword password) past = do
     let go from
             | from < clockLimit = pure ()
             | otherwise = do
-                (timeSearch, to) <- liftIO $ nextSlot from (paramDuration parameters)
+                (timeSearch, to) <- liftIO $ nextSlot from (paramHours parameters)
                 uids <-
                     lift
                         $ tryX SearchFailed
@@ -237,12 +238,9 @@ readEmails (EmailUser username) (EmailPassword password) past = do
                 go to
     liftIO getClockTime >>= go . addToClockTime noTimeDiff{tdDay = 1}
 
-nextSlot :: ClockTime -> Duration -> IO ([SearchQuery], ClockTime)
-nextSlot now duration = do
-    let oldestTime =
-            addToClockTime
-                (durationToTimeDiff $ negateDuration duration)
-                now
+nextSlot :: ClockTime -> Hours -> IO ([SearchQuery], ClockTime)
+nextSlot now (Hours hours) = do
+    let oldestTime = addToClockTime noTimeDiff{tdHour = -hours} now
     newestCalendar <- toCalendarTime now
     oldestCalendar <- toCalendarTime oldestTime
     pure

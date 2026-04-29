@@ -5,13 +5,13 @@ where
 
 import Control.Monad (when)
 import Core.Types.Basic
-    ( FaultsEnabled (..)
+    ( Duration (..)
+    , FaultsEnabled (..)
     , HasInstrumentation (HasInstrumentation)
     , Owner (..)
     , RequestRefId (..)
     )
 import Core.Types.Change (Change (..), Key (..))
-import Core.Types.Duration (Duration (Hours))
 import Core.Types.Fact (toJSFact)
 import Core.Types.Operation (Operation (..))
 import MockMPFS (mockMPFS, withFacts, withRequests)
@@ -69,7 +69,7 @@ spec = do
             let acceptedState =
                     Accepted
                         $ Pending
-                            (Hours 5)
+                            (Duration 5)
                             faultsEnabled
                             (HasInstrumentation True)
                             signature
@@ -81,7 +81,7 @@ spec = do
                 newTestRunState =
                     Finished
                         acceptedState
-                        (Hours actualDuration)
+                        (Duration actualDuration)
                         OutcomeSuccess
                         (URL url)
                 test = validateToDoneCore validation testRun newTestRunState
@@ -97,7 +97,7 @@ spec = do
                 let pendingState =
                         Accepted
                             ( Pending
-                                (Hours 5)
+                                (Duration 5)
                                 (FaultsEnabled True)
                                 (HasInstrumentation True)
                                 signature
@@ -108,7 +108,7 @@ spec = do
                             , operation =
                                 Update
                                     pendingState
-                                    (Finished pendingState (Hours 1) OutcomeSuccess (URL ""))
+                                    (Finished pendingState (Duration 1) OutcomeSuccess (URL ""))
                             }
                     pendingRequest =
                         FinishedRequest
@@ -133,7 +133,7 @@ spec = do
                 duration <- genA
                 let pendingState =
                         Pending
-                            (Hours duration)
+                            (Duration duration)
                             (FaultsEnabled True)
                             (HasInstrumentation True)
                             signature
@@ -161,14 +161,14 @@ spec = do
                 let fact =
                         Accepted
                             $ Pending
-                                (Hours pendingDuration)
+                                (Duration pendingDuration)
                                 faultsEnabled
                                 (HasInstrumentation True)
                                 signature
                     request =
                         Accepted
                             $ Pending
-                                (Hours differentPendingDuration)
+                                (Duration differentPendingDuration)
                                 faultsEnabled
                                 (HasInstrumentation True)
                                 differentSignature
@@ -180,7 +180,7 @@ spec = do
                     newTestRunState =
                         Finished
                             request
-                            (Hours finishedDuration)
+                            (Duration finishedDuration)
                             OutcomeSuccess
                             (URL url)
                     test = validateToDoneCore validation testRun newTestRunState

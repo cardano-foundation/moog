@@ -10,6 +10,7 @@ import Core.Context (withContext)
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
+    , Duration (..)
     , FaultsEnabled (FaultsEnabled)
     , FileName (..)
     , GithubRepository (..)
@@ -19,7 +20,6 @@ import Core.Types.Basic
     , Platform (..)
     , TokenId (..)
     )
-import Core.Types.Duration (Duration (..))
 import Core.Types.Fact (JSFact, keyHash, renderFacts, toJSFact)
 import Core.Types.Mnemonics
     ( Mnemonics (ClearText)
@@ -135,8 +135,8 @@ facts = runIdentity $ do
             ( mkCurrentConfig
                 (Owner "agent")
                 $ TestRunValidationConfig
-                    { minDuration = Hours 1
-                    , maxDuration = Hours 10
+                    { minDuration = 1
+                    , maxDuration = 10
                     }
             )
             0
@@ -196,7 +196,7 @@ validSSHKeys :: [(FilePath, ByteString)]
 validSSHKeys = [("alice_id_ed25519", aliceKey)]
 
 testDuration :: Duration
-testDuration = Hours 3
+testDuration = Duration 3
 
 faultsEnabled :: FaultsEnabled
 faultsEnabled = FaultsEnabled True

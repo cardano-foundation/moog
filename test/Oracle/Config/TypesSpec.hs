@@ -9,11 +9,11 @@ import Oracle.Config.Types (Config (..), mkCurrentConfig)
 import Oracle.Validate.Requests.TestRun.Config
     ( TestRunValidationConfig (..)
     )
-import Oracle.Validate.Requests.TestRun.Lib (genDuration)
 import Test.Hspec (Spec, describe, it)
 import Test.Hspec.Canonical (roundTrip)
 import Test.QuickCheck
-    ( Gen
+    ( Arbitrary (..)
+    , Gen
     , Testable (..)
     , forAll
     , suchThat
@@ -23,8 +23,8 @@ import Test.QuickCheck.JSString (genAscii)
 genConfig :: Gen Config
 genConfig = do
     agent <- Owner <$> genAscii
-    minDuration <- genDuration `suchThat` (> mempty)
-    maxDuration <- genDuration `suchThat` (> minDuration)
+    minDuration <- arbitrary `suchThat` (>= 0)
+    maxDuration <- arbitrary `suchThat` (> minDuration)
     let testRunValidationConfig =
             TestRunValidationConfig
                 { minDuration = minDuration

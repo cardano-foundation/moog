@@ -10,7 +10,6 @@ import Control.Monad (when)
 import Control.Monad.Trans.Class (lift)
 import Core.Types.Basic (Owner)
 import Core.Types.Change (Change (..))
-import Core.Types.Duration (Duration)
 import Core.Types.Fact (Fact (..))
 import Core.Types.Operation (Op (..), Operation (..))
 import Effects
@@ -35,13 +34,13 @@ import Oracle.Validate.Types
     , mapFailure
     , notValidated
     )
-import Text.JSON.Canonical (ToJSON (..))
+import Text.JSON.Canonical (Int54, ToJSON (..))
 
 data ConfigFailure
     = ConfigureKeyValidationFailure KeyFailure
     | ConfigureNotFromOracle Owner
-    | ConfigureMinLessThanZero Duration
-    | ConfigureMaxLessThanMin Duration Duration
+    | ConfigureMinLessThanOne Int
+    | ConfigureMaxLessThanMin Int Int
     deriving (Show, Eq)
 
 instance Monad m => ToJSON m ConfigFailure where
@@ -49,14 +48,14 @@ instance Monad m => ToJSON m ConfigFailure where
         object ["configureKeyValidationFailure" .= keyFailure]
     toJSON (ConfigureNotFromOracle owner) =
         object ["configureNotFromOracle" .= show owner]
-    toJSON (ConfigureMinLessThanZero minD) =
-        object ["configureMinLessThanZero" .= minD]
+    toJSON (ConfigureMinLessThanOne minD) =
+        object ["configureMinLessThanOne" .= fromIntegral @_ @Int54 minD]
     toJSON (ConfigureMaxLessThanMin maxD minD) =
         object
             [ (,) "configureMaxLessThanMin"
                 $ object
-                    [ "max" .= maxD
-                    , "min" .= minD
+                    [ "max" .= fromIntegral @_ @Int54 maxD
+                    , "min" .= fromIntegral @_ @Int54 minD
                     ]
             ]
 
@@ -72,9 +71,9 @@ commonValidation oracleOwner submitterOwner configTestRun = do
         $ ConfigureNotFromOracle submitterOwner
     let minD = minDuration configTestRun
         maxD = maxDuration configTestRun
-    when (minD <= mempty)
+    when (minD < 1)
         $ notValidated
-        $ ConfigureMinLessThanZero minD
+        $ ConfigureMinLessThanOne minD
     when (maxD < minD)
         $ notValidated
         $ ConfigureMaxLessThanMin maxD minD
