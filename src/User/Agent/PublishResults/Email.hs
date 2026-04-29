@@ -3,10 +3,12 @@ This is a module to check emails for test results.
 -}
 module User.Agent.PublishResults.Email
     ( readEmails
+    , readEmailsWithSummary
     , readEmail
     , printEmails
     , clockTimeToUTCTime
     , utcTimeToClockTime
+    , EmailReadSummary (..)
     , Result (..)
     , Parameters (..)
     , EmailException (..)
@@ -37,6 +39,7 @@ import Core.Types.Duration
     )
 import Data.ByteString qualified as B
 import Data.ByteString.Lazy qualified as BL
+import Data.Either (partitionEithers)
 import Data.IMF
     ( Message
     , body
@@ -183,6 +186,57 @@ data Parameters
     }
     deriving (Show, Eq)
 
+data EmailReadSummary = EmailReadSummary
+    { emailCandidateCount :: Int
+    , emailWithinWindowCount :: Int
+    , emailParsedCount :: Int
+    , emailRejectedCount :: Int
+    , emailDroppedByWindowCount :: Int
+    }
+    deriving (Show, Eq)
+
+emptyEmailReadSummary :: EmailReadSummary
+emptyEmailReadSummary =
+    EmailReadSummary
+        { emailCandidateCount = 0
+        , emailWithinWindowCount = 0
+        , emailParsedCount = 0
+        , emailRejectedCount = 0
+        , emailDroppedByWindowCount = 0
+        }
+
+appendEmailReadSummary
+    :: EmailReadSummary -> EmailReadSummary -> EmailReadSummary
+appendEmailReadSummary a b =
+    EmailReadSummary
+        { emailCandidateCount =
+            emailCandidateCount a + emailCandidateCount b
+        , emailWithinWindowCount =
+            emailWithinWindowCount a + emailWithinWindowCount b
+        , emailParsedCount = emailParsedCount a + emailParsedCount b
+        , emailRejectedCount =
+            emailRejectedCount a + emailRejectedCount b
+        , emailDroppedByWindowCount =
+            emailDroppedByWindowCount a + emailDroppedByWindowCount b
+        }
+
+summarizeEmails
+    :: Int
+    -> [Either ParsingError Result]
+    -> [Either ParsingError Result]
+    -> EmailReadSummary
+summarizeEmails candidates sorted kept =
+    let
+        (rejected, parsed) = partitionEithers kept
+    in
+        EmailReadSummary
+            { emailCandidateCount = candidates
+            , emailWithinWindowCount = length kept
+            , emailParsedCount = length parsed
+            , emailRejectedCount = length rejected
+            , emailDroppedByWindowCount = length sorted - length kept
+            }
+
 parameters :: Parameters
 parameters =
     Parameters
@@ -207,10 +261,24 @@ readEmails
         (Of (Either ParsingError Result))
         (ExceptT EmailException IO)
         ()
-readEmails (EmailUser username) (EmailPassword password) past = do
-    conn <- lift $ tryX ConnectionFailed $ connectIMAPSSL "imap.gmail.com"
-    _ <- lift $ tryX LoginFailed $ login conn username password
-    _ <- lift $ tryX SelectFailed $ select conn allMail
+readEmails emailUser emailPassword past = do
+    (results, _) <-
+        lift $ readEmailsWithSummary emailUser emailPassword past
+    each results
+
+readEmailsWithSummary
+    :: EmailUser
+    -> EmailPassword
+    -> Duration
+    -- ^ limit to emails since this time
+    -> ExceptT
+        EmailException
+        IO
+        ([Either ParsingError Result], EmailReadSummary)
+readEmailsWithSummary (EmailUser username) (EmailPassword password) past = do
+    conn <- tryX ConnectionFailed $ connectIMAPSSL "imap.gmail.com"
+    _ <- tryX LoginFailed $ login conn username password
+    _ <- tryX SelectFailed $ select conn allMail
     now <- liftIO getCurrentTime
     let limit =
             addUTCTime
@@ -219,23 +287,33 @@ readEmails (EmailUser username) (EmailPassword password) past = do
     let clockLimit = utcTimeToClockTime limit
     tz <- liftIO getCurrentTimeZone -- wrong, should be the email server's timezone
     let localTimeLimit = utcToLocalTime tz limit
-    let go from
-            | from < clockLimit = pure ()
+    let go from summary found
+            | from < clockLimit = pure (found, summary)
             | otherwise = do
                 (timeSearch, to) <- liftIO $ nextSlot from (paramDuration parameters)
                 uids <-
-                    lift
-                        $ tryX SearchFailed
+                    tryX SearchFailed
                         $ search conn
                         $ antithesisMail : timeSearch
                 results <- forM uids $ \uid -> do
-                    content <- lift $ tryX FetchFailed $ fetch conn uid
+                    content <- tryX FetchFailed $ fetch conn uid
                     if B.null content
                         then pure Nothing
                         else pure $ Just $ readEmail content
-                each $ keepInLimit localTimeLimit $ sortResults $ catMaybes results
-                go to
-    liftIO getClockTime >>= go . addToClockTime noTimeDiff{tdDay = 1}
+                let sorted = sortResults $ catMaybes results
+                    kept = keepInLimit localTimeLimit sorted
+                    summary' =
+                        summary
+                            `appendEmailReadSummary` summarizeEmails
+                                (length uids)
+                                sorted
+                                kept
+                go to summary' (found <> kept)
+    from <- liftIO getClockTime
+    go
+        (addToClockTime noTimeDiff{tdDay = 1} from)
+        emptyEmailReadSummary
+        []
 
 nextSlot :: ClockTime -> Duration -> IO ([SearchQuery], ClockTime)
 nextSlot now duration = do

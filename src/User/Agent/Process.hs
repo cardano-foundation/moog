@@ -37,6 +37,7 @@ import Core.Types.MPFS (MPFSClient (..), mpfsClientOption)
 import Core.Types.Tx (WithTxHash)
 import Core.Types.Wallet (Wallet)
 import Data.CaseInsensitive (mk)
+import Data.Either (partitionEithers)
 import Data.Foldable (find, for_)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.String.QQ (s)
@@ -82,8 +83,10 @@ import User.Agent.Options
     )
 import User.Agent.PublishResults.Email
     ( EmailPassword
+    , EmailReadSummary (..)
     , EmailUser
     , Result (..)
+    , readEmailsWithSummary
     )
 import User.Agent.PushTest
     ( AntithesisAuth
@@ -144,6 +147,11 @@ data ProcessOptions = ProcessOptions
     , poRegistry :: Registry
     , poAntithesisAuth :: AntithesisAuth
     , poVerbose :: Bool
+    }
+
+data EmailPoll = EmailPoll
+    { emailPollResults :: [Result]
+    , emailPollSummary :: EmailReadSummary
     }
 
 processOptionsParser :: Parser ProcessOptions
@@ -220,9 +228,12 @@ agentProcess
         } = do
         putStrLn "Starting agent process service..."
         forever $ runExceptT $ do
-            results <- liftIO $ pollEmails opts
-            loggin
-                $ "Found " ++ show (length results) ++ " email results."
+            EmailPoll
+                { emailPollResults = results
+                , emailPollSummary
+                } <-
+                liftIO $ pollEmails opts
+            loggin $ emailPollSummaryMessage emailPollSummary
             efacts <- liftIO $ pollTestRuns opts
             (pendingTests, runningTests, doneTests, stateChanging) <- case efacts of
                 ValidationFailure err -> do
@@ -359,28 +370,46 @@ agentProcess
 loggin :: MonadIO m => String -> m ()
 loggin = liftIO . putStrLn
 
-pollEmails :: ProcessOptions -> IO [Result]
+emailPollSummaryMessage :: EmailReadSummary -> String
+emailPollSummaryMessage
+    EmailReadSummary
+        { emailCandidateCount
+        , emailWithinWindowCount
+        , emailParsedCount
+        , emailRejectedCount
+        , emailDroppedByWindowCount
+        } =
+        "Found "
+            ++ show emailParsedCount
+            ++ " email results from "
+            ++ show emailCandidateCount
+            ++ " Antithesis candidate emails ("
+            ++ show emailWithinWindowCount
+            ++ " inside recovery window, "
+            ++ show emailRejectedCount
+            ++ " parse failures, "
+            ++ show emailDroppedByWindowCount
+            ++ " outside recovery window)."
+
+pollEmails :: ProcessOptions -> IO EmailPoll
 pollEmails
     ProcessOptions
-        { poMPFSClient
-        , poAuth
-        , poAntithesisEmail
+        { poAntithesisEmail
         , poAntithesisEmailPassword
         , poMinutes
         } = do
         eresults <-
-            cmd
-                $ AgentCommand
-                    poAuth
-                    poMPFSClient
-                $ CheckAllResults
+            runExceptT
+                $ readEmailsWithSummary
                     poAntithesisEmail
                     poAntithesisEmailPassword
                     poMinutes
 
         case eresults of
-            ValidationFailure err -> error $ "Failed to get email results: " ++ show err
-            ValidationSuccess results -> pure results
+            Left err -> error $ "Failed to get email results: " ++ show err
+            Right (resultsOrErrors, emailPollSummary) -> do
+                let (_, emailPollResults) = partitionEithers resultsOrErrors
+                pure EmailPoll{emailPollResults, emailPollSummary}
 
 pollTestRuns
     :: ProcessOptions

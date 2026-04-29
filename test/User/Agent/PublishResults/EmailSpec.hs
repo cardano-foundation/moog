@@ -136,6 +136,37 @@ spec = do
                                     [s|https://cardano.antithesis.com/report/nDSj3YOUtIvcco1HRmK7iz2w/YudEq2ITbl0xxDqYNgdrT2gHUMtQDXYkNtDMyRwT61A.html?auth=v2.public.eyJuYmYiOiIyMDI1LTA5LTEzVDExOjAyOjM2LjIwNzY1ODk2NFoiLCJzY29wZSI6eyJSZXBvcnRTY29wZVYxIjp7ImFzc2V0IjoiWXVkRXEySVRibDB4eERxWU5nZHJUMmdIVU10UURYWWtOdERNeVJ3VDYxQS5odG1sIiwicmVwb3J0X2lkIjoibkRTajNZT1V0SXZjY28xSFJtSzdpejJ3In19fUQUQv8zIXJj1FqNehObRCWcj22nLkUqxHJCTuO5FN4TK_xN4P9o8luQnFgbwPKH1eAmwrFtC7qMUzlp3kqpoQI|]
                             , outcome = OutcomeFailure
                             }
+        it "parses no-findings result email from overtime run"
+            $ case readEmail noFindingsOvertimeRun of
+                Left err -> expectationFailure $ "should parse: " <> show err
+                Right r ->
+                    r
+                        `shouldBe` Result
+                            { description =
+                                TestRun
+                                    { commitId = Commit "fcda6bcf1859a15a83a39ec837b9fef1db58f9d1"
+                                    , directory = Directory "testnets/cardano_node_master"
+                                    , platform = Platform "github"
+                                    , repository =
+                                        GithubRepository
+                                            { organization =
+                                                "cardano-foundation"
+                                            , project =
+                                                "cardano-node-antithesis"
+                                            }
+                                    , requester = GithubUsername "cfhal"
+                                    , tryIndex = 1
+                                    }
+                            , date =
+                                fromJust
+                                    $ parseTimeM
+                                        True
+                                        defaultTimeLocale
+                                        "%Y-%m-%d %H:%M:%S"
+                                        "2026-04-28 23:00:07"
+                            , link = incidentLink
+                            , outcome = OutcomeSuccess
+                            }
 
         describe "parses test outcomes" $ do
             let shouldHaveOutcome :: B.ByteString -> Outcome -> Expectation
@@ -152,6 +183,8 @@ spec = do
                 $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
             it "outcomeSuccess2"
                 $ outcomeSuccess `shouldHaveOutcome` OutcomeSuccess
+            it "noFindingsOvertimeRun"
+                $ noFindingsOvertimeRun `shouldHaveOutcome` OutcomeSuccess
             it "outcomeErrorReport"
                 $ outcomeErrorReport `shouldHaveOutcome` OutcomeFailure
 
@@ -172,6 +205,10 @@ expectedLink =
 https://cardano.antithesis.com/report/zMNsYjs1lOgRg0IijZGTB1GN/mcuSRCDOzItEqm33oW5hyJHB-GLiVUEItcy_QHALwNg.html?auth=v2.public.eyJuYmYiOiIyMDI1LTA5LTA1VDE2OjI3OjAwLjE3OTczNTk5OFoiLCJzY29wZSI6eyJSZXBvcnRTY29wZVYxIjp7ImFzc2V0IjoibWN1U1JDRE96SXRFcW0zM29XNWh5SkhCLUdMaVZVRUl0Y3lfUUhBTHdOZy5odG1sIiwicmVwb3J0X2lkIjoiek1Oc1lqczFsT2dSZzBJaWpaR1RCMUdOIn19fXphuf6Ej7hBlNswCpx1nhpDqVndh8T9e-0_huYlJKnckuN9bTSlL8YrbjwBx6J5NrW50gs2EQClq15Ze2J7qQQ
 |]
 
+incidentLink :: Text
+incidentLink =
+    "https://cardano.antithesis.com/report/overtime/success.html?auth=redacted"
+
 goldenEmail :: B.ByteString
 goldenEmail =
     [s|
@@ -187,6 +224,19 @@ Date: Fri, 5 Sep 2025 17:27:03 +0000
 
     <a href="https://cardano.antithesis.com/report/zMNsYjs1lOgRg0IijZGTB1GN/mcuSRCDOzItEqm33oW5hyJHB-GLiVUEItcy_QHALwNg.html?auth=v2.public.eyJuYmYiOiIyMDI1LTA5LTA1VDE2OjI3OjAwLjE3OTczNTk5OFoiLCJzY29wZSI6eyJSZXBvcnRTY29wZVYxIjp7ImFzc2V0IjoibWN1U1JDRE96SXRFcW0zM29XNWh5SkhCLUdMaVZVRUl0Y3lfUUhBTHdOZy5odG1sIiwicmVwb3J0X2lkIjoiek1Oc1lqczFsT2dSZzBJaWpaR1RCMUdOIn19fXphuf6Ej7hBlNswCpx1nhpDqVndh8T9e-0_huYlJKnckuN9bTSlL8YrbjwBx6J5NrW50gs2EQClq15Ze2J7qQQ#/run/156ddbac4c6eede1268ca1995cb18c4a-37-4/findings/2f95173b159955ee457c5f52cbb711791c742ef1,961d3c463f5ef7640df4b3f30c6d7d9d2759b9c7">Look into 2 ongoing findings.</a>
 
+|]
+
+noFindingsOvertimeRun :: B.ByteString
+noFindingsOvertimeRun =
+    [s|
+From: "'Antithesis Reports' via list_antithesis_external" <antithesis@cardanofoundation.org>
+Subject: 2026-04-28 Cardano Foundation Test
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+Date: Tue, 28 Apr 2026 23:00:07 +0000
+
+Run by cardano on 2026-04-28 19:44 UTC<br> Description: {"testRun":{"commitId":"fcda6bcf1859a15a83a39ec837b9fef1db58f9d1","directory":"testnets/cardano_node_master","platform":"github","repository":{"organization":"cardano-foundation","repo":"cardano-node-antithesis"},"requester":"cfhal","try":1,"type":"test-run"},"testRunId":"51daa32a454ac4df6b3729e0b505ae7dbea449437a1466c432ae4e6744e5eb90"}<br><span style="font-size:larger;font-weight:bold"><a href="https://cardano.antithesis.com/report/overtime/success.html?auth=redacted">View report - overtime-run</a></span><br><h3>No findings introduced this run.<br>0 ongoing issues.</h3>
 |]
 
 noDate :: B.ByteString
