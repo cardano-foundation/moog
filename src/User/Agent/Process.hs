@@ -27,11 +27,11 @@ import Control.Monad.Trans.Except (runExceptT, throwE)
 import Core.Options (tokenIdOption, walletOption)
 import Core.Types.Basic
     ( Directory (..)
+    , Duration
     , GithubUsername (..)
     , Success (..)
     , TokenId
     )
-import Core.Types.Duration (Duration)
 import Core.Types.Fact (Fact (..))
 import Core.Types.MPFS (MPFSClient (..), mpfsClientOption)
 import Core.Types.Tx (WithTxHash)
@@ -83,6 +83,7 @@ import User.Agent.Options
 import User.Agent.PublishResults.Email
     ( EmailPassword
     , EmailUser
+    , Minutes
     , Result (..)
     )
 import User.Agent.PushTest
@@ -139,7 +140,7 @@ data ProcessOptions = ProcessOptions
     , poMPFSClient :: MPFSClient
     , poAntithesisEmail :: EmailUser
     , poAntithesisEmailPassword :: EmailPassword
-    , poMinutes :: Duration
+    , poMinutes :: Minutes
     , poTrustedRequesters :: Requesters
     , poRegistry :: Registry
     , poAntithesisAuth :: AntithesisAuth

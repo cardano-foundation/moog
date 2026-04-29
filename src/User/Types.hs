@@ -34,6 +34,7 @@ import Control.Monad (guard)
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
+    , Duration (..)
     , FaultsEnabled (..)
     , GithubRepository (..)
     , GithubUsername (..)
@@ -41,7 +42,6 @@ import Core.Types.Basic
     , Platform (..)
     , Try (..)
     )
-import Core.Types.Duration (Duration (..))
 import Core.Types.VKey (decodeVKey)
 import Crypto.Error (CryptoFailable (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
@@ -225,10 +225,10 @@ deriving instance Eq (TestRunState a)
 deriving instance Show (TestRunState a)
 
 instance Monad m => ToJSON m (TestRunState a) where
-    toJSON (Pending d faultsEnabled hasInstrumentation signature) =
+    toJSON (Pending (Duration d) faultsEnabled hasInstrumentation signature) =
         object
             [ ("phase", stringJSON "pending")
-            , ("duration", toJSON d)
+            , ("duration", intJSON d)
             , ("signature", byteStringToJSON $ BA.convert signature)
             , "faults_enabled" .= faultsEnabled
             , "has_instrumentation" .= hasInstrumentation
@@ -248,21 +248,18 @@ instance Monad m => ToJSON m (TestRunState a) where
         object
             [ ("phase", stringJSON "finished")
             , ("from", toJSON running)
-            , ("duration", toJSON duration)
+            , ("duration", intJSON $ case duration of Duration d -> d)
             , ("url", stringJSON $ case url of URL u -> u)
             , ("outcome", toJSON outcome)
             ]
 
-instance
-    (ReportSchemaErrors m, Alternative m)
-    => FromJSON m (TestRunState PendingT)
-    where
+instance (ReportSchemaErrors m) => FromJSON m (TestRunState PendingT) where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
         phase <- getStringField "phase" mapping
         case phase of
             "pending" -> do
-                duration <- getField "duration" mapping >>= fromJSON
+                duration <- getIntegralField "duration" mapping
                 signatureJSValue <- getField "signature" mapping
                 signatureByteString <- byteStringFromJSON signatureJSValue
                 faultsEnabled <-
@@ -276,7 +273,7 @@ instance
                     CryptoPassed signature ->
                         pure
                             $ Pending
-                                duration
+                                (Duration duration)
                                 faultsEnabled
                                 hasInstrumentation
                                 signature
@@ -293,10 +290,7 @@ instance
             "an object representing a pending phase"
             other
 
-instance
-    (ReportSchemaErrors m, Alternative m)
-    => FromJSON m (TestRunState DoneT)
-    where
+instance (ReportSchemaErrors m) => FromJSON m (TestRunState DoneT) where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
         phase <- getStringField "phase" mapping
@@ -308,11 +302,10 @@ instance
                 pure $ Rejected pending reasonList
             "finished" -> do
                 running <- getField "from" mapping >>= fromJSON
-                duration <- do
-                    getField "duration" mapping >>= fromJSON
+                duration <- getIntegralField "duration" mapping
                 url <- getStringField "url" mapping
                 outcome <- getFieldWithDefault "outcome" OutcomeUnknown mapping
-                pure $ Finished running duration outcome (URL url)
+                pure $ Finished running (Duration duration) outcome (URL url)
             _ ->
                 expectedButGotValue
                     "a rejected phase"
@@ -322,10 +315,7 @@ instance
             "an object representing a rejected phase"
             other
 
-instance
-    (ReportSchemaErrors m, Alternative m)
-    => FromJSON m (TestRunState RunningT)
-    where
+instance (ReportSchemaErrors m) => FromJSON m (TestRunState RunningT) where
     fromJSON obj@(JSObject _) = do
         mapping <- fromJSON obj
         phase <- getStringField "phase" mapping

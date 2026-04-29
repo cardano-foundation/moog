@@ -27,7 +27,7 @@ import Oracle.Config.Types (ConfigKey (..))
 import Oracle.Config.TypesSpec (genConfig)
 import Oracle.Types
     ( Request (Request)
-    , RequestZoo (..)
+    , RequestZoo (RegisterUserRequest, UnregisterUserRequest)
     , Token (Token)
     , TokenState (TokenState)
     )
@@ -80,10 +80,6 @@ genRequestZoo =
             <$> genRequest genRegisterUserKey (pure (Insert ()))
         , UnregisterUserRequest
             <$> genRequest genRegisterUserKey (pure (Delete ()))
-        , InsertConfigRequest
-            <$> genRequest (pure ConfigKey) (Insert <$> genConfig)
-        , UpdateConfigRequest
-            <$> genRequest (pure ConfigKey) (Update <$> genConfig <*> genConfig)
         ]
 
 genRefId :: Gen RequestRefId

@@ -10,7 +10,8 @@ where
 import Control.Lens ((%~), (.~))
 import Control.Monad (when)
 import Core.Types.Basic
-    ( FaultsEnabled (..)
+    ( Duration (..)
+    , FaultsEnabled (..)
     , FileName (..)
     , HasInstrumentation (HasInstrumentation)
     , Owner (..)
@@ -19,7 +20,6 @@ import Core.Types.Basic
     , project
     )
 import Core.Types.Change (Change (..), Key (..))
-import Core.Types.Duration (Duration (..))
 import Core.Types.Fact (JSFact, toJSFact)
 import Core.Types.Operation (Operation (..))
 import Lib.SSH.Public (encodeSSHPublicKey)
@@ -58,7 +58,6 @@ import Oracle.Validate.Requests.TestRun.Lib
     , changeProject
     , changeRequester
     , changeTry
-    , genDuration
     , gitAsset
     , gitCommit
     , gitDirectory
@@ -89,6 +88,7 @@ import Test.Hspec
     )
 import Test.QuickCheck
     ( Arbitrary (..)
+    , Positive (..)
     , Testable (..)
     , counterexample
     , cover
@@ -103,6 +103,7 @@ import Test.QuickCheck.EGen
     , gen
     , genA
     , genBlind
+    , genShrinkA
     )
 import Test.QuickCheck.JSString (genAscii)
 import Test.QuickCheck.Lib (withAPresence)
@@ -143,10 +144,10 @@ spec = do
             testRun <- testRunEGen
             testConfig <- testConfigEGen
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
-            duration <-
+            Positive duration <-
                 gen
-                    $ genDuration
-                        `suchThat` \d ->
+                    $ arbitrary
+                        `suchThat` \(Positive d) ->
                             d >= testConfig.minDuration
                                 && d <= testConfig.maxDuration
             (sign, pk) <- genBlind ed25519Gen
@@ -171,7 +172,10 @@ spec = do
                     n -> do
                         let previousTestRun = testRun{tryIndex = n - 1}
                         previousState <-
-                            Pending duration faultsEnabled (HasInstrumentation True)
+                            Pending
+                                (Duration duration)
+                                faultsEnabled
+                                (HasInstrumentation True)
                                 <$> signTestRun
                                     sign
                                     previousTestRun
@@ -198,7 +202,10 @@ spec = do
                             , mockAssets = files
                             }
             testRunState <-
-                Pending duration faultsEnabled (HasInstrumentation True)
+                Pending
+                    (Duration duration)
+                    faultsEnabled
+                    (HasInstrumentation True)
                     <$> signTestRun sign testRun
             pure $ do
                 mresult <-
@@ -215,17 +222,20 @@ spec = do
             $ do
                 testRun <- testRunEGen
                 testConfig <- testConfigEGen
-                duration <-
+                Positive duration <-
                     gen
-                        $ genDuration
-                            `suchThat` \d ->
+                        $ arbitrary
+                            `suchThat` \(Positive d) ->
                                 d >= testConfig.minDuration
                                     && d <= testConfig.maxDuration
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 (sign, _pk) <- genBlind ed25519Gen
                 forRole <- genForRole
                 testRunState <-
-                    Pending duration faultsEnabled (HasInstrumentation True)
+                    Pending
+                        (Duration duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
                         <$> signTestRun sign testRun
                 let validation =
                         mkEffects
@@ -252,10 +262,10 @@ spec = do
             $ do
                 testRun <- testRunEGen
                 testConfig <- testConfigEGen
-                duration <-
+                Positive duration <-
                     gen
-                        $ genDuration
-                            `suchThat` \d ->
+                        $ arbitrary
+                            `suchThat` \(Positive d) ->
                                 d >= testConfig.minDuration
                                     && d <= testConfig.maxDuration
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
@@ -275,7 +285,10 @@ spec = do
                         )
                         0
                 testRunState <-
-                    Pending duration faultsEnabled (HasInstrumentation True)
+                    Pending
+                        (Duration duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
                         <$> signTestRun sign testRun
                 let validation =
                         mkEffects
@@ -312,26 +325,32 @@ spec = do
             $ do
                 testRun <- testRunEGen
                 testConfig <- testConfigEGen
-                duration <-
+                Positive duration <-
                     gen
-                        $ genDuration
-                            `suchThat` \d ->
+                        $ arbitrary
+                            `suchThat` \(Positive d) ->
                                 d >= testConfig.minDuration
                                     && d <= testConfig.maxDuration
-                otherDuration <-
+                Positive otherDuration <-
                     gen
-                        $ genDuration
-                            `suchThat` \d ->
+                        $ arbitrary
+                            `suchThat` \(Positive d) ->
                                 d >= testConfig.minDuration
                                     && d <= testConfig.maxDuration
                 faultsEnabled <- FaultsEnabled <$> gen arbitrary
                 (sign, _pk) <- genBlind ed25519Gen
                 forRole <- genForRole
                 testRunState <-
-                    Pending duration faultsEnabled (HasInstrumentation True)
+                    Pending
+                        (Duration duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
                         <$> signTestRun sign testRun
                 otherTestRunState <-
-                    Pending otherDuration faultsEnabled (HasInstrumentation True)
+                    Pending
+                        (Duration otherDuration)
+                        faultsEnabled
+                        (HasInstrumentation True)
                         <$> signTestRun sign testRun
                 let pendingRequest =
                         CreateTestRequest
@@ -367,12 +386,17 @@ spec = do
                     `shouldReturn` ValidationFailure
                         (CreateTestRunKeyAlreadyPending testRun)
         it "reports unacceptable duration" $ egenProperty $ do
-            duration <- gen genDuration
+            duration <- genShrinkA
             testRun <- testRunEGen
             testConfig <- testConfigEGen
             signature <- gen signatureGen
             faultsEnabled <- FaultsEnabled <$> gen arbitrary
-            let testRunState = Pending duration faultsEnabled (HasInstrumentation True) signature
+            let testRunState =
+                    Pending
+                        (Duration duration)
+                        faultsEnabled
+                        (HasInstrumentation True)
+                        signature
             pure $ do
                 mresult <-
                     runValidate
@@ -411,7 +435,7 @@ spec = do
                         noValidation
                 testRunState =
                     Pending
-                        (Hours duration)
+                        (Duration duration)
                         faultsEnabled
                         (HasInstrumentation True)
                         signature
@@ -458,7 +482,7 @@ spec = do
                 mkTestRunFact s = toJSFact testRunDB s 0
                 pending =
                     Pending
-                        (Hours duration)
+                        (Duration duration)
                         faultsEnabled
                         (HasInstrumentation True)
                         signature
@@ -471,7 +495,7 @@ spec = do
             let finished =
                     Finished
                         accepted
-                        (Hours finalDuration)
+                        (Duration finalDuration)
                         OutcomeSuccess
                         (URL finalURL)
             testRunStateDB <-
@@ -489,7 +513,7 @@ spec = do
                         noValidation
             let testRunState =
                     Pending
-                        (Hours duration)
+                        (Duration duration)
                         faultsEnabled
                         (HasInstrumentation True)
                         signature
@@ -525,7 +549,7 @@ spec = do
             testRun' <- gen $ oneof [changeDirectory testRun, pure testRun]
             let testRunState =
                     Pending
-                        (Hours duration)
+                        (Duration duration)
                         faultsEnabled
                         (HasInstrumentation True)
                         signature
@@ -557,7 +581,7 @@ spec = do
             testRun <- testRunEGen
             let testRunState =
                     Pending
-                        (Hours duration)
+                        (Duration duration)
                         faultsEnabled
                         (HasInstrumentation True)
                         signature
