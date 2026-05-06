@@ -92,5 +92,6 @@ nav:
     - Troubleshooting: ops/troubleshooting.md
   - Developers:
     - Code Design: dev/code-design.md
+    - Release Packaging: dev/release-packaging.md
   - Blog:
     - blog/index.md

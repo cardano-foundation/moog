@@ -23,6 +23,8 @@
     };
     mkdocs.url = "github:paolino/dev-assets?dir=mkdocs";
     asciinema.url = "github:paolino/dev-assets?dir=asciinema";
+    dev-assets.url =
+      "github:paolino/dev-assets?ref=spike/darwin-homebrew-action";
   };
 
   outputs = inputs@{ self, nixpkgs, flake-utils, haskellNix, CHaP, iohkNix
@@ -93,8 +95,10 @@
                   inherit (inputs) nixpkgs flake-utils haskellNix;
                 };
               in import ./nix/moog-macos-artifacts.nix {
-                inherit pkgs project node-project version;
+                inherit pkgs project version;
                 rewrite-libs = rewrite-libs.packages.default;
+                mkDarwinHomebrewBundle =
+                  inputs.dev-assets.lib.mkDarwinHomebrewBundle { inherit pkgs; };
               }
             else { packages = { }; };
 
