@@ -24,8 +24,8 @@ nix build .#darwin-dev-homebrew-artifacts
 Both are built with `paolino/dev-assets` through
 `lib.mkDarwinHomebrewBundle`. The output directory contains:
 
-- a relocatable `aarch64-darwin` tarball with `moog` and `moog-oracle` under
-  `bin/`
+- a relocatable `aarch64-darwin` tarball with the release executables under
+  `bin/`: `moog`, `moog-oracle`, and `moog-agent`
 - a generated Homebrew formula
 - `SHA256SUMS`
 - `release-metadata.json`
@@ -34,6 +34,11 @@ Both are built with `paolino/dev-assets` through
 version as the Homebrew version. `darwin-dev-homebrew-artifacts` produces
 `moog-dev.rb`, embeds the source revision in the artifact and formula version,
 and points the formula at the moving `dev-homebrew` release tag.
+
+The release executable set is defined once in `nix/moog-project.nix` as
+`releaseExecutables`. Linux tarballs, macOS tarballs, and Homebrew artifacts
+all consume that set so a new first-party executable is not exposed on only one
+platform by accident.
 
 ## Pull Request Verification
 

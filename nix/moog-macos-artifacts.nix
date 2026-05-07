@@ -8,21 +8,18 @@
 }:
 
 let
-  moog = project.packages.moog;
-  moog-oracle = project.packages.moog-oracle;
+  releaseExecutables = project.releaseExecutables.native;
+  executableNames = project.releaseExecutables.names;
+  moog = releaseExecutables.moog;
   packageVersion = moog.version or version;
   devArtifactVersion = "${packageVersion}-${version}";
-  darwinExecutables = {
-    inherit moog moog-oracle;
-  };
-  darwinExecutableNames = [
-    "moog"
-    "moog-oracle"
-  ];
-  darwinFormulaTest = ''
-    system "#{bin}/moog", "--help"
-    system "#{bin}/moog-oracle", "--help"
-  '';
+  darwinFormulaTest = pkgs.lib.concatMapStringsSep "\n" (name: ''
+    system "#{bin}/${name}", "--help"
+  '') executableNames;
+  smokeCommands = map (name: "${name} --help >/dev/null") executableNames;
+  copyExecutables = pkgs.lib.concatMapStringsSep "\n" (name: ''
+    cp ${releaseExecutables.${name}}/bin/${name} $out/unpacked
+  '') executableNames;
   mkMoogDarwinHomebrewBundle =
     args:
     mkDarwinHomebrewBundle (
@@ -33,19 +30,19 @@ let
         desc = "Administer Antithesis test execution for Cardano";
         homepage = "https://github.com/cardano-foundation/moog";
         formulaClass = "Moog";
-        executables = darwinExecutables;
-        executableNames = darwinExecutableNames;
+        executables = releaseExecutables;
+        inherit executableNames;
         formulaTest = darwinFormulaTest;
-        smokeCommands = [
-          "moog --help >/dev/null"
-          "moog-oracle --help >/dev/null"
-        ];
+        inherit smokeCommands;
       }
       // args
     );
   tarball-derivation = pkgs.stdenv.mkDerivation {
     pname = "moog";
     inherit version;
+    passthru = {
+      inherit executableNames;
+    };
     buildInputs = with pkgs.buildPackages; [ nix ];
     phases = [
       "unpackPhase"
@@ -53,8 +50,7 @@ let
     ];
     unpackPhase = ''
       mkdir -p $out/unpacked
-      cp ${moog}/bin/moog $out/unpacked
-      cp ${moog-oracle}/bin/moog-oracle $out/unpacked
+      ${copyExecutables}
       ( cd $out/unpacked ;
         ${rewrite-libs}/bin/rewrite-libs . `ls -1 | grep -Fv .dylib`
         for a in *; do /usr/bin/codesign -f -s - $a; done

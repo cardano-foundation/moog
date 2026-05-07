@@ -110,10 +110,6 @@ jobs:
             trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
             substituters = https://cache.iog.io https://cache.nixos.org/
             accept-flake-config = true
-      - uses: cachix/cachix-action@v15
-        with:
-          name: paolino
-          authToken: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build and smoke test Homebrew artifacts
         uses: paolino/dev-assets/darwin-homebrew-release@spike/darwin-homebrew-action
         with:
@@ -126,15 +122,17 @@ jobs:
           release-artifact-name: darwin-release-bundle
           dev-artifact-name: darwin-dev-homebrew-artifacts
           tarball-pattern: moog-*-aarch64-darwin.tar.gz
-          installed-commands: moog moog-oracle
+          installed-commands: moog moog-oracle moog-agent
           cleanup-formulae: moog moog-dev
           tap-name: cardano-foundation/moog
           tap-repository: cardano-foundation/moog
           tarball-smoke-script: |
             moog --help
             moog-oracle --help
+            moog-agent --help
           brew-smoke-script: |
             moog --help
             moog-oracle --help
+            moog-agent --help
             test -x "$(command -v moog)"
             otool -L "$(which moog)"
