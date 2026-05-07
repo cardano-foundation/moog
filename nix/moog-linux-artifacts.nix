@@ -1,16 +1,25 @@
-{ pkgs, node-project, version, project, ... }:
+{
+  pkgs,
+  node-project,
+  version,
+  project,
+  ...
+}:
 let
-  moog = project.musl64.moog.components.exes.moog;
-  moog-oracle = project.musl64.moog.components.exes.moog-oracle;
-  moog-agent = project.musl64.moog.components.exes.moog-agent;
+  releaseExecutables = project.releaseExecutables.musl64;
+  executableNames = project.releaseExecutables.names;
+  copyExecutables = pkgs.lib.concatMapStringsSep "\n" (name: ''
+    cp ${releaseExecutables.${name}}/bin/${name} $out/unpacked
+  '') executableNames;
   tarball-derivation = pkgs.stdenv.mkDerivation rec {
     pname = "moog";
     inherit version;
+    passthru = {
+      inherit executableNames;
+    };
     unpackPhase = ''
       mkdir -p $out/unpacked
-      cp ${moog}/bin/moog $out/unpacked
-      cp ${moog-oracle}/bin/moog-oracle $out/unpacked
-      cp ${moog-agent}/bin/moog-agent $out/unpacked
+      ${copyExecutables}
       chmod -R +w $out/unpacked/*
     '';
     installPhase = ''
@@ -18,4 +27,7 @@ let
       rm -rf $out/unpacked
     '';
   };
-in { packages.linux64.tarball = tarball-derivation; }
+in
+{
+  packages.linux64.tarball = tarball-derivation;
+}

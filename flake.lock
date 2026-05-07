@@ -401,6 +401,22 @@
         "type": "github"
       }
     },
+    "dev-assets": {
+      "locked": {
+        "lastModified": 1778081689,
+        "narHash": "sha256-qv4fLPZk5hWGwsRo7HQke3fHuLFMAGRPgd0w5Jbrh30=",
+        "owner": "paolino",
+        "repo": "dev-assets",
+        "rev": "9746af456f56048844fb81195e11dce1ef9cc82b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "paolino",
+        "ref": "spike/darwin-homebrew-action",
+        "repo": "dev-assets",
+        "type": "github"
+      }
+    },
     "devshell": {
       "inputs": {
         "flake-utils": [
@@ -2284,6 +2300,7 @@
         "CHaP": "CHaP",
         "asciinema": "asciinema",
         "cardano-node-runtime": "cardano-node-runtime",
+        "dev-assets": "dev-assets",
         "flake-parts": "flake-parts_2",
         "flake-utils": "flake-utils_5",
         "haskellNix": "haskellNix_2",

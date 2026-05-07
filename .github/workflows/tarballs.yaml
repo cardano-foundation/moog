@@ -96,3 +96,43 @@ jobs:
         with:
           name: darwin-tarball
           path: ./darwin-tarball
+  macos-homebrew-artifacts:
+    name: Build and test macOS Homebrew artifacts
+    if: github.event_name == 'pull_request'
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=
+            substituters = https://cache.iog.io https://cache.nixos.org/
+            accept-flake-config = true
+      - name: Build and smoke test Homebrew artifacts
+        uses: paolino/dev-assets/darwin-homebrew-release@spike/darwin-homebrew-action
+        with:
+          mode: dev-homebrew
+          update-tap: "no"
+          release-package: darwin-release-artifacts
+          dev-package: darwin-dev-homebrew-artifacts
+          release-formula: moog.rb
+          dev-formula: moog-dev.rb
+          release-artifact-name: darwin-release-bundle
+          dev-artifact-name: darwin-dev-homebrew-artifacts
+          tarball-pattern: moog-*-aarch64-darwin.tar.gz
+          installed-commands: moog moog-oracle moog-agent
+          cleanup-formulae: moog moog-dev
+          tap-name: cardano-foundation/moog
+          tap-repository: cardano-foundation/moog
+          tarball-smoke-script: |
+            moog --help
+            moog-oracle --help
+            moog-agent --help
+          brew-smoke-script: |
+            moog --help
+            moog-oracle --help
+            moog-agent --help
+            test -x "$(command -v moog)"
+            otool -L "$(which moog)"
