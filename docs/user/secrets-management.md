@@ -34,6 +34,7 @@ graph LR
         wallet[walletPassphrase]
         ssh[sshPassword]
         anti[antithesisPassword]
+        antiurl[antithesisLaunchUrl]
         email[agentEmail]
         emailpw[agentEmailPassword]
         slack[slackWebhook]
@@ -45,6 +46,7 @@ graph LR
     Agent --> pat
     Agent --> wallet
     Agent --> anti
+    Agent --> antiurl
     Agent --> email
     Agent --> emailpw
     Agent --> slack
@@ -70,6 +72,7 @@ agentEmail: agent@example.com             # email for receiving Antithesis resul
 agentEmailPassword: xxxx-xxxx-xxxx-xxxx   # app password for the email account
 githubPAT: ghp_xxxxxxxxxxxx              # GitHub PAT with repo scope
 antithesisPassword: your_password         # Antithesis registry/platform password
+antithesisLaunchUrl: https://amaru-cardano.antithesis.com/api/v1/launch/cardano  # tenant launch URL
 walletPassphrase: your_passphrase         # wallet encryption passphrase (if any)
 slackWebhook: https://hooks.slack.com/... # Slack notifications (optional)
 trustedRequesters:                        # allowed requester PKHs (optional)
@@ -93,6 +96,7 @@ walletPassphrase: your_passphrase   # wallet encryption passphrase (if any)
 | `githubPAT` | oracle, agent, requester | GitHub Personal Access Token |
 | `walletPassphrase` | oracle, agent, requester | Wallet encryption passphrase |
 | `antithesisPassword` | agent | Antithesis platform/registry password |
+| `antithesisLaunchUrl` | agent | Antithesis tenant launch URL |
 | `agentEmail` | agent | Email address for receiving test results |
 | `agentEmailPassword` | agent | App password for the email account |
 | `slackWebhook` | agent | Slack webhook URL for notifications |

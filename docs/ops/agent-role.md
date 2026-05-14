@@ -52,6 +52,8 @@ See the [Deployment Guide](deployment.md#agent-deployment) for full setup instru
 | `MOOG_SECRETS_FILE` | Path to `secrets.yaml` |
 | `MOOG_WAIT` | Seconds between polling cycles (alternative to `--poll-interval`) |
 | `MOOG_ANTITHESIS_USER` | Antithesis platform username |
+| `MOOG_ANTITHESIS_LAUNCH_URL` | Antithesis tenant launch URL |
+| `MOOG_REGISTRY` | Registry URL where the agent pushes the config image |
 | `DOCKER_CONFIG` | Path to Docker config directory (for private registries) |
 
 ### Docker socket and privileged mode

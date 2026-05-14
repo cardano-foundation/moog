@@ -13,6 +13,8 @@ services:
       - MOOG_SECRETS_FILE=/run/secrets/secrets
       - MOOG_WAIT=240
       - MOOG_ANTITHESIS_USER=cardano
+      # - MOOG_ANTITHESIS_LAUNCH_URL=https://<tenant>.antithesis.com/api/v1/launch/cardano
+      # - MOOG_REGISTRY=us-central1-docker.pkg.dev/<project>/<tenant-repository>
       - DOCKER_CONFIG=/run/secrets/docker
     restart: always
     privileged: true
@@ -40,3 +42,4 @@ volumes:
 #   - requester1
 #   - requester2
 # antithesisPassword: # Password for Antithesis registry and Docker image
+# antithesisLaunchUrl: # Antithesis tenant launch URL (alternative to MOOG_ANTITHESIS_LAUNCH_URL)

@@ -121,6 +121,7 @@ agentEmail: agent@example.com
 agentEmailPassword: xxxx-xxxx-xxxx-xxxx  # Google app password
 githubPAT: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 antithesisPassword: your_antithesis_password
+antithesisLaunchUrl: https://amaru-cardano.antithesis.com/api/v1/launch/cardano
 slackWebhook: https://hooks.slack.com/services/...  # optional
 trustedRequesters:  # optional, ignored when --trust-all-requesters is used
   - requester_pkh_1
@@ -147,6 +148,7 @@ services:
       - MOOG_SECRETS_FILE=/run/secrets/secrets
       - MOOG_WAIT=240
       - MOOG_ANTITHESIS_USER=cardano
+      - MOOG_REGISTRY=us-central1-docker.pkg.dev/<project>/<tenant-repository>
       - DOCKER_CONFIG=/run/secrets/docker
     restart: always
     privileged: true
@@ -189,6 +191,8 @@ The agent polls for pending test runs every `--poll-interval` seconds (default 6
 | `MOOG_SECRETS_FILE` | oracle, agent | Path to `secrets.yaml` |
 | `MOOG_WAIT` | oracle, agent | Seconds between polling cycles |
 | `MOOG_ANTITHESIS_USER` | agent | Antithesis platform username |
+| `MOOG_ANTITHESIS_LAUNCH_URL` | agent | Antithesis tenant launch URL (alternative to `antithesisLaunchUrl` in `secrets.yaml`) |
+| `MOOG_REGISTRY` | agent | URL of the registry where to push the config image (alternative to `--registry`) |
 | `DOCKER_CONFIG` | agent | Path to Docker config directory (for private registries) |
 
 ## Service Lifecycle
