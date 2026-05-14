@@ -76,14 +76,17 @@ spec = do
             $ \message
                duration
                faultsEnabled
-               hasInstrumentation
                (ASCIIString url) -> forAll (listOf testRunRejectionGen) $ \rejections -> do
                     forAllBlind ed25519Gen $ \(sign, _verify) -> do
+                        -- has_instrumentation is intentionally not emitted on
+                        -- the wire (see User.Types ToJSON); FromJSON defaults
+                        -- it to True when absent. The roundtrip is therefore
+                        -- only lossless for HasInstrumentation True.
                         let pending =
                                 Pending
                                     (Duration duration)
                                     (FaultsEnabled faultsEnabled)
-                                    (HasInstrumentation hasInstrumentation)
+                                    (HasInstrumentation True)
                                     $ sign message
                         roundTrip pending
                         let rejected =
