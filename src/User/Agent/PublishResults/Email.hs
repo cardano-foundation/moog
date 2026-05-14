@@ -270,7 +270,7 @@ readEmails emailUser emailPassword past = do
 readEmailsWithSummary
     :: EmailUser
     -> EmailPassword
-    -> Duration
+    -> Minutes
     -- ^ limit to emails since this time
     -> ExceptT
         EmailException
