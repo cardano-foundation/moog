@@ -10,6 +10,7 @@ module User.Agent.PushTest
     , PostTestRunRequest (..)
     , Tag (..)
     , AntithesisAuth (..)
+    , LaunchUrl (..)
     , renderPostToAntithesis
     , renderTestRun
     , SlackWebhook (..)
@@ -227,27 +228,35 @@ getTestRun tk testRunId = do
 data AntithesisAuth = AntithesisAuth
     { username :: String
     , password :: String
+    , launchUrl :: LaunchUrl
     }
+    deriving (Show, Eq)
+
+-- | Antithesis tenant launch URL, e.g.
+-- @https://amaru-cardano.antithesis.com/api/v1/launch/cardano@.
+newtype LaunchUrl = LaunchUrl {unLaunchUrl :: String}
     deriving (Show, Eq)
 
 renderPostToAntithesis
     :: AntithesisAuth -> PostTestRunRequest -> (String, [String])
-renderPostToAntithesis (AntithesisAuth username password) request =
-    let curlArgs = (command, args)
-        command = "curl"
-        args =
-            [ "--fail"
-            , "-u"
-            , username ++ ":" ++ password
-            , "-X"
-            , "POST"
-            , "https://cardano.antithesis.com/api/v1/launch/cardano"
-            , "-H"
-            , "Content-Type: application/json"
-            , "-d"
-            , BL.unpack $ Aeson.encode request
-            ]
-    in  (curlArgs :: (String, [String]))
+renderPostToAntithesis
+    (AntithesisAuth username password (LaunchUrl url))
+    request =
+        let curlArgs = (command, args)
+            command = "curl"
+            args =
+                [ "--fail"
+                , "-u"
+                , username ++ ":" ++ password
+                , "-X"
+                , "POST"
+                , url
+                , "-H"
+                , "Content-Type: application/json"
+                , "-d"
+                , BL.unpack $ Aeson.encode request
+                ]
+        in  (curlArgs :: (String, [String]))
 
 curl :: (String, [String]) -> IO (Either String String)
 curl (command, args) = runSystemCommand [] command args
