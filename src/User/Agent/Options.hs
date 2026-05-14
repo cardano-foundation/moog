@@ -41,7 +41,6 @@ import OptEnvConf
     , setting
     , short
     , str
-    , strOption
     , value
     )
 import Oracle.Validate.DownloadAssets (DownloadAssetsFailure)
@@ -190,12 +189,13 @@ slackOption =
 registryOption :: Parser Registry
 registryOption =
     Registry
-        <$> strOption
+        <$> setting
             [ help "URL of the registry where to push the config image"
             , metavar "REGISTRY_URL"
             , long "registry"
-            , value
-                "us-central1-docker.pkg.dev/molten-verve-216720/cardano-repository"
+            , env "MOOG_REGISTRY"
+            , reader str
+            , option
             ]
 
 antithesisAuthOption :: Parser AntithesisAuth
