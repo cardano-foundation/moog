@@ -14,6 +14,7 @@ import Core.Types.Basic
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
 import User.Agent.PushTest
     ( AntithesisAuth (..)
+    , LaunchUrl (..)
     , PostTestRunRequest (..)
     , Registry (..)
     , Tag (..)
@@ -52,7 +53,10 @@ spec = do
                         , requester = GithubUsername "alice"
                         }
                 testRunId = TestRunId "test-run-001"
-                auth = AntithesisAuth "user" "pass"
+                launchUrl =
+                    "https://example.antithesis.com/api/v1/launch/cardano"
+                auth =
+                    AntithesisAuth "user" "pass" (LaunchUrl launchUrl)
                 body =
                     PostTestRunRequest
                         { description = renderTestRun testRunId testRun
@@ -72,7 +76,7 @@ spec = do
                            , "user:pass"
                            , "-X"
                            , "POST"
-                           , "https://cardano.antithesis.com/api/v1/launch/cardano"
+                           , launchUrl
                            , "-H"
                            , "Content-Type: application/json"
                            , "-d"

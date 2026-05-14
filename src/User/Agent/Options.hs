@@ -65,6 +65,7 @@ import User.Agent.PublishResults.Email
     )
 import User.Agent.PushTest
     ( AntithesisAuth (..)
+    , LaunchUrl (..)
     , PushFailure
     , Registry (..)
     , SlackWebhook (..)
@@ -198,19 +199,18 @@ registryOption =
             ]
 
 antithesisAuthOption :: Parser AntithesisAuth
-antithesisAuthOption =
-    cardanoWithPwd
-        <$> antithesisUserOption
-        <*> secretsParser
+antithesisAuthOption = do
+    username <- antithesisUserOption
+    password <-
+        secretsParser
             "Enter the password to access Antithesis"
             "The password to access Antithesis"
             "MOOG_ANTITHESIS_PASSWORD"
             "PASSWORD"
             "ask-antithesis-password"
             "antithesisPassword"
-  where
-    cardanoWithPwd username pwd =
-        AntithesisAuth{username = username, password = pwd}
+    launchUrl <- launchUrlOption
+    pure AntithesisAuth{username, password, launchUrl}
 
 antithesisUserOption :: Parser String
 antithesisUserOption =
@@ -220,6 +220,21 @@ antithesisUserOption =
         , help "The username of the Antithesis account"
         , reader str
         ]
+
+launchUrlOption :: Parser LaunchUrl
+launchUrlOption =
+    LaunchUrl
+        <$> setting
+            [ env "MOOG_ANTITHESIS_LAUNCH_URL"
+            , conf "antithesisLaunchUrl"
+            , long "launch-url"
+            , metavar "LAUNCH_URL"
+            , help
+                "Antithesis tenant launch URL (e.g. \
+                \https://amaru-cardano.antithesis.com/api/v1/launch/cardano)"
+            , reader str
+            , option
+            ]
 
 downloadAssetsOptions
     :: Parser
