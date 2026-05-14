@@ -225,13 +225,17 @@ deriving instance Eq (TestRunState a)
 deriving instance Show (TestRunState a)
 
 instance Monad m => ToJSON m (TestRunState a) where
-    toJSON (Pending (Duration d) faultsEnabled hasInstrumentation signature) =
+    -- has_instrumentation is intentionally NOT emitted on the wire. The Plutus
+    -- validator hashes oldValue bytes verbatim, so any field this renderer adds
+    -- that the requester's renderer didn't write desyncs on-chain transitions.
+    -- Field stays in the record for off-chain logic; round-trip via FromJSON
+    -- defaults to True when absent.
+    toJSON (Pending (Duration d) faultsEnabled _hasInstrumentation signature) =
         object
             [ ("phase", stringJSON "pending")
             , ("duration", intJSON d)
             , ("signature", byteStringToJSON $ BA.convert signature)
             , "faults_enabled" .= faultsEnabled
-            , "has_instrumentation" .= hasInstrumentation
             ]
     toJSON (Rejected pending reasons) =
         object
