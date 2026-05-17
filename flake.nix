@@ -62,7 +62,7 @@
             inherit system;
           };
           project = import ./nix/moog-project.nix {
-            indexState = "2025-08-07T00:00:00Z";
+            indexState = "2025-08-18T23:16:27Z";
             inherit CHaP;
             inherit pkgs;
             inherit cardano-cli;
