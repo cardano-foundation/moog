@@ -122,6 +122,7 @@ library
     Lib.SSH.Public
     Lib.System
     MPFS.API
+    MPFS.Boot
     Options
     Oracle.Cli
     Oracle.Config.Cli
@@ -181,6 +182,11 @@ library
     , cardano-ledger-api     ^>=1.11.0.0
     , cardano-ledger-binary  ^>=1.6.0.0
     , cardano-ledger-core    ^>=1.17.0.0
+    , cardano-ledger-mary
+    , cardano-mpfs-api
+    , cardano-mpfs-cage
+    , cardano-mpfs-client
+    , cardano-slotting
     , case-insensitive
     , containers             ^>=0.6.8
     , crypton
@@ -345,6 +351,7 @@ test-suite unit-tests
     Lib.JSON.Canonical.ExtraSpec
     Lib.SSH.KeySpec
     MockMPFS
+    MPFS.BootSpec
     Oracle.Config.TypesSpec
     Oracle.TypesSpec
     Oracle.Validate.Requests.ConfigSpec
@@ -379,6 +386,7 @@ test-suite unit-tests
   build-depends:
     , aeson
     , base
+    , bech32
     , bytestring
     , canonical-json
     , case-insensitive

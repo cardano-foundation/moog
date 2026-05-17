@@ -1,12 +1,21 @@
-index-state: 2025-08-07T00:00:00Z
+index-state: 2025-08-18T23:16:27Z
 
 index-state:
-  , hackage.haskell.org 2025-08-07T00:00:00Z
-  , cardano-haskell-packages 2025-08-07T00:00:00Z
+  , hackage.haskell.org 2025-08-18T23:16:27Z
+  , cardano-haskell-packages 2025-08-18T23:16:27Z
 
 packages:
   .
   CI/rewrite-libs
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/cardano-mpfs-offchain.git
+  tag: 18ae5ff0457cc4cecdf8c9bfbff2d44e3e77e008
+  --sha256: 13dc6nx6ycxz9a0m717gcbspw7zr8dg1k29jv50qpljirrffia9x
+  subdir:
+    cardano-mpfs-api
+    cardano-mpfs-client
 
 repository cardano-haskell-packages
   url: https://chap.intersectmbo.org/
@@ -18,3 +27,90 @@ repository cardano-haskell-packages
     bcec67e8e99cabfa7764d75ad9b158d72bfacf70ca1d0ec8bc6b4406d1bf8413
     c00aae8461a256275598500ea0e187588c35a5d5d7454fb57eac18d9edb86a56
     d4a35cd3121aa00d18544bb0ac01c3e1691d618f462c46129271bccf39f7e8ee
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/rocksdb-haskell.git
+  tag: a3e86b39f9510fea54abf734ee84aec33d0d683f
+  --sha256: 1gjzqhf81fy3bpc79ndmx3s77x3s1gf0lsk762acbfnpfh6g1hd0
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/rocksdb-kv-transactions
+  tag: 44c3c2a4b7bab8ca0ca444c99977a358fc6af0ae
+  --sha256: 0rxc1g7imzlapdgab1v6cyy5nrgg8ilwbr9r015dxbdazl5rm9b9
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/cardano-utxo-csmt
+  tag: ccb893a16ba157e07a48e28df3c4d7eaa1fe107f
+  --sha256: 1crzbdrwbd2p35q53hmwznsk0qkh0zfik0a7dzp2kmp23bgh9qrl
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/chain-follower
+  tag: d592a5015f8d7edb2d6022936a67a054dfe5329f
+  --sha256: 1pm2yhsm2zg5nv01aixv6ss21f2ka8ysq6dv2q4mpf9smz0m8g78
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/haskell-mts
+  tag: f6f0ee24593bc20244afbc8899687a3fb73f4d88
+  --sha256: 0yvbnmbqfiichkw2qskj4b82kmk44f8483fvvh2gmibvda10229i
+
+source-repository-package
+  type: git
+  location: https://github.com/NorfairKing/opt-env-conf.git
+  tag: 0a530020fb0d5c11dbf37c983c1d70fed69ba816
+  --sha256: 0gy0ak952gmliv6986g1z6hxfd3fjs3wchqyrz0v64x1js9chyhi
+  subdir: opt-env-conf
+
+source-repository-package
+  type: git
+  location: https://github.com/paolino/aiken-codegen
+  tag: 74f364c10e930ce2bf47e64b755ede4424733325
+  --sha256: 0rg5hqjix9bs9radzib1ppy09qamxkkqr0hdvc8qm907c21cy2g8
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/cardano-node-clients
+  tag: fdf6fe114959453d46ea733536b70f2d28c9bec8
+  --sha256: 1sykch5944i117n110zs5rpa7pxx8s4ymflwx94vmb1fffw6hdi7
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/cardano-read-ledger
+  tag: 2a9521e9282e4955f5454847c3f87eb7e7ac1730
+  --sha256: 1hgs2g2ain43jy7m4h36fddwbkij4s18b9l21iya4givnpmmi2l3
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/contra-tracer-contrib
+  tag: f0518e871391133efa10dab5b20a36da7b673389
+  --sha256: 0193m530mx6pgp1d8ms9q91bhr3hqzcg92dirz6j7lw25mx2j3ns
+
+source-repository-package
+  type: git
+  location: https://github.com/cardano-foundation/cardano-mpfs-onchain
+  tag: 023d352e850f866752927818da44861478ae99e5
+  --sha256: 1w1i4a00m08r0hf4bn6dwvmka1qibrchdz06l9bck8xzzvyn69k1
+  subdir: haskell
+
+allow-newer: chain-follower:data-default
+
+constraints:
+  contra-tracer-contrib +iohk,
+  cardano-node-clients ==0.1.0.0,
+  ouroboros-consensus ==0.27.0.0,
+  ouroboros-consensus-cardano ==0.25.1.0,
+  ouroboros-consensus-protocol ==0.12.0.0,
+  ouroboros-network ==0.21.3.0,
+  ouroboros-network-api ==0.14.1.0,
+  ouroboros-network-framework ==0.18.0.2,
+  ouroboros-network-mock ==0.1.1.2,
+  ouroboros-network-protocols ==0.14.0.2,
+  ouroboros-network-testing ==0.8.1.0,
+  typed-protocols ==0.3.0.0,
+  typed-protocols-cborg ==0.3.0.0,
+  typed-protocols-stateful ==0.3.0.0,
+  typed-protocols-stateful-cborg ==0.3.0.0

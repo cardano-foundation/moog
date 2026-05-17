@@ -20,6 +20,11 @@ module MPFS.API
     , mpfsClient
     ) where
 
+import Cardano.MPFS.API.Types
+    ( BootFacts
+    , BootRequest
+    , StatusResponse
+    )
 import Core.Types.Basic (Address, RequestRefId, TokenId)
 import Core.Types.Tx (SignedTx, TxHash, WithUnsignedTx)
 import Data.Aeson
@@ -37,6 +42,7 @@ import Lib.JSON.Canonical.Extra
     , fromAesonThrow
     , toAesonString
     )
+import MPFS.Boot (bootTokenFromFacts)
 import Servant.API
     ( Capture
     , Get
@@ -110,11 +116,15 @@ instance FromJSON RequestUpdateBody where
             <$> (o .: "key" >>= fromAesonString)
             <*> (o .: "oldValue" >>= fromAesonString)
             <*> (o .: "newValue" >>= fromAesonString)
-type BootToken =
-    "transaction"
-        :> Capture "address" Address
-        :> "boot-token"
-        :> Get '[JSON] (WithUnsignedTx Value)
+type Status =
+    "status"
+        :> Get '[JSON] StatusResponse
+
+type BootFactsEndpoint =
+    "facts"
+        :> "boot"
+        :> ReqBody '[JSON] BootRequest
+        :> Post '[JSON] BootFacts
 
 type EndToken =
     "transaction"
@@ -189,8 +199,7 @@ type GetTransaction =
         :> Get '[JSON] Value
 
 type TokenAPI =
-    BootToken
-        :<|> EndToken
+    EndToken
         :<|> RequestInsert
         :<|> RequestDelete
         :<|> RequestUpdate
@@ -207,8 +216,8 @@ tokenApi = Proxy
 
 bootToken
     :: Address -> ClientM (WithUnsignedTx JSValue)
-bootToken address =
-    fmap fromAesonThrow <$> bootToken' address
+bootToken =
+    bootTokenFromFacts status' bootFacts'
 endToken
     :: Address -> TokenId -> ClientM (WithUnsignedTx JSValue)
 endToken address tokenId =
@@ -283,12 +292,9 @@ getTokenFacts' :: TokenId -> ClientM Value
 submitTransaction' :: SignedTx -> ClientM TxHash
 waitNBlocks' :: Int -> ClientM Value
 getTransaction' :: TxHash -> ClientM Value
-bootToken'
-    :: Address -> ClientM (WithUnsignedTx Value)
 endToken'
     :: Address -> TokenId -> ClientM (WithUnsignedTx Value)
-bootToken'
-    :<|> endToken'
+endToken'
     :<|> requestInsert'
     :<|> requestDelete'
     :<|> requestUpdate'
@@ -300,6 +306,14 @@ bootToken'
     :<|> waitNBlocks'
     :<|> getTransaction' =
         client tokenApi
+
+status' :: ClientM StatusResponse
+status' =
+    client (Proxy :: Proxy Status)
+
+bootFacts' :: BootRequest -> ClientM BootFacts
+bootFacts' =
+    client (Proxy :: Proxy BootFactsEndpoint)
 
 mpfsClient :: MPFS ClientM
 mpfsClient =
