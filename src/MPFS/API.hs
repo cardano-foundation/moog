@@ -27,6 +27,8 @@ module MPFS.API
 import Cardano.MPFS.API.Types
     ( BootFacts
     , BootRequest
+    , EndFacts
+    , EndRequest
     , StatusResponse
     )
 import Control.Monad (void)
@@ -49,6 +51,7 @@ import Lib.JSON.Canonical.Extra
     , toAesonString
     )
 import MPFS.Boot (bootTokenFromFacts)
+import MPFS.End (endTokenFromFacts)
 import Servant.API
     ( Capture
     , Get
@@ -140,6 +143,12 @@ type BootFactsEndpoint =
         :> "boot"
         :> ReqBody '[JSON] BootRequest
         :> Post '[JSON] BootFacts
+
+type EndFactsEndpoint =
+    "facts"
+        :> "end"
+        :> ReqBody '[JSON] EndRequest
+        :> Post '[JSON] EndFacts
 
 type EndToken =
     "transaction"
@@ -252,8 +261,8 @@ bootToken =
     bootTokenFromFacts status' bootFacts'
 endToken
     :: Address -> TokenId -> ClientM (WithUnsignedTx JSValue)
-endToken address tokenId =
-    fmap fromAesonThrow <$> endToken' address tokenId
+endToken =
+    endTokenFromFacts status' endFacts'
 requestInsert
     :: Address
     -> TokenId
@@ -339,9 +348,9 @@ submitTransactionV2' :: SubmitV2Body -> ClientM Text
 waitNBlocks' :: Int -> ClientM Value
 getTransaction' :: TxHash -> ClientM Value
 awaitTransactionV2' :: TxHash -> Maybe Int -> ClientM NoContent
-endToken'
+_endToken'
     :: Address -> TokenId -> ClientM (WithUnsignedTx Value)
-endToken'
+_endToken'
     :<|> requestInsert'
     :<|> requestDelete'
     :<|> requestUpdate'
@@ -361,6 +370,10 @@ status' =
 bootFacts' :: BootRequest -> ClientM BootFacts
 bootFacts' =
     client (Proxy :: Proxy BootFactsEndpoint)
+
+endFacts' :: EndRequest -> ClientM EndFacts
+endFacts' =
+    client (Proxy :: Proxy EndFactsEndpoint)
 
 getTokenV2' =
     client (Proxy :: Proxy GetTokenV2)

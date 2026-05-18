@@ -36,8 +36,8 @@ import Data.Scientific (floatingOrInteger)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import MPFS.Canary
-    ( BootCanaryResult (..)
-    , bootCanary
+    ( EndBoundaryCanaryResult (..)
+    , bootThenEndCanary
     )
 import Network.HTTP.Client
     ( HttpException
@@ -106,24 +106,32 @@ main = do
     output <- toJSON result
     BL.putStrLn $ renderCanonicalJSON output
 
-runCanary :: CanaryConfig -> IO BootCanaryResult
+runCanary :: CanaryConfig -> IO EndBoundaryCanaryResult
 runCanary cfg =
     withCanaryTempDirectory $ \tmp -> do
         wallet <- canaryWallet
         genesisDir <- fundedGenesis tmp cfg wallet
         withDevnetServer tmp cfg genesisDir $ \host -> do
             client <- newClient (host, NoWait, 120)
-            bootCanary client wallet cfg.polls
+            bootThenEndCanary client wallet cfg.polls
 
-assertCanaryResult :: BootCanaryResult -> IO ()
+assertCanaryResult :: EndBoundaryCanaryResult -> IO ()
 assertCanaryResult result = do
     let TokenId tokenId = result.canaryTokenId
     when (null tokenId)
-        $ failTest "boot canary returned an empty token id"
-    when (result.transactionPolls < 0)
-        $ failTest "boot canary returned a negative transaction poll count"
-    when (result.tokenPolls < 0)
-        $ failTest "boot canary returned a negative token poll count"
+        $ failTest "end boundary canary returned an empty token id"
+    when (result.bootTransactionPolls < 0)
+        $ failTest
+            "end boundary canary returned a negative boot transaction poll count"
+    when (result.tokenBeforeEndPolls < 0)
+        $ failTest
+            "end boundary canary returned a negative token-before-end poll count"
+    when (result.endTransactionPolls < 0)
+        $ failTest
+            "end boundary canary returned a negative end transaction poll count"
+    when (result.tokenGonePolls < 0)
+        $ failTest
+            "end boundary canary returned a negative token-gone poll count"
 
 loadConfig :: IO CanaryConfig
 loadConfig = do

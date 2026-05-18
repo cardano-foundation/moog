@@ -6,15 +6,15 @@ on:
       offchain_ref:
         description: "cardano-mpfs-offchain ref to pair with MOOG"
         required: false
-        default: "261-boot-fact-provider-pivot"
+        default: "268-end-fact-provider-pivot"
   pull_request:
     branches:
       - main
 
 jobs:
-  boot-canary:
-    name: Run MPFS v2 boot canary
-    if: github.event_name != 'pull_request' || github.head_ref == 'feat/boot-facts-pivot'
+  boot-end-canary:
+    name: Run MPFS v2 boot/end boundary canary
+    if: github.event_name != 'pull_request' || github.head_ref == 'feat/boot-facts-pivot' || github.head_ref == 'feat/end-facts-canary'
     runs-on: ubuntu-latest
     env:
       MOOG_CANARY_POLLS: "240"
@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: lambdasistemi/cardano-mpfs-offchain
-          ref: ${{ github.event.inputs.offchain_ref || '261-boot-fact-provider-pivot' }}
+          ref: ${{ github.event.inputs.offchain_ref || '268-end-fact-provider-pivot' }}
           token: ${{ secrets.MOOG_GITHUB_PAT || github.token }}
           path: cardano-mpfs-offchain
 
@@ -46,7 +46,7 @@ jobs:
             "printf '%s\n%s\n%s\n' \"\$MPFS_BLUEPRINT\" \"\$E2E_GENESIS_DIR\" \"\$PATH\"" \
             | tail -n3 > "$RUNNER_TEMP/mpfs-devnet-env"
 
-      - name: Run MPFS v2 canary executable
+      - name: Run MPFS v2 boot/end canary executable
         working-directory: moog
         run: |
           mapfile -t devnet_env < "$RUNNER_TEMP/mpfs-devnet-env"

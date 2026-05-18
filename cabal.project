@@ -11,8 +11,8 @@ packages:
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/cardano-mpfs-offchain.git
-  tag: 18ae5ff0457cc4cecdf8c9bfbff2d44e3e77e008
-  --sha256: 13dc6nx6ycxz9a0m717gcbspw7zr8dg1k29jv50qpljirrffia9x
+  tag: 28ae8af569dea2466903bf5460dd969c52e4afdd
+  --sha256: 060imqihkzn833kfhimkpyqqk6g2y7bfizi65mq931j4qfsk34j7
   subdir:
     cardano-mpfs-api
     cardano-mpfs-client
@@ -55,8 +55,8 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/haskell-mts
-  tag: f6f0ee24593bc20244afbc8899687a3fb73f4d88
-  --sha256: 0yvbnmbqfiichkw2qskj4b82kmk44f8483fvvh2gmibvda10229i
+  tag: 13264a52b47e3a1f43a6ebeebd424a10f9e4466a
+  --sha256: 1bqgpxdy79ncsz8hyg2qyd7jnm8hqj4q8rq8mhr3iirix66c77fb
 
 source-repository-package
   type: git
