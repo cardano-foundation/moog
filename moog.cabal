@@ -304,6 +304,42 @@ executable moog-agent
   -- Base language which the package is written in.
   default-language: Haskell2010
 
+executable moog-mpfs-v2-canary
+  -- Import common warning flags.
+  import:           warnings
+
+  -- .hs or .lhs file containing the Main module.
+  main-is:          app/moog-mpfs-v2-canary.hs
+
+  -- Modules included in this executable, other than Main.
+  -- other-modules:
+
+  -- LANGUAGE extensions used by modules in this package.
+  -- other-extensions:
+
+  -- Other library packages from which modules are imported.
+  build-depends:
+    , aeson
+    , base
+    , base16-bytestring
+    , bech32
+    , bytestring
+    , canonical-json
+    , directory
+    , filepath
+    , http-client
+    , http-types
+    , moog
+    , process
+    , scientific
+    , temporary
+    , text
+
+  -- Directories containing source files.
+
+  -- Base language which the package is written in.
+  default-language: Haskell2010
+
 test-suite e2e-tests
   -- Import common warning flags.
   import:           warnings

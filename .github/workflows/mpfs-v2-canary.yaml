@@ -1,0 +1,68 @@
+name: MPFS v2 Canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      offchain_ref:
+        description: "cardano-mpfs-offchain ref to pair with MOOG"
+        required: false
+        default: "261-boot-fact-provider-pivot"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  boot-canary:
+    name: Run MPFS v2 boot canary
+    if: github.event_name != 'pull_request' || github.head_ref == 'feat/boot-facts-pivot'
+    runs-on: ubuntu-latest
+    env:
+      MOOG_CANARY_POLLS: "240"
+    steps:
+      - name: Checkout MOOG
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          path: moog
+
+      - name: Checkout paired MPFS offchain
+        uses: actions/checkout@v6
+        with:
+          repository: lambdasistemi/cardano-mpfs-offchain
+          ref: ${{ github.event.inputs.offchain_ref || '261-boot-fact-provider-pivot' }}
+          token: ${{ secrets.MOOG_GITHUB_PAT || github.token }}
+          path: cardano-mpfs-offchain
+
+      - uses: paolino/dev-assets/setup-nix@v0.0.1
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+
+      - name: Prepare paired MPFS offchain devnet
+        working-directory: cardano-mpfs-offchain
+        run: |
+          nix build --quiet --print-out-paths .#mpfs-devnet-server \
+            > "$RUNNER_TEMP/mpfs-devnet-server"
+          nix develop --quiet -c bash -lc \
+            "printf '%s\n%s\n%s\n' \"\$MPFS_BLUEPRINT\" \"\$E2E_GENESIS_DIR\" \"\$PATH\"" \
+            | tail -n3 > "$RUNNER_TEMP/mpfs-devnet-env"
+
+      - name: Run MPFS v2 canary executable
+        working-directory: moog
+        run: |
+          mapfile -t devnet_env < "$RUNNER_TEMP/mpfs-devnet-env"
+          export MPFS_BLUEPRINT="${devnet_env[0]}"
+          export E2E_GENESIS_DIR="${devnet_env[1]}"
+          export MPFS_DEVNET_PATH="${devnet_env[2]}"
+          server_store="$(cat "$RUNNER_TEMP/mpfs-devnet-server")"
+          export MPFS_DEVNET_SERVER="$server_store/bin/mpfs-devnet-server"
+          export MOOG_CANARY_TMPDIR="$RUNNER_TEMP/mpfs-v2-canary"
+          export MOOG_CANARY_KEEP_TMP=1
+          nix --quiet run .#moog-mpfs-v2-canary
+
+      - name: Upload devnet log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mpfs-v2-canary-devnet-log
+          path: ${{ runner.temp }}/mpfs-v2-canary/mpfs-devnet.log
+          if-no-files-found: ignore
