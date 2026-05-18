@@ -1,19 +1,23 @@
 module MPFS.API
     ( tokenApi
     , TokenAPI
+    , SubmitV2Body (..)
     , requestInsert
     , requestDelete
     , requestUpdate
     , retractChange
     , updateToken
     , getToken
+    , getTokenV2
     , getTokenFacts
     , submitTransaction
+    , submitTransactionV2
     , waitNBlocks
     , RequestInsertBody (..)
     , RequestDeleteBody (..)
     , RequestUpdateBody (..)
     , getTransaction
+    , awaitTransactionV2
     , bootToken
     , endToken
     , MPFS (..)
@@ -25,8 +29,9 @@ import Cardano.MPFS.API.Types
     , BootRequest
     , StatusResponse
     )
+import Control.Monad (void)
 import Core.Types.Basic (Address, RequestRefId, TokenId)
-import Core.Types.Tx (SignedTx, TxHash, WithUnsignedTx)
+import Core.Types.Tx (SignedTx (..), TxHash (..), WithUnsignedTx)
 import Data.Aeson
     ( FromJSON (..)
     , ToJSON (..)
@@ -37,6 +42,7 @@ import Data.Aeson
     , (.=)
     )
 import Data.Data (Proxy (..))
+import Data.Text (Text)
 import Lib.JSON.Canonical.Extra
     ( fromAesonString
     , fromAesonThrow
@@ -47,7 +53,9 @@ import Servant.API
     ( Capture
     , Get
     , JSON
+    , NoContent
     , Post
+    , QueryParam
     , QueryParam'
     , QueryParams
     , ReqBody
@@ -116,6 +124,13 @@ instance FromJSON RequestUpdateBody where
             <$> (o .: "key" >>= fromAesonString)
             <*> (o .: "oldValue" >>= fromAesonString)
             <*> (o .: "newValue" >>= fromAesonString)
+
+newtype SubmitV2Body = SubmitV2Body SignedTx
+
+instance ToJSON SubmitV2Body where
+    toJSON (SubmitV2Body (SignedTx signedTx)) =
+        object ["tx" .= signedTx]
+
 type Status =
     "status"
         :> Get '[JSON] StatusResponse
@@ -177,6 +192,11 @@ type GetToken =
         :> Capture "tokenId" TokenId
         :> Get '[JSON] Value
 
+type GetTokenV2 =
+    "tokens"
+        :> Capture "tokenId" TokenId
+        :> Get '[JSON] Value
+
 type GetTokenFacts =
     "token"
         :> Capture "tokenId" TokenId
@@ -188,6 +208,12 @@ type SubmitTransaction =
         :> ReqBody '[JSON] SignedTx
         :> Post '[JSON] TxHash
 
+type SubmitTransactionV2 =
+    "tx"
+        :> "submit"
+        :> ReqBody '[JSON] SubmitV2Body
+        :> Post '[JSON] Text
+
 type WaitNBlocks =
     "wait"
         :> Capture "n" Int
@@ -197,6 +223,12 @@ type GetTransaction =
     "transaction"
         :> QueryParam' '[Required] "txHash" TxHash
         :> Get '[JSON] Value
+
+type AwaitTransactionV2 =
+    "tx"
+        :> Capture "txId" TxHash
+        :> QueryParam "timeout" Int
+        :> Get '[JSON] NoContent
 
 type TokenAPI =
     EndToken
@@ -258,15 +290,27 @@ updateToken address tokenId requests =
 getToken :: TokenId -> ClientM JSValue
 getToken tokenId = fromAesonThrow <$> getToken' tokenId
 
+getTokenV2 :: TokenId -> ClientM JSValue
+getTokenV2 tokenId = fromAesonThrow <$> getTokenV2' tokenId
+
 getTokenFacts :: TokenId -> ClientM JSValue
 getTokenFacts tokenId = fromAesonThrow <$> getTokenFacts' tokenId
 
 submitTransaction :: SignedTx -> ClientM TxHash
 submitTransaction = submitTransaction'
+
+submitTransactionV2 :: SignedTx -> ClientM TxHash
+submitTransactionV2 signed =
+    TxHash <$> submitTransactionV2' (SubmitV2Body signed)
+
 waitNBlocks :: Int -> ClientM JSValue
 waitNBlocks n = fromAesonThrow <$> waitNBlocks' n
 getTransaction :: TxHash -> ClientM JSValue
 getTransaction txHash = fromAesonThrow <$> getTransaction' txHash
+
+awaitTransactionV2 :: TxHash -> ClientM ()
+awaitTransactionV2 txHash =
+    void $ awaitTransactionV2' txHash (Just 1)
 
 requestInsert'
     :: Address
@@ -288,10 +332,13 @@ retractChange'
 updateToken'
     :: Address -> TokenId -> [RequestRefId] -> ClientM (WithUnsignedTx Value)
 getToken' :: TokenId -> ClientM Value
+getTokenV2' :: TokenId -> ClientM Value
 getTokenFacts' :: TokenId -> ClientM Value
 submitTransaction' :: SignedTx -> ClientM TxHash
+submitTransactionV2' :: SubmitV2Body -> ClientM Text
 waitNBlocks' :: Int -> ClientM Value
 getTransaction' :: TxHash -> ClientM Value
+awaitTransactionV2' :: TxHash -> Maybe Int -> ClientM NoContent
 endToken'
     :: Address -> TokenId -> ClientM (WithUnsignedTx Value)
 endToken'
@@ -314,6 +361,15 @@ status' =
 bootFacts' :: BootRequest -> ClientM BootFacts
 bootFacts' =
     client (Proxy :: Proxy BootFactsEndpoint)
+
+getTokenV2' =
+    client (Proxy :: Proxy GetTokenV2)
+
+submitTransactionV2' =
+    client (Proxy :: Proxy SubmitTransactionV2)
+
+awaitTransactionV2' =
+    client (Proxy :: Proxy AwaitTransactionV2)
 
 mpfsClient :: MPFS ClientM
 mpfsClient =
