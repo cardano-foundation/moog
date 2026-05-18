@@ -36,6 +36,7 @@ import Lib.Options.Secrets (secretsParser)
 import OptEnvConf
     ( Alternative (..)
     , Parser
+    , auto
     , checkEither
     , command
     , commands
@@ -112,6 +113,7 @@ commandParser =
             "retract"
             "Retract a request"
             retractRequestOptions
+        , command "canary" "Run MPFS boundary canaries" canaryOptions
         , command "facts" "Get token facts"
             $ (\c tk -> fmapBox (GetFacts c tk))
                 <$> mpfsClientOption
@@ -256,6 +258,33 @@ retractRequestOptions =
         <$> mpfsClientOption
         <*> walletOption
         <*> outputReferenceParser
+
+canaryOptions :: Parser (Box Command)
+canaryOptions =
+    commands
+        [ command
+            "boot"
+            "Boot through MPFS v2 facts and verify indexed visibility"
+            $ Box
+                <$> ( BootCanary
+                        <$> mpfsClientOption
+                        <*> walletOption
+                        <*> canaryPollsOption
+                    )
+        ]
+
+canaryPollsOption :: Parser Int
+canaryPollsOption =
+    setting
+        [ long "polls"
+        , metavar "COUNT"
+        , help
+            "How many one-second polls to wait for transaction and token visibility"
+        , env "MOOG_CANARY_POLLS"
+        , option
+        , reader auto
+        , value 180
+        ]
 
 secretsFileOption :: Parser (Maybe (Path Abs File))
 secretsFileOption =
