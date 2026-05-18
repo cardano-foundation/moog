@@ -18,9 +18,9 @@ import Core.Types.Basic (TokenId)
 import Core.Types.MPFS (MPFSClient (..))
 import Core.Types.Tx
     ( TxHash
-    , WithTxHash (..)
+    , WithUnsignedTx (..)
     )
-import Core.Types.Wallet (Wallet)
+import Core.Types.Wallet (Wallet (..))
 import Lib.JSON.Canonical.Extra
     ( boolJSON
     , intJSON
@@ -29,9 +29,11 @@ import Lib.JSON.Canonical.Extra
     )
 import MPFS.API
     ( MPFS (..)
+    , awaitTransactionV2
+    , getTokenV2
     , mpfsClient
+    , submitTransactionV2
     )
-import Submitting (Submission (..))
 import Text.JSON.Canonical
     ( FromJSON (fromJSON)
     , JSValue
@@ -71,20 +73,25 @@ bootCanary
     -> Wallet
     -> Int
     -> IO BootCanaryResult
-bootCanary MPFSClient{runMPFS, submitTx} wallet maxPolls = do
-    WithTxHash txHash rawTokenId <- runMPFS $ do
-        let Submission submit = submitTx wallet
-        submit $ mpfsBootToken mpfsClient
+bootCanary MPFSClient{runMPFS} wallet@Wallet{sign} maxPolls = do
+    WithUnsignedTx unsignedTx rawTokenId <-
+        runMPFS $ mpfsBootToken mpfsClient (address wallet)
+    signedTx <-
+        case sign unsignedTx of
+            Right tx -> pure tx
+            Left err -> throwIO err
+    txHash <-
+        runMPFS $ submitTransactionV2 signedTx
     tokenId <-
         either throwIO pure $ tokenIdFromBootValue rawTokenId
     transactionPolls <-
         pollBoundary "transaction" maxPolls
             $ runMPFS
-            $ mpfsGetTransaction mpfsClient txHash
+            $ awaitTransactionV2 txHash
     tokenPolls <-
         pollBoundary "token" maxPolls
             $ runMPFS
-            $ mpfsGetToken mpfsClient tokenId
+            $ getTokenV2 tokenId
     pure
         BootCanaryResult
             { canaryTxHash = txHash
