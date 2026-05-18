@@ -123,6 +123,7 @@ library
     Lib.System
     MPFS.API
     MPFS.Boot
+    MPFS.Canary
     Options
     Oracle.Cli
     Oracle.Config.Cli
@@ -352,6 +353,7 @@ test-suite unit-tests
     Lib.SSH.KeySpec
     MockMPFS
     MPFS.BootSpec
+    MPFS.CanarySpec
     Oracle.Config.TypesSpec
     Oracle.TypesSpec
     Oracle.Validate.Requests.ConfigSpec

@@ -28,6 +28,7 @@ import MPFS.API
     , mpfsClient
     , retractChange
     )
+import MPFS.Canary (BootCanaryResult, bootCanary)
 import Oracle.Cli (OracleCommand (..), oracleCmd)
 import Oracle.Config.Types (ProtocolFailure)
 import Oracle.Types
@@ -64,6 +65,8 @@ data Command a where
         :: Auth -> MPFSClient -> AgentCommand NotReady a -> Command a
     RetractRequest
         :: MPFSClient -> Wallet -> RequestRefId -> Command TxHash
+    BootCanary
+        :: MPFSClient -> Wallet -> Int -> Command BootCanaryResult
     GetFacts
         :: MPFSClient
         -> TokenId
@@ -126,6 +129,8 @@ cmd = \case
                 $ submit
                 $ \address ->
                     retractChange address refId
+    BootCanary mpfs wallet maxPolls -> do
+        bootCanary mpfs wallet maxPolls
     GetFacts MPFSClient{runMPFS} tokenId factsCommand -> do
         let validation =
                 mkEffects
