@@ -1,12 +1,12 @@
-# MPFS v2 Boot Canary
+# MPFS v2 Boot/End Boundary Canary
 
-The boot canary isolates the MPFS v2 live boundary from the old MOOG
-requester, oracle, and agent semantics.
+The canary proves the MPFS v2 live boundary needed to boot a cage token
+and then end that same token through facts-only client construction.
 
 It runs this path:
 
 ```text
-wallet -> GET /status -> POST /facts/boot -> verify -> bootCageTx -> sign -> POST /tx/submit -> GET /tx/:id -> GET /tokens/:id
+wallet -> GET /status -> POST /facts/boot -> verifyBootFacts -> bootCageTx -> sign -> POST /tx/submit -> GET /tx/:id -> GET /tokens/:id -> GET /status -> POST /facts/end -> verifyEndFacts -> endCageTx -> sign -> POST /tx/submit -> GET /tx/:id -> GET /tokens/:id until 404
 ```
 
 Required environment:
@@ -29,14 +29,16 @@ Successful output contains:
 
 ```json
 {
-  "boundary": "mpfs-v2-boot",
-  "transactionObserved": true,
-  "tokenObserved": true
+  "boundary": "mpfs-v2-end",
+  "bootTransactionObserved": true,
+  "endTransactionObserved": true,
+  "tokenObservedBeforeEnd": true,
+  "tokenGoneObserved": true
 }
 ```
 
-This command is release evidence only for the lower boot boundary. It
-does not validate MOOG requester, oracle, agent, or Antithesis test-run
+This command is release evidence only for the MPFS v2 boot/end boundary.
+It does not validate requester, oracle, agent, or Antithesis test-run
 semantics.
 
 The CI smoke for this boundary runs the dedicated Haskell executable
@@ -53,5 +55,5 @@ nix run .#moog-mpfs-v2-canary
 
 The executable creates a deterministic MOOG wallet, patches a temporary
 copy of the devnet genesis to fund that wallet, starts
-`mpfs-devnet-server`, and runs the boot canary path against the live HTTP
-API.
+`mpfs-devnet-server`, and runs the boot-then-end canary path against the
+live HTTP API.
