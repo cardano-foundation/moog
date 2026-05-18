@@ -23,22 +23,20 @@ let
       hlint = { index-state = indexState; };
     };
     withHoogle = true;
-    buildInputs = [
-      pkgs.gitAndTools.git
-      pkgs.just
-    ] ++ pkgs.lib.optional (cardano-cli != null) cardano-cli ++ [
-      project.hsPkgs.cardano-addresses.components.exes.cardano-address
-      project.hsPkgs.bech32.components.exes.bech32
-      pkgs.nixfmt-classic
-      pkgs.mkdocs
-      mkdocs.from-nixpkgs
-      mkdocs.asciinema-plugin
-      mkdocs.markdown-callouts
-      mkdocs.markdown-graphviz
-      asciinema.compress
-      asciinema.resize
-      pkgs.asciinema
-    ];
+    buildInputs = [ pkgs.gitAndTools.git pkgs.just ]
+      ++ pkgs.lib.optional (cardano-cli != null) cardano-cli ++ [
+        project.hsPkgs.cardano-addresses.components.exes.cardano-address
+        project.hsPkgs.bech32.components.exes.bech32
+        pkgs.nixfmt-classic
+        pkgs.mkdocs
+        mkdocs.from-nixpkgs
+        mkdocs.asciinema-plugin
+        mkdocs.markdown-callouts
+        mkdocs.markdown-graphviz
+        asciinema.compress
+        asciinema.resize
+        pkgs.asciinema
+      ];
     shellHook = ''
       echo "Entering shell for moog CLI development"
     '';
@@ -71,11 +69,14 @@ in {
   packages.moog = project.hsPkgs.moog.components.exes.moog;
   packages.moog-oracle = project.hsPkgs.moog.components.exes.moog-oracle;
   packages.moog-agent = project.hsPkgs.moog.components.exes.moog-agent;
+  packages.moog-mpfs-v2-canary =
+    project.hsPkgs.moog.components.exes.moog-mpfs-v2-canary;
   packages.bech32 = project.hsPkgs.bech32.components.exes.bech32;
   packages.cardano-address =
     project.hsPkgs.cardano-addresses.components.exes.cardano-address;
   packages.unit-tests = project.hsPkgs.moog.components.tests.unit-tests;
-  packages.integration-tests = project.hsPkgs.moog.components.tests.integration-tests;
+  packages.integration-tests =
+    project.hsPkgs.moog.components.tests.integration-tests;
   packages.e2e-tests = project.hsPkgs.moog.components.tests.e2e-tests;
   musl64 = project.projectCross.musl64.hsPkgs;
   aarch64-musl = project.projectCross.aarch64-multiplatform-musl.hsPkgs;
