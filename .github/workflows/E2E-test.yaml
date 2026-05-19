@@ -9,7 +9,7 @@ on:
 jobs:
   integration-tests:
     name: Run moog E2E tests
-    if: github.event_name != 'pull_request' || github.head_ref != 'feat/boot-facts-pivot'
+    if: github.event_name != 'pull_request' || (github.head_ref != 'feat/boot-facts-pivot' && github.head_ref != 'feat/end-facts-canary')
     runs-on: ubuntu-latest
     env:
       MOOG_MPFS_HOST: "http://localhost:3000"
