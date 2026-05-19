@@ -27,3 +27,7 @@ docs/yarn.lock
 tmp
 result
 site
+
+# resolve-ticket worktree scratch
+WIP.md
+.llm/
