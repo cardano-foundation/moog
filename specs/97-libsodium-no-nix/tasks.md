@@ -15,11 +15,11 @@ subagent. The orchestrator owns the live-boundary proof (cache delete
 
 - [X] **T001** — `fix(ci): skip libsodium autogen.sh config-script download`
       — subagent slice (behavior change). Brief below.
-- [ ] **T002** — *Orchestrator-only*, post-acceptance. Delete the
+- [X] **T002** — *Orchestrator-only*, post-acceptance. Delete the
       `Linux-libs` cache and trigger `Build without nix` on this branch
       to produce the live-boundary proof run URL. Attach to PR body.
       No commit; this is verification work.
-- [ ] **T003** — *Orchestrator-only*, finalization. Drop `gate.sh`
+- [X] **T003** — *Orchestrator-only*, finalization. Drop `gate.sh`
       (`chore: drop gate.sh (ready for review)`) and `gh pr ready 100`.
       No subagent.
 - [X] **T004** — *Controller follow-up*, discovered by T002 and resolved
@@ -50,6 +50,13 @@ orchestrator verification + finalization, not subagent work, so the
 The T002 / T003
 checkboxes are flipped by the orchestrator as part of finalization
 audit (not amended into a code commit, since they ship no code).
+
+T002 live-boundary proof:
+
+- `Build without nix` succeeded on `a137b15e`:
+  https://github.com/cardano-foundation/moog/actions/runs/26103954981
+- `Run MPFS v2 boot/end boundary canary` succeeded on `a137b15e`:
+  https://github.com/cardano-foundation/moog/actions/runs/26103955990
 
 ## Subagent brief — T001
 
