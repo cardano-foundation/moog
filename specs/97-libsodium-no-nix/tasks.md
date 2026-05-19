@@ -30,9 +30,13 @@ subagent. The orchestrator owns the live-boundary proof (cache delete
       run. Add `liblzma-dev` to the no-Nix APT package set so
       `pkg-config` can satisfy `lzma:+pkgconfig` during Cabal
       dependency resolution.
+- [X] **T006** — *Controller follow-up*, discovered by the T005 live
+      run. Add `librocksdb-dev` to the no-Nix APT package set so
+      `rocksdb-haskell-jprupp` can configure against the RocksDB C
+      library.
 
-T001 and T005 are the behavior-changing commits in this branch. T004 is
-resolved by the current base branch. T002 and T003 are
+T001, T005, and T006 are the behavior-changing commits in this branch.
+T004 is resolved by the current base branch. T002 and T003 are
 orchestrator verification + finalization, not subagent work, so the
 `Tasks:` trailers in the slice commits list their respective task ids only.
 The T002 / T003
