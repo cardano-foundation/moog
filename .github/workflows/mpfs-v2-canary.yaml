@@ -6,7 +6,7 @@ on:
       offchain_ref:
         description: "cardano-mpfs-offchain ref to pair with MOOG"
         required: false
-        default: "268-end-fact-provider-pivot"
+        default: "main"
   pull_request:
     branches:
       - main
@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: lambdasistemi/cardano-mpfs-offchain
-          ref: ${{ github.event.inputs.offchain_ref || '268-end-fact-provider-pivot' }}
+          ref: ${{ github.event.inputs.offchain_ref || 'main' }}
           token: ${{ secrets.MOOG_GITHUB_PAT || github.token }}
           path: cardano-mpfs-offchain
 

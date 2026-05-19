@@ -38,8 +38,12 @@ subagent. The orchestrator owns the live-boundary proof (cache delete
       current `origin/main`. Replace obsolete MPFS-v1 PR checks with
       the MPFS-v2 boot/end boundary canary, while keeping the old E2E
       and integration workflows available by manual dispatch.
+- [X] **T008** — *Controller follow-up*, discovered by the T007 canary
+      run. Point the MPFS v2 canary checkout at a reachable
+      `cardano-mpfs-offchain` ref (`main`) instead of the stale
+      `268-end-fact-provider-pivot` branch name.
 
-T001, T005, T006, and T007 are the behavior-changing commits in this branch.
+T001, T005, T006, T007, and T008 are the behavior-changing commits in this branch.
 T004 is resolved by the current base branch. T002 and T003 are
 orchestrator verification + finalization, not subagent work, so the
 `Tasks:` trailers in the slice commits list their respective task ids only.
