@@ -34,8 +34,12 @@ subagent. The orchestrator owns the live-boundary proof (cache delete
       run. Add `librocksdb-dev` to the no-Nix APT package set so
       `rocksdb-haskell-jprupp` can configure against the RocksDB C
       library.
+- [X] **T007** — *Controller follow-up*, discovered after rebasing onto
+      current `origin/main`. Replace obsolete MPFS-v1 PR checks with
+      the MPFS-v2 boot/end boundary canary, while keeping the old E2E
+      and integration workflows available by manual dispatch.
 
-T001, T005, and T006 are the behavior-changing commits in this branch.
+T001, T005, T006, and T007 are the behavior-changing commits in this branch.
 T004 is resolved by the current base branch. T002 and T003 are
 orchestrator verification + finalization, not subagent work, so the
 `Tasks:` trailers in the slice commits list their respective task ids only.

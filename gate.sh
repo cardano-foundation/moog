@@ -12,4 +12,8 @@ nix develop --quiet -c just hlint
 # Shellcheck warnings on this file pre-date the libsodium fix and are not
 # in scope; only validate YAML + GitHub Actions schema.
 nix shell nixpkgs#actionlint --quiet -c \
-  actionlint -shellcheck '' .github/workflows/build-no-nix.yaml
+  actionlint -shellcheck '' \
+    .github/workflows/build-no-nix.yaml \
+    .github/workflows/E2E-test.yaml \
+    .github/workflows/integration-tests.yaml \
+    .github/workflows/mpfs-v2-canary.yaml
