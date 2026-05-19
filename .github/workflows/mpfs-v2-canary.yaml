@@ -14,7 +14,6 @@ on:
 jobs:
   boot-end-canary:
     name: Run MPFS v2 boot/end boundary canary
-    if: github.event_name != 'pull_request' || github.head_ref == 'feat/boot-facts-pivot' || github.head_ref == 'feat/end-facts-canary'
     runs-on: ubuntu-latest
     env:
       MOOG_CANARY_POLLS: "240"
