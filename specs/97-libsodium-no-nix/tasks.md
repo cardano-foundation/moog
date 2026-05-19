@@ -13,7 +13,7 @@ subagent. The orchestrator owns the live-boundary proof (cache delete
 
 ## Task list
 
-- [ ] **T001** — `fix(ci): skip libsodium autogen.sh config-script download`
+- [X] **T001** — `fix(ci): skip libsodium autogen.sh config-script download`
       — subagent slice (behavior change). Brief below.
 - [ ] **T002** — *Orchestrator-only*, post-acceptance. Delete the
       `Linux-libs` cache and trigger `Build without nix` on this branch

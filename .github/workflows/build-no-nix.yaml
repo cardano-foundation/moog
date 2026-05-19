@@ -116,6 +116,18 @@ jobs:
 
       - name: Install libsodium fork
         if: steps.libs-cache.outputs.cache-hit != 'true'
+        env:
+          # autogen.sh in the libsodium fork overwrites
+          # build-aux/config.{guess,sub} by curl-ing
+          # git.savannah.gnu.org/gitweb without --fail; when that CGI
+          # is slow or returns 5xx the HTML error page lands in
+          # config.sub and ./configure fails with
+          #   "cannot run /bin/bash ./build-aux/config.sub"
+          # The fork commits both files in tree; this env var is the
+          # documented escape hatch in autogen.sh itself.
+          # See specs/97-libsodium-no-nix/research.md for the full
+          # investigation.
+          DO_NOT_UPDATE_CONFIG_SCRIPTS: 1
         run: |
           mkdir -p ~/src
           cd ~/src
