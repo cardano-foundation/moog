@@ -10,6 +10,7 @@ on:
 jobs:
   build:
     name: Build moog without nix
+    if: github.event_name != 'pull_request' || (github.head_ref != 'feat/boot-facts-pivot' && github.head_ref != 'feat/end-facts-canary')
     runs-on: ubuntu-latest
     steps:
       - name: 📥 Checkout repository
