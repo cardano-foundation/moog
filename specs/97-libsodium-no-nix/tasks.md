@@ -22,10 +22,20 @@ subagent. The orchestrator owns the live-boundary proof (cache delete
 - [ ] **T003** — *Orchestrator-only*, finalization. Drop `gate.sh`
       (`chore: drop gate.sh (ready for review)`) and `gh pr ready 100`.
       No subagent.
+- [X] **T004** — *Controller follow-up*, discovered by T002 and resolved
+      by rebasing onto current `origin/main`. The base branch now pins
+      `lambdasistemi/cardano-mpfs-offchain` to a reachable revision, so
+      a clean no-Nix runner can fetch it during `cabal build all`.
+- [X] **T005** — *Controller follow-up*, discovered by the T004 live
+      run. Add `liblzma-dev` to the no-Nix APT package set so
+      `pkg-config` can satisfy `lzma:+pkgconfig` during Cabal
+      dependency resolution.
 
-T001 is the only behavior-changing commit. T002 and T003 are
+T001 and T005 are the behavior-changing commits in this branch. T004 is
+resolved by the current base branch. T002 and T003 are
 orchestrator verification + finalization, not subagent work, so the
-`Tasks:` trailer in the slice commit lists `T001` only. The T002 / T003
+`Tasks:` trailers in the slice commits list their respective task ids only.
+The T002 / T003
 checkboxes are flipped by the orchestrator as part of finalization
 audit (not amended into a code commit, since they ship no code).
 

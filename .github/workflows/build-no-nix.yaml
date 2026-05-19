@@ -31,6 +31,7 @@ jobs:
             libffi-dev
             libgmp-dev
             liblmdb-dev
+            liblzma-dev
             libncurses-dev
             libssl-dev
             libsystemd-dev
