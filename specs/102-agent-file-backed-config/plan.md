@@ -54,7 +54,7 @@ Per-tenant values that currently have source-level defaults or hard-coded
 values should become explicit configuration. In particular:
 
 - Registry should be configurable through `--registry`, `MOOG_REGISTRY`, and
-  `registry`.
+  `registry`, with no source-level tenant default.
 - Antithesis launch URL should be configurable through `--launch-url`,
   `MOOG_ANTITHESIS_LAUNCH_URL`, and `antithesisLaunchUrl`, then threaded into
   the code path that renders the Antithesis launch request.
@@ -63,6 +63,22 @@ values should become explicit configuration. In particular:
 
 Environment variables and CLI flags must remain supported. Precedence should
 follow existing `opt-env-conf` semantics and must be covered by tests.
+
+## Resolved Decisions Before Implementation
+
+- `registry` is required for `moog-agent` process startup and `agent push-test`.
+  Removing the previous Cardano Foundation source default is intentional so a
+  missing tenant registry fails closed.
+- `antithesisLaunchUrl` is required for every Antithesis push path and is
+  stored with the existing `AntithesisAuth` value. This keeps the launch URL
+  next to the credentials used by `renderPostToAntithesis` while avoiding a
+  second configuration loader.
+- Existing environment variables keep their current names. New environment
+  variables are limited to settings that had no existing environment source:
+  `MOOG_REGISTRY` and `MOOG_ANTITHESIS_LAUNCH_URL`.
+- The canonical deployed agent example should use stable `current` paths under
+  `/secrets/moog-agent/current/...`. Operators can repoint the `current`
+  symlink to `old` or `new` without editing Compose for each rotation.
 
 ## Slice Breakdown
 
@@ -138,18 +154,10 @@ full CI equivalence.
 
 ## Open Questions For Next Phase
 
-- Should `registry` remain optional with the current default for requester-style
-  ad hoc `push-test`, or should it become required everywhere to satisfy
-  fail-closed tenant behavior?
-- Should `antithesisLaunchUrl` be stored inside `AntithesisAuth` or a sibling
-  deployment/tenant configuration record?
-- Should the canonical compose example in `CD/moog-agent/docker-compose.yaml`
-  move to `/secrets/moog-agent/current/...`, or should only the documentation
-  show that operator rotation pattern?
+None. The implementation decisions above are the worker contract.
 
 ## Out Of Scope
 
 - Multi-tenant scheduling.
 - Removing existing CLI flags or environment variables.
 - Changing wallet, Docker registry, or Antithesis API formats.
-
