@@ -181,10 +181,10 @@ library
     , canonical-json
     , cardano-addresses      ^>=4.0.0
     , cardano-crypto         ^>=1.3.0
-    , cardano-crypto-class   ^>=2.2.2.0
-    , cardano-ledger-api     ^>=1.11.0.0
-    , cardano-ledger-binary  ^>=1.6.0.0
-    , cardano-ledger-core    ^>=1.17.0.0
+    , cardano-crypto-class   ^>=2.3.1.0
+    , cardano-ledger-api     ^>=1.13.0.0
+    , cardano-ledger-binary  ^>=1.8.0.0
+    , cardano-ledger-core    ^>=1.19.0.0
     , cardano-ledger-mary
     , cardano-mpfs-api
     , cardano-mpfs-cage
