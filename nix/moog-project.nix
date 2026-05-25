@@ -11,6 +11,14 @@ let
       lib.mkForce [[ pkgs.libsodium-vrf pkgs.secp256k1 ]];
     packages.cardano-crypto-class.components.library.pkgconfig =
       lib.mkForce [[ pkgs.libsodium-vrf pkgs.secp256k1 pkgs.libblst ]];
+    packages.cardano-ledger-binary.components.library.doHaddock =
+      lib.mkForce false;
+    packages.plutus-core.components.library.doHaddock =
+      lib.mkForce false;
+    packages.plutus-ledger-api.components.library.doHaddock =
+      lib.mkForce false;
+    packages.plutus-tx.components.library.doHaddock =
+      lib.mkForce false;
   };
 
   shell = { pkgs, ... }: {
@@ -56,7 +64,7 @@ let
   mkProject = ctx@{ lib, pkgs, ... }: {
     name = "moog";
     src = ./..;
-    compiler-nix-name = "ghc984";
+    compiler-nix-name = "ghc9123";
     shell = shell { inherit pkgs; };
     modules = [ libOverlay ];
     inputMap = { "https://chap.intersectmbo.org/" = CHaP; };

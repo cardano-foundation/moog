@@ -15,11 +15,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     CHaP = {
-      url = "github:intersectmbo/cardano-haskell-packages?ref=repo";
+      url = "github:intersectmbo/cardano-haskell-packages/887d73ce434831e3a67df48e070f4f979b3ac5a6";
       flake = false;
     };
     cardano-node-runtime = {
-      url = "github:IntersectMBO/cardano-node?ref=10.1.4";
+      url = "github:IntersectMBO/cardano-node?ref=10.7.0";
     };
     mkdocs.url = "github:paolino/dev-assets?dir=mkdocs";
     asciinema.url = "github:paolino/dev-assets?dir=asciinema";
@@ -55,6 +55,7 @@
           pkgs = import nixpkgs {
             overlays = [
               iohkNix.overlays.crypto # modified crypto libs
+              iohkNix.overlays.haskell-nix-crypto
               iohkNix.overlays.cardano-lib
               haskellNix.overlay # some functions
               fix-blst
@@ -62,7 +63,7 @@
             inherit system;
           };
           project = import ./nix/moog-project.nix {
-            indexState = "2025-08-18T23:16:27Z";
+            indexState = "2026-02-17T10:15:41Z";
             inherit CHaP;
             inherit pkgs;
             inherit cardano-cli;
