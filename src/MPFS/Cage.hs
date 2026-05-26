@@ -17,7 +17,6 @@ import Cardano.MPFS.Cage.Blueprint
     , extractCompiledCode
     , loadBlueprint
     )
-import Cardano.MPFS.Cage.Ledger (ConwayEra)
 import Cardano.MPFS.Client.Cage.Config
     ( CageConfig (..)
     , computeScriptHash
@@ -39,7 +38,7 @@ import Data.Text.Encoding qualified as T
 import Servant.Client (ClientM)
 import System.Environment (lookupEnv)
 
-import Cardano.Ledger.Api.Tx (Tx)
+import Cardano.Tx.Ledger (ConwayTx)
 
 addressBytesForCage :: Address -> Either String ByteString
 addressBytesForCage (Address address) = do
@@ -81,7 +80,7 @@ walletPolicy =
         , wpMaxValidityWindow = SlotNo maxBound
         }
 
-txHex :: Tx ConwayEra -> T.Text
+txHex :: ConwayTx -> T.Text
 txHex =
     T.decodeUtf8 . Base16.encode . serialize' (natVersion @11)
 

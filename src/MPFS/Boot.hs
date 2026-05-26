@@ -13,7 +13,6 @@ import Cardano.MPFS.API.Types
     , BootRequest (..)
     , StatusResponse (..)
     )
-import Cardano.MPFS.Cage.Ledger (ConwayEra)
 import Cardano.MPFS.Client.Cage.Boot (bootCageTx)
 import Cardano.MPFS.Client.Cage.Config
     ( CageConfig (..)
@@ -37,8 +36,9 @@ import Data.Text.Encoding qualified as T
 import Servant.Client (ClientM)
 import Text.JSON.Canonical (JSValue (..), toJSString)
 
-import Cardano.Ledger.Api.Tx (Tx, bodyTxL)
+import Cardano.Ledger.Api.Tx (bodyTxL)
 import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
+import Cardano.Tx.Ledger (ConwayTx)
 import MPFS.Cage
     ( addressBytesForCage
     , liftEitherClientM
@@ -87,7 +87,7 @@ maybeToEither e =
 
 extractTokenId
     :: CageConfig
-    -> Tx ConwayEra
+    -> ConwayTx
     -> Either String ByteString
 extractTokenId cfg tx =
     let MultiAsset minted =

@@ -190,8 +190,9 @@ library
     , cardano-mpfs-cage
     , cardano-mpfs-client
     , cardano-slotting
+    , cardano-tx-tools
     , case-insensitive
-    , containers             ^>=0.6.8
+    , containers             >=0.6.8 && <0.8
     , crypton
     , crypton-box
     , directory
@@ -521,6 +522,7 @@ test-suite integration-tests
     , cardano-ledger-binary
     , cardano-ledger-core
     , cardano-strict-containers
+    , cardano-tx-tools
     , directory
     , exceptions
     , github
