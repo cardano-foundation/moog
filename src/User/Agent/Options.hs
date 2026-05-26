@@ -134,6 +134,7 @@ minutesOption =
             , help
                 "Number of minutes in the past to check for test results (default: 1440)"
             , metavar "MINUTES"
+            , conf "minutes"
             , reader auto
             , value 1440
             , option
@@ -194,6 +195,7 @@ registryOption =
             , metavar "REGISTRY_URL"
             , long "registry"
             , env "MOOG_REGISTRY"
+            , conf "registry"
             , reader str
             , option
             ]
@@ -216,6 +218,7 @@ antithesisUserOption :: Parser String
 antithesisUserOption =
     setting
         [ env "MOOG_ANTITHESIS_USER"
+        , conf "antithesisUser"
         , metavar "ANTITHESIS_USER"
         , help "The username of the Antithesis account"
         , reader str

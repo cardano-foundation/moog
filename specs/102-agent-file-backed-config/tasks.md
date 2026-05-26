@@ -23,12 +23,12 @@ nix develop --quiet -c cabal test unit-tests --test-show-details=direct --test-o
 
 Tasks:
 
-- [ ] T102-S1 Add failing unit coverage for `moog-agent` file-backed runtime configuration in `test/User/Agent/*`, using a temporary YAML file and temporary wallet JSON.
-- [ ] T102-S1 Add a failing precedence test proving an explicit environment value such as `MOOG_TOKEN_ID` overrides a YAML value in `test/User/Agent/*`.
-- [ ] T102-S1 Add `conf` keys for token id, MPFS host, wait behavior, MPFS timeout, poll interval, result lookback minutes, registry, Antithesis username, and wallet file path where needed in `src/Core/Options.hs`, `src/Core/Types/MPFS.hs`, `src/Core/Types/Mnemonics/Options.hs`, `src/Oracle/Process.hs`, and `src/User/Agent/Options.hs`.
-- [ ] T102-S1 Remove the source-level registry tenant default and add `MOOG_REGISTRY` as the explicit environment source for registry configuration.
-- [ ] T102-S1 Update `moog.cabal` only if the slice adds a new unit test module.
-- [ ] T102-S1 Run the focused unit test and the branch gate before committing.
+- [X] T102-S1 Add failing unit coverage for `moog-agent` file-backed runtime configuration in `test/User/Agent/*`, using a temporary YAML file and temporary wallet JSON.
+- [X] T102-S1 Add a failing precedence test proving an explicit environment value such as `MOOG_TOKEN_ID` overrides a YAML value in `test/User/Agent/*`.
+- [X] T102-S1 Add `conf` keys for token id, MPFS host, wait behavior, MPFS timeout, poll interval, result lookback minutes, registry, Antithesis username, and wallet file path where needed in `src/Core/Options.hs`, `src/Core/Types/MPFS.hs`, `src/Core/Types/Mnemonics/Options.hs`, `src/Oracle/Process.hs`, and `src/User/Agent/Options.hs`.
+- [X] T102-S1 Remove the source-level registry tenant default and add `MOOG_REGISTRY` as the explicit environment source for registry configuration.
+- [X] T102-S1 Update `moog.cabal` only if the slice adds a new unit test module.
+- [X] T102-S1 Run the focused unit test and the branch gate before committing.
 
 ## Slice 2 — Antithesis Launch URL Threading
 

@@ -110,6 +110,7 @@ pollIntervalOption =
         , metavar "SECONDS"
         , help "Interval in seconds between polling for new requests"
         , env "POLL_INTERVAL_SECONDS"
+        , conf "pollIntervalSeconds"
         , reader auto
         , option
         , value 30

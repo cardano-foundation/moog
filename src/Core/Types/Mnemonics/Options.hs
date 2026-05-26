@@ -66,6 +66,7 @@ walletFileOption :: Parser FilePath
 walletFileOption =
     setting
         [ env "MOOG_WALLET_FILE"
+        , conf "walletFile"
         , metavar "FILEPATH"
         , help "The file path to the wallet secret mnemonics"
         , long "wallet"
