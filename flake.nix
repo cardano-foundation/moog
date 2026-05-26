@@ -15,7 +15,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     CHaP = {
-      url = "github:intersectmbo/cardano-haskell-packages/887d73ce434831e3a67df48e070f4f979b3ac5a6";
+      url = "github:intersectmbo/cardano-haskell-packages/repo";
       flake = false;
     };
     cardano-node-runtime = {

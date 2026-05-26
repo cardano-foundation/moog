@@ -2,7 +2,7 @@ index-state: 2026-02-17T10:15:41Z
 
 index-state:
   , hackage.haskell.org 2026-02-17T10:15:41Z
-  , cardano-haskell-packages 2026-03-23T18:21:55Z
+  , cardano-haskell-packages 2026-05-22T05:43:37Z
 
 packages:
   .
@@ -11,8 +11,8 @@ packages:
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/cardano-mpfs-offchain.git
-  tag: f6b39cda447f2dda539e6a35f3d09a20b49e7c8b
-  --sha256: 01chapmg1ww460hy11v04h2cs36lqig82bbfp5lmb7zb0xc9pw58
+  tag: c33c1bdd658b725965c9f404ec0477dabea70de3
+  --sha256: 1almz2il76d4q3r5wby8lp5716xy3kz994n2idarqxm4z5qizih9
   subdir:
     cardano-mpfs-api
     cardano-mpfs-client
@@ -80,6 +80,18 @@ source-repository-package
 
 source-repository-package
   type: git
+  location: https://github.com/lambdasistemi/cardano-tx-tools
+  tag: 97374ffb611d08d2e0e7c17dfdac5699ac2b3ed8
+  --sha256: 0jsnq3hbay8y12jc0sz3jqdd99rrhkiqc0qkppf37hc3qv46p5fx
+
+source-repository-package
+  type: git
+  location: https://github.com/lambdasistemi/github-release-check
+  tag: d90131112a4d6c048d1809adaffdefed92e8e841
+  --sha256: 0ad6yi431w8h5i3x9x661b99frcgvd39gm4164y8cx1ihpsjixn3
+
+source-repository-package
+  type: git
   location: https://github.com/stevana/quickcheck-state-machine
   tag: v0.10.3
   --sha256: 1v7pk509ysbfkbkvf8sppf0pgp866vyviah5gsihlsvlb08lnrfg
@@ -105,11 +117,12 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/cardano-foundation/cardano-mpfs-onchain
-  tag: 023d352e850f866752927818da44861478ae99e5
-  --sha256: 1w1i4a00m08r0hf4bn6dwvmka1qibrchdz06l9bck8xzzvyn69k1
+  tag: 457c1cbcbbf622d0e583a3e9c0b413de079f315a
+  --sha256: 19m88h0ga5s09vrqqglj0wbwy4knvi9yy4mab9hwdb8mrrfdh5ig
   subdir: haskell
 
 allow-newer: chain-follower:data-default
+allow-newer: mts:containers
 
 constraints:
   contra-tracer-contrib +iohk,
@@ -126,6 +139,7 @@ constraints:
   cardano-crypto-praos ==2.2.2.0,
   cardano-protocol-tpraos ==1.5.0.0,
   cuddle ==1.1.1.0,
+  QuickCheck >=2.15 && <2.16,
   quickcheck-state-machine ==0.10.3,
   ouroboros-consensus ==1.0.0.0,
   ouroboros-network ==1.1.0.0,
@@ -138,3 +152,12 @@ package ouroboros-consensus
 package ouroboros-network
   tests: False
   benchmarks: False
+
+package lzma
+  flags: -pkgconfig
+
+package cardano-mpfs-cage
+  ghc-options: -Wwarn=unused-packages
+
+package cardano-mpfs-client
+  ghc-options: -Wwarn=unused-packages

@@ -28,7 +28,8 @@ import System.Directory
     , setPermissions
     )
 import System.Environment (getArgs)
-import System.Exit (die, exitFailure)
+import System.Exit (ExitCode (..), die, exitFailure)
+import System.Process (callProcess, readProcessWithExitCode)
 import Text.Megaparsec
     ( Parsec
     , anySingle
@@ -38,7 +39,6 @@ import Text.Megaparsec
     , someTill
     )
 import Text.Megaparsec.Char (eol, spaceChar)
-import Turtle (procStrict, procs)
 
 -- Rewrite libs paths and bundle them
 main :: IO ()
@@ -61,20 +61,31 @@ systemLibs = ["libSystem.B.dylib"]
 -- returns processed libraries
 chain :: FilePath -> [Text] -> IO [Text]
 chain dir args@(x : xs) = do
-    (_, output) <- procStrict "otool" ["-L", x] mempty
-    case parse parseOTool (T.unpack x) output of
-        Left err -> do
-            print err
-            return []
-        Right files -> do
-            -- parse again all libraries pointing to nix store that we haven't processed yet
-            let libs = filter (T.isPrefixOf "/nix/store/") files
-            filtered <- traverse (patchLib x dir) libs
-            chained <-
-                chain
-                    dir
-                    (xs ++ filter (`notElem` args) (catMaybes filtered))
-            return $ x : chained
+    (exitCode, output, err) <-
+        readProcessWithExitCode "otool" ["-L", T.unpack x] ""
+    case exitCode of
+        ExitFailure code ->
+            die $
+                "otool -L failed for "
+                    <> T.unpack x
+                    <> " with exit code "
+                    <> show code
+                    <> "\n"
+                    <> err
+        ExitSuccess ->
+            case parse parseOTool (T.unpack x) (T.pack output) of
+                Left parseErr -> do
+                    print parseErr
+                    return []
+                Right files -> do
+                    -- parse again all libraries pointing to nix store that we haven't processed yet
+                    let libs = filter (T.isPrefixOf "/nix/store/") files
+                    filtered <- traverse (patchLib x dir) libs
+                    chained <-
+                        chain
+                            dir
+                            (xs ++ filter (`notElem` args) (catMaybes filtered))
+                    return $ x : chained
 chain _ [] = return []
 
 patchLib :: Text -> FilePath -> Text -> IO (Maybe Text)
@@ -82,28 +93,30 @@ patchLib source dir lib
     | filter (`T.isSuffixOf` lib) systemLibs /= mempty = do
         -- if it's a system lib, just point to correct folder and be done
         print $ "Patching " <> lib <> " as system in " <> source
-        procs
+        callProcess
             "install_name_tool"
-            [ "-change"
-            , lib
-            , "/usr/lib/" <> filename lib
-            , T.pack dir <> "/" <> filename source
-            ]
-            mempty
+            $ map
+                T.unpack
+                [ "-change"
+                , lib
+                , "/usr/lib/" <> filename lib
+                , T.pack dir <> "/" <> filename source
+                ]
         return Nothing
     | otherwise = do
         -- otherwise, copy it to dist and change where it points
         print $ "Bundling " <> lib <> " in " <> source
         -- substitute store path if they are missing
-        procs "nix-store" ["-r", lib] mempty
-        procs
+        callProcess "nix-store" $ map T.unpack ["-r", lib]
+        callProcess
             "install_name_tool"
-            [ "-change"
-            , lib
-            , "@executable_path/" <> filename lib
-            , T.pack dir <> "/" <> filename source
-            ]
-            mempty
+            $ map
+                T.unpack
+                [ "-change"
+                , lib
+                , "@executable_path/" <> filename lib
+                , T.pack dir <> "/" <> filename source
+                ]
         let dest = dir <> "/" <> T.unpack (filename lib)
         copyFile (T.unpack lib) dest
         permissions <- getPermissions dest

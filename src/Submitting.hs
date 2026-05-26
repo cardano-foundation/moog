@@ -46,7 +46,6 @@ import Cardano.Crypto.Wallet (XPrv)
 import Cardano.Crypto.Wallet qualified as Crypto.HD
 import Cardano.Ledger.Api
     ( ConwayEra
-    , EraTx (Tx)
     , KeyRole (..)
     , WitVKey (..)
     , addrTxWitsL
@@ -54,7 +53,6 @@ import Cardano.Ledger.Api
     , txIdTx
     , witsTxL
     )
-import Cardano.Ledger.Api qualified as L
 import Cardano.Ledger.Api.Tx.In (TxId (..))
 import Cardano.Ledger.Binary
     ( DecCBOR (decCBOR)
@@ -70,6 +68,7 @@ import Cardano.Ledger.Keys
     , asWitness
     )
 import Cardano.Mnemonic (MkSomeMnemonic (mkSomeMnemonic))
+import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent (threadDelay)
 import Control.Exception (Exception, SomeException, throwIO)
 import Control.Lens ((%~))
@@ -252,13 +251,13 @@ signTx xprv (UnsignedTx unsignedHex) = do
     unhex = first (const InvalidHex) . Base16.decode . T.encodeUtf8
 
 serializeTx
-    :: Tx ConwayEra
+    :: ConwayTx
     -> ByteString
 serializeTx = BL.toStrict . Ledger.serialize (eraProtVerLow @ConwayEra)
 
 deserializeTx
     :: ByteString
-    -> Either DecoderError (Tx ConwayEra)
+    -> Either DecoderError ConwayTx
 deserializeTx
     bytes = case decodeFullAnnotator
         (eraProtVerLow @ConwayEra)
@@ -268,14 +267,14 @@ deserializeTx
         Left err -> error $ "Failed to decode full CBOR: " ++ show err
         Right tx' -> Right tx'
 
-signLedgerTx :: XPrv -> L.Tx L.ConwayEra -> L.Tx L.ConwayEra
+signLedgerTx :: XPrv -> ConwayTx -> ConwayTx
 signLedgerTx xprv tx =
     addKeyWitnesses tx
         $ Set.fromList
             [ mkKeyWitness (txIdTx tx) xprv
             ]
 
-mkKeyWitness :: TxId -> XPrv -> WitVKey 'Witness
+mkKeyWitness :: TxId -> XPrv -> WitVKey Witness
 mkKeyWitness (TxId hash) xprv =
     WitVKey
         (getShelleyKeyWitnessVerificationKey xprv)
@@ -307,5 +306,5 @@ mkKeyWitness (TxId hash) xprv =
                 error "rawDeserialiseVerKeyDSIGN failed converting XPub"
 
 addKeyWitnesses
-    :: EraTx era => Tx era -> Set (WitVKey 'Witness) -> Tx era
+    :: ConwayTx -> Set (WitVKey Witness) -> ConwayTx
 addKeyWitnesses tx newWits = tx & witsTxL . addrTxWitsL %~ Set.union newWits

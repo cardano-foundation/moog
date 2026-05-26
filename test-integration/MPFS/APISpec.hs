@@ -3,7 +3,6 @@
 module MPFS.APISpec (mpfsAPISpec)
 where
 
-import Cardano.Ledger.Alonzo.Tx (AlonzoTx)
 import Cardano.Ledger.Api
     ( Addr (..)
     , ConwayEra
@@ -25,6 +24,7 @@ import Cardano.Ledger.Core
     , ScriptHash (..)
     )
 import Cardano.Ledger.Credential (Credential (..))
+import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent (threadDelay)
 import Control.Exception (throwIO)
 import Control.Lens (to, (^.))
@@ -161,7 +161,7 @@ getHostFromEnv = getEnv "MOOG_MPFS_HOST"
 newtype Call = Call {calling :: forall a. ClientM a -> IO a}
 
 -- | CBOR deserialization of a tx in any era.
-deserializeTx :: Text -> AlonzoTx ConwayEra
+deserializeTx :: Text -> ConwayTx
 deserializeTx tx = case decode (T.encodeUtf8 tx) of
     Left err -> error $ "Failed to decode CBOR: " ++ show err
     Right bs -> case decodeFullAnnotator
@@ -240,7 +240,7 @@ teardown auth Context{mpfs, tokenId, wait180S, oracleWallet} = do
             $ EndToken tokenId oracleWallet
     liftIO $ waitTx mpfs txHash
 
-getFirstOutput :: AlonzoTx ConwayEra -> Maybe (String, Data)
+getFirstOutput :: ConwayTx -> Maybe (String, Data)
 getFirstOutput dtx = case dtx
     ^. bodyTxL
         . outputsTxBodyL
