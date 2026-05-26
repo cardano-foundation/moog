@@ -144,7 +144,7 @@ jobs:
         with:
           path: |
             ~/.cache/cabal
-          key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project.freeze') }}
+          key: ${{ runner.os }}-cabal-${{ hashFiles('cabal.project') }}
 
       - name: Cabal build all
         if: steps.cache-cabal.outputs.cache-hit != 'true'
