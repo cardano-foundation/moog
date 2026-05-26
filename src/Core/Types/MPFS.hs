@@ -41,23 +41,29 @@ newMPFSClient = do
     host <-
         setting
             [ env "MOOG_MPFS_HOST"
+            , conf "mpfsHost"
             , metavar "HOST"
             , help "The host of the MPFS server"
             , reader str
             ]
-    wait <-
-        setting
-            [ env "MOOG_WAIT"
-            , metavar "WAIT"
-            , help "Whether to wait for the transaction to be included in a block"
-            , reader $ Wait <$> auto
-            , value NoWait
-            ]
+    mWaitCycles <-
+        optional
+            $ setting
+                [ env "MOOG_WAIT"
+                , conf "wait"
+                , metavar "WAIT"
+                , help
+                    "Number of polling cycles to wait for a transaction \
+                    \to be included in a block (omit to skip waiting)"
+                , reader auto
+                ]
+    let wait = maybe NoWait Wait mWaitCycles
     timeoutSeconds <-
         setting
             [ metavar "SECONDS"
             , help "Timeout in seconds for MPFS requests"
             , env "MOOG_MPFS_TIMEOUT_SECONDS"
+            , conf "mpfsTimeoutSeconds"
             , reader auto
             , value 120
             ]

@@ -46,6 +46,7 @@ import OptEnvConf
     ( Parser
     , auto
     , checkEither
+    , conf
     , env
     , help
     , long
@@ -244,6 +245,7 @@ tokenIdOption =
     TokenId
         <$> setting
             [ env "MOOG_TOKEN_ID"
+            , conf "tokenId"
             , metavar "TOKEN_ID"
             , help "The token ID of the antithesis token"
             , reader str

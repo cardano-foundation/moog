@@ -404,6 +404,7 @@ test-suite unit-tests
     Oracle.Validate.Requests.TestRun.FinishSpec
     Oracle.Validate.Requests.TestRun.Lib
     Oracle.Validate.Requests.TestRun.RejectSpec
+    User.Agent.ProcessOptionsSpec
     User.Agent.PublishResults.EmailSpec
     User.Agent.PushTestSpec
     User.Agent.TypesSpec
@@ -433,6 +434,7 @@ test-suite unit-tests
     , case-insensitive
     , crypton
     , directory
+    , filepath
     , hspec
     , lens
     , memory
