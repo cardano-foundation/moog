@@ -31,7 +31,7 @@ let
       hlint = { index-state = indexState; };
     };
     withHoogle = true;
-    buildInputs = [ pkgs.gitAndTools.git pkgs.just ]
+    buildInputs = [ pkgs.git pkgs.just ]
       ++ pkgs.lib.optional (cardano-cli != null) cardano-cli ++ [
         project.hsPkgs.cardano-addresses.components.exes.cardano-address
         project.hsPkgs.bech32.components.exes.bech32
