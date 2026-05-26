@@ -48,7 +48,7 @@ jobs:
         id: cache-haskell
         uses: actions/cache@v5
         with:
-          key: ${{ runner.os }}-ghc-9.8.4
+          key: ${{ runner.os }}-ghc-9.12.3
           path:
             haskell-bin.tgz
 
@@ -59,8 +59,8 @@ jobs:
           curl https://downloads.haskell.org/~ghcup/0.1.50.2/x86_64-linux-ghcup-0.1.50.2 --output ghcup
           chmod +x ghcup
           export GHCUP_INSTALL_BASE_PREFIX=$HOME
-          ./ghcup install ghc 9.8.4
-          ./ghcup set ghc 9.8.4
+          ./ghcup install ghc 9.12.3
+          ./ghcup set ghc 9.12.3
           ./ghcup install cabal 3.12.1.0
           ./ghcup set cabal 3.12.1.0
           ./ghcup rm ghc 9.12.2 || true
@@ -83,7 +83,7 @@ jobs:
       - name: Set the iohknix version
         if: steps.libs-cache.outputs.cache-hit != 'true'
         run: |
-          CARDANO_NODE_VERSION='10.5.1'
+          CARDANO_NODE_VERSION='10.7.0'
           IOHKNIX_VERSION=$(curl https://raw.githubusercontent.com/IntersectMBO/cardano-node/$CARDANO_NODE_VERSION/flake.lock | jq -r '.nodes.iohkNix.locked.rev')
           echo "iohk-nix version: $IOHKNIX_VERSION"
           echo "IOHKNIX_VERSION=$IOHKNIX_VERSION" >> $GITHUB_ENV
