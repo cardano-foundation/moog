@@ -34,6 +34,7 @@ jobs:
             liblzma-dev
             libncurses-dev
             librocksdb-dev
+            liburing-dev
             libssl-dev
             libsystemd-dev
             libtool
