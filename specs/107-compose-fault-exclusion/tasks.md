@@ -10,10 +10,10 @@
 
 ## Slice 2 — PostTestRunRequest fields + JSON serializer
 
-- [ ] T107-S2.1 RED: extend `test/User/Agent/PushTestSpec.hs` with three cases — `PostTestRunRequest` with all four exclusion lists empty serializes to a payload with **no** `custom.*_exclusion` keys; populated list emits `"custom.container_faults_kill_exclusion": "asteria-game,tx-generator"` (comma-joined, no spaces); mixed empty + populated emits only the populated keys. Tests fail because fields and serializer logic don't exist yet.
-- [ ] T107-S2.2 GREEN: add `networkFaultExclusion`, `containerFaultsKillExclusion`, `containerFaultsPauseExclusion`, `containerFaultsStopExclusion` to `PostTestRunRequest`. Update `ToJSON` to emit each `custom.*_exclusion` key conditionally (omit on empty). Update every existing call site of `PostTestRunRequest` constructor to default the four fields to `[]` so the codebase still builds.
-- [ ] T107-S2.3 Run `./gate.sh` green. WIP.md milestone: `Slice 2 gate green` + note the existing `PushTestSpec` cases still pass (proves F8 backwards compatibility).
-- [ ] T107-S2.4 Commit (signed) with subject `feat(agent): emit custom.*_exclusion params in launch payload` and trailer `Tasks: T107-S2`.
+- [X] T107-S2.1 RED: extend `test/User/Agent/PushTestSpec.hs` with three cases — `PostTestRunRequest` with all four exclusion lists empty serializes to a payload with **no** `custom.*_exclusion` keys; populated list emits `"custom.container_faults_kill_exclusion": "asteria-game,tx-generator"` (comma-joined, no spaces); mixed empty + populated emits only the populated keys. Tests fail because fields and serializer logic don't exist yet.
+- [X] T107-S2.2 GREEN: add `networkFaultExclusion`, `containerFaultsKillExclusion`, `containerFaultsPauseExclusion`, `containerFaultsStopExclusion` to `PostTestRunRequest`. Update `ToJSON` to emit each `custom.*_exclusion` key conditionally (omit on empty). Update every existing call site of `PostTestRunRequest` constructor to default the four fields to `[]` so the codebase still builds.
+- [X] T107-S2.3 Run `./gate.sh` green. WIP.md milestone: `Slice 2 gate green` + note the existing `PushTestSpec` cases still pass (proves F8 backwards compatibility).
+- [X] T107-S2.4 Commit (signed) with subject `feat(agent): emit custom.*_exclusion params in launch payload` and trailer `Tasks: T107-S2`.
 
 ## Slice 3 — Wire parser into pushTestToAntithesisIO
 

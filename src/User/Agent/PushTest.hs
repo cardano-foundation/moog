@@ -36,6 +36,8 @@ import Core.Types.Basic
 import Core.Types.Fact (Fact (..))
 import Core.Types.Wallet (Wallet (..))
 import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.Types (Pair)
 import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.CaseInsensitive (CI (..))
 import Data.Functor (($>), (<&>))
@@ -94,6 +96,10 @@ data PostTestRunRequest = PostTestRunRequest
     , slack :: Maybe String
     , faults_enabled :: Bool
     , is_haskell :: Bool
+    , networkFaultExclusion :: [String]
+    , containerFaultsKillExclusion :: [String]
+    , containerFaultsPauseExclusion :: [String]
+    , containerFaultsStopExclusion :: [String]
     }
     deriving (Show, Eq)
 
@@ -109,6 +115,10 @@ instance Aeson.ToJSON PostTestRunRequest where
             , slack
             , faults_enabled
             , is_haskell
+            , networkFaultExclusion
+            , containerFaultsKillExclusion
+            , containerFaultsPauseExclusion
+            , containerFaultsStopExclusion
             } =
             Aeson.object
                 [ "params"
@@ -131,6 +141,24 @@ instance Aeson.ToJSON PostTestRunRequest where
                             ["antithesis.integrations.slack.callback_url" Aeson..= wh]
                         )
                         slack
+                    <> exclusionFields
+                        "custom.network_fault_exclusion"
+                        networkFaultExclusion
+                    <> exclusionFields
+                        "custom.container_faults_kill_exclusion"
+                        containerFaultsKillExclusion
+                    <> exclusionFields
+                        "custom.container_faults_pause_exclusion"
+                        containerFaultsPauseExclusion
+                    <> exclusionFields
+                        "custom.container_faults_stop_exclusion"
+                        containerFaultsStopExclusion
+
+exclusionFields :: String -> [String] -> [Pair]
+exclusionFields _ [] = []
+exclusionFields key services =
+    [Key.fromString key Aeson..= intercalate "," services]
+
 pushTestToAntithesis
     :: Wallet
     -> Directory
@@ -170,6 +198,10 @@ pushTestToAntithesisIO
                     , slack = fmap unSlackWebhook slack
                     , faults_enabled = getFaultsEnabled faultsEnabled
                     , is_haskell = not (getHasInstrumentation hasInstrumentation)
+                    , networkFaultExclusion = []
+                    , containerFaultsKillExclusion = []
+                    , containerFaultsPauseExclusion = []
+                    , containerFaultsStopExclusion = []
                     }
             post = renderPostToAntithesis auth body
         epost <- liftIO $ curl post
