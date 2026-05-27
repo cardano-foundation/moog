@@ -52,8 +52,7 @@ agentEnvVars =
     ]
 
 withScrubbedEnv :: IO a -> IO a
-withScrubbedEnv =
-    bracket_ (saveAndUnset agentEnvVars) restoreAll . const
+withScrubbedEnv = bracket_ (saveAndUnset agentEnvVars) restoreAll
   where
     saveAndUnset xs = mapM_ unsetEnv xs >> pure ()
     restoreAll = pure ()
