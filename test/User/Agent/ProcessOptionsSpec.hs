@@ -5,17 +5,32 @@ module User.Agent.ProcessOptionsSpec
     )
 where
 
-import Control.Exception (bracket_)
+import Control.Exception (bracket, bracket_, try)
 import Core.Types.Basic (TokenId (..))
+import Data.List (isPrefixOf)
+import GHC.IO.Handle (hDuplicate, hDuplicateTo)
 import System.Environment
     ( lookupEnv
     , setEnv
     , unsetEnv
     , withArgs
     )
+import System.Exit (ExitCode (..))
 import System.FilePath ((</>))
+import System.IO
+    ( IOMode (..)
+    , hClose
+    , stderr
+    , withFile
+    )
 import System.IO.Temp (withSystemTempDirectory)
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Test.Hspec
+    ( Spec
+    , describe
+    , expectationFailure
+    , it
+    , shouldBe
+    )
 import User.Agent.Process
     ( ProcessOptions (..)
     , parseArgs
@@ -57,6 +72,17 @@ withScrubbedEnv = bracket_ (saveAndUnset agentEnvVars) restoreAll
     saveAndUnset xs = mapM_ unsetEnv xs >> pure ()
     restoreAll = pure ()
 
+-- | Redirect stderr to /dev/null for the duration of the action. Used to
+-- suppress the OptEnvConf error renderer when a test deliberately triggers
+-- a parse failure.
+silenceStderr :: IO a -> IO a
+silenceStderr action =
+    withFile "/dev/null" WriteMode $ \devNull ->
+        bracket
+            (hDuplicate stderr)
+            (\saved -> hDuplicateTo saved stderr >> hClose saved)
+            (\_ -> hDuplicateTo devNull stderr >> action)
+
 -- | Temporarily set an env var inside an IO action, restoring whatever
 -- value (or absence) the variable had before.
 withEnv :: String -> String -> IO a -> IO a
@@ -92,6 +118,15 @@ agentYamlContent walletPath =
         , "trustedRequesters:"
         , "  - alice"
         ]
+
+-- | Variant of 'agentYamlContent' with the @antithesisLaunchUrl@ key removed,
+-- so the parser sees no source for the tenant launch URL.
+agentYamlContentWithoutLaunchUrl :: FilePath -> String
+agentYamlContentWithoutLaunchUrl walletPath =
+    unlines
+        . filter (not . isPrefixOf "antithesisLaunchUrl")
+        . lines
+        $ agentYamlContent walletPath
 
 writeFixtures :: FilePath -> IO (FilePath, FilePath)
 writeFixtures tmp = do
@@ -145,3 +180,30 @@ spec = describe "agent file-backed configuration" $ do
                         ]
                 opts <- withArgs args parseArgs
                 poTokenId opts `shouldBe` TokenId "env-token"
+    it "fails closed when no launch URL is supplied" $ do
+        withScrubbedEnv
+            $ withSystemTempDirectory "moog-agent-conf-no-url"
+            $ \tmp -> do
+                let walletPath = tmp </> "agent-wallet.json"
+                    yamlPath = tmp </> "agent.yaml"
+                writeFile walletPath walletJsonContent
+                writeFile
+                    yamlPath
+                    (agentYamlContentWithoutLaunchUrl walletPath)
+                let args =
+                        [ "--secrets-file"
+                        , yamlPath
+                        , "--trust-all-requesters"
+                        ]
+                result <-
+                    try $ silenceStderr $ withArgs args parseArgs
+                case result of
+                    Left (ExitFailure _) -> pure ()
+                    Left ExitSuccess ->
+                        expectationFailure
+                            "parser returned ExitSuccess; expected\
+                            \ ExitFailure for missing launch URL"
+                    Right _ ->
+                        expectationFailure
+                            "parser succeeded; expected ExitFailure\
+                            \ when antithesisLaunchUrl is unset"
