@@ -65,7 +65,6 @@ import Data.Time.Clock.POSIX
     ( posixSecondsToUTCTime
     , utcTimeToPOSIXSeconds
     )
-import Data.Typeable (Typeable)
 import Lib.JSON.Canonical.Extra (object, (.=))
 import Network.HaskellNet.IMAP
     ( SearchQuery
@@ -123,7 +122,7 @@ data EmailException where
     SelectFailed :: IOError -> EmailException
     SearchFailed :: IOError -> EmailException
     FetchFailed :: IOError -> EmailException
-    deriving (Show, Typeable, Eq)
+    deriving (Show, Eq)
 
 instance Exception EmailException
 
