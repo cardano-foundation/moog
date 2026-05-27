@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Build + run unit tests via the same flake output CI uses (avoids the
+# currently-broken `nix develop` shell on main — cabal-fmt 0.1.12 doesn't
+# allow base 4.21 from the GHC 9.12 bump). Lint/format are not part of CI
+# today; reintroduce here once the dev shell is repaired.
 git diff --check
-nix develop --quiet -c cabal build all --enable-tests
-nix develop --quiet -c cabal test unit-tests --test-show-details=direct
-nix develop --quiet -c cabal-fmt -c moog.cabal CI/rewrite-libs/rewrite-libs.cabal
-nix develop --quiet -c fourmolu -m check src app test CI/rewrite-libs
-nix develop --quiet -c hlint -c src app test CI/rewrite-libs
+nix --quiet run .#unit-tests
