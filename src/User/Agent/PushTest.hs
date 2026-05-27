@@ -7,6 +7,7 @@ module User.Agent.PushTest
     , pushTestToAntithesis
     , dockerfile
     , pushTestToAntithesisIO
+    , buildPostTestRunRequest
     , PostTestRunRequest (..)
     , Tag (..)
     , AntithesisAuth (..)
@@ -44,6 +45,10 @@ import Data.Functor (($>), (<&>))
 import Data.Functor.Identity (Identity (..))
 import Data.List (intercalate)
 import Data.String.QQ (s)
+import Docker.FaultExclusion
+    ( FaultExclusions (..)
+    , parseFaultExclusions
+    )
 import Lib.JSON.Canonical.Extra (object, withObject, (.:), (.=))
 import Lib.System (runSystemCommand)
 import Oracle.Validate.Types
@@ -184,28 +189,77 @@ pushTestToAntithesisIO
     slack = do
         etag <- liftIO $ buildConfigImage registry dir testRunId
         tag <- throwLeft DockerBuildFailure etag
-        epush <- liftIO $ pushConfigImage tag
-        void $ throwLeft DockerPushFailure epush
         (tr, Duration duration, faultsEnabled, hasInstrumentation) <-
             getTestRun tk testRunId
-        let body =
-                PostTestRunRequest
-                    { description = renderTestRun testRunId tr
-                    , duration = realToFrac duration * 60
-                    , config_image = tagString tag
-                    , recipients = ["antithesis@cardanofoundation.org"]
-                    , source = renderSource tr
-                    , slack = fmap unSlackWebhook slack
-                    , faults_enabled = getFaultsEnabled faultsEnabled
-                    , is_haskell = not (getHasInstrumentation hasInstrumentation)
-                    , networkFaultExclusion = []
-                    , containerFaultsKillExclusion = []
-                    , containerFaultsPauseExclusion = []
-                    , containerFaultsStopExclusion = []
-                    }
-            post = renderPostToAntithesis auth body
+        body <-
+            liftIO
+                ( buildPostTestRunRequest
+                    dir
+                    (renderTestRun testRunId tr)
+                    (realToFrac duration * 60)
+                    (tagString tag)
+                    ["antithesis@cardanofoundation.org"]
+                    (renderSource tr)
+                    (fmap unSlackWebhook slack)
+                    (getFaultsEnabled faultsEnabled)
+                    (not (getHasInstrumentation hasInstrumentation))
+                )
+                >>= throwLeft id
+        epush <- liftIO $ pushConfigImage tag
+        void $ throwLeft DockerPushFailure epush
+        let post = renderPostToAntithesis auth body
         epost <- liftIO $ curl post
         void $ throwLeft PostToAntithesisFailure epost
+
+buildPostTestRunRequest
+    :: Directory
+    -> String
+    -> Float
+    -> String
+    -> [String]
+    -> String
+    -> Maybe String
+    -> Bool
+    -> Bool
+    -> IO (Either PushFailure PostTestRunRequest)
+buildPostTestRunRequest
+    (Directory testnetDir)
+    description
+    duration
+    configImage
+    recipients
+    source
+    slack
+    faultsEnabled
+    isHaskell = do
+        exclusions <- parseFaultExclusions composePath
+        pure $
+            case exclusions of
+                Left err -> Left $ ComposeFaultExclusionParseFailure err
+                Right
+                    FaultExclusions
+                        { networkExclusion
+                        , killExclusion
+                        , pauseExclusion
+                        , stopExclusion
+                        } ->
+                        Right
+                            PostTestRunRequest
+                                { description
+                                , duration
+                                , config_image = configImage
+                                , recipients
+                                , source
+                                , slack
+                                , faults_enabled = faultsEnabled
+                                , is_haskell = isHaskell
+                                , networkFaultExclusion = networkExclusion
+                                , containerFaultsKillExclusion = killExclusion
+                                , containerFaultsPauseExclusion = pauseExclusion
+                                , containerFaultsStopExclusion = stopExclusion
+                                }
+      where
+        composePath = testnetDir ++ "/docker-compose.yaml"
 
 renderSource :: TestRun -> String
 renderSource TestRun{repository = GithubRepository{organization, project}} =
@@ -343,6 +397,7 @@ buildConfigImage (Registry registry) (Directory context) (TestRunId trId) =
 data PushFailure
     = DockerBuildFailure String
     | DockerPushFailure String
+    | ComposeFaultExclusionParseFailure String
     | Couldn'tResolveTestRunId TestRunId
     | PostToAntithesisFailure String
     deriving (Show, Eq)
@@ -355,6 +410,10 @@ instance Monad m => ToJSON m PushFailure where
     toJSON (DockerPushFailure msg) =
         object
             [ "dockerPushFailure" .= msg
+            ]
+    toJSON (ComposeFaultExclusionParseFailure msg) =
+        object
+            [ "composeFaultExclusionParseFailure" .= msg
             ]
     toJSON (Couldn'tResolveTestRunId (TestRunId trId)) =
         object

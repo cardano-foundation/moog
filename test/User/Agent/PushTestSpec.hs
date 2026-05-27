@@ -6,6 +6,7 @@ where
 import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
+import Data.List (isInfixOf)
 import Data.Text qualified as Text
 import Core.Types.Basic
     ( Commit (..)
@@ -16,12 +17,16 @@ import Core.Types.Basic
     , Try (..)
     )
 import Test.Hspec (Spec, describe, it, shouldBe, shouldReturn)
+import System.FilePath ((</>))
+import System.IO.Temp (withSystemTempDirectory)
 import User.Agent.PushTest
     ( AntithesisAuth (..)
     , LaunchUrl (..)
     , PostTestRunRequest (..)
+    , PushFailure (..)
     , Registry (..)
     , Tag (..)
+    , buildPostTestRunRequest
     , buildConfigImage
     , renderPostToAntithesis
     , renderTestRun
@@ -131,6 +136,78 @@ spec = do
                                 $ Text.pack "pause-a,pause-b"
                            , Just $ Aeson.String $ Text.pack "stop-a"
                            ]
+    describe "buildPostTestRunRequest" $ do
+        it "populates all exclusion lists from a compose label" $
+            withSystemTempDirectory
+                "push-test-compose"
+                $ \dir -> do
+                    writeCompose
+                        dir
+                        [ "services:"
+                        , "  asteria-game:"
+                        , "    image: asteria-game:latest"
+                        , "    labels:"
+                        , "      com.antithesis.exclude_from_faults: \"network,kill,pause,stop\""
+                        ]
+                    result <- testBuildPostTestRunRequest dir
+                    fmap requestExclusions result
+                        `shouldBe` Right
+                            ( ["asteria-game"]
+                            , ["asteria-game"]
+                            , ["asteria-game"]
+                            , ["asteria-game"]
+                            )
+
+        it "populates disjoint exclusion lists from two services" $
+            withSystemTempDirectory
+                "push-test-compose"
+                $ \dir -> do
+                    writeCompose
+                        dir
+                        [ "services:"
+                        , "  alpha:"
+                        , "    image: alpha:latest"
+                        , "    labels:"
+                        , "      com.antithesis.exclude_from_faults: network"
+                        , "  beta:"
+                        , "    image: beta:latest"
+                        , "    labels:"
+                        , "      com.antithesis.exclude_from_faults: kill,pause"
+                        ]
+                    result <- testBuildPostTestRunRequest dir
+                    fmap requestExclusions result
+                        `shouldBe` Right
+                            ( ["alpha"]
+                            , ["beta"]
+                            , ["beta"]
+                            , []
+                            )
+
+        it "returns a PushFailure when docker-compose.yaml is missing" $
+            withSystemTempDirectory
+                "push-test-compose"
+                $ \dir -> do
+                    result <- testBuildPostTestRunRequest dir
+                    result
+                        `shouldBeComposeFailureContaining`
+                            [dir </> "docker-compose.yaml"]
+
+        it "returns a PushFailure for an unknown fault class" $
+            withSystemTempDirectory
+                "push-test-compose"
+                $ \dir -> do
+                    writeCompose
+                        dir
+                        [ "services:"
+                        , "  tracer:"
+                        , "    image: tracer:latest"
+                        , "    labels:"
+                        , "      com.antithesis.exclude_from_faults: netwrk"
+                        ]
+                    result <- testBuildPostTestRunRequest dir
+                    result
+                        `shouldBeComposeFailureContaining`
+                            ["tracer", "netwrk"]
 
 basePostTestRunRequest :: PostTestRunRequest
 basePostTestRunRequest =
@@ -164,3 +241,42 @@ lookupParam name request = do
     Aeson.Object topLevel <- Aeson.decode $ Aeson.encode request
     Aeson.Object params <- KeyMap.lookup (Key.fromString "params") topLevel
     KeyMap.lookup (Key.fromString name) params
+
+testBuildPostTestRunRequest
+    :: FilePath -> IO (Either PushFailure PostTestRunRequest)
+testBuildPostTestRunRequest dir =
+    buildPostTestRunRequest
+        (Directory dir)
+        "description"
+        3600
+        "registry/cardano-moog-config:dummy"
+        ["hal@cardanofoundation.org"]
+        "dummy"
+        Nothing
+        True
+        False
+
+writeCompose :: FilePath -> [String] -> IO ()
+writeCompose dir =
+    writeFile (dir </> "docker-compose.yaml") . unlines
+
+requestExclusions :: PostTestRunRequest -> ([String], [String], [String], [String])
+requestExclusions request =
+    ( networkFaultExclusion request
+    , containerFaultsKillExclusion request
+    , containerFaultsPauseExclusion request
+    , containerFaultsStopExclusion request
+    )
+
+shouldBeComposeFailureContaining
+    :: Either PushFailure PostTestRunRequest -> [String] -> IO ()
+shouldBeComposeFailureContaining
+    (Left (ComposeFaultExclusionParseFailure msg))
+    expected =
+        mapM_ (`shouldContain` msg) expected
+shouldBeComposeFailureContaining actual _ =
+    actual `shouldBe` Left (ComposeFaultExclusionParseFailure "")
+
+shouldContain :: String -> String -> IO ()
+shouldContain expected actual =
+    (expected `isInfixOf` actual) `shouldBe` True
