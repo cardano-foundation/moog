@@ -57,7 +57,6 @@ newMPFSClient = do
                     \to be included in a block (omit to skip waiting)"
                 , reader auto
                 ]
-    let wait = maybe NoWait Wait mWaitCycles
     timeoutSeconds <-
         setting
             [ metavar "SECONDS"
@@ -67,6 +66,7 @@ newMPFSClient = do
             , reader auto
             , value 120
             ]
+    let wait = maybe NoWait Wait mWaitCycles
     pure (host, wait, timeoutSeconds)
 
 timeout :: Int -> ManagerSettings -> ManagerSettings
