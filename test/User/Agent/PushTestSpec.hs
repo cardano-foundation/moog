@@ -3,6 +3,10 @@ module User.Agent.PushTestSpec
     )
 where
 
+import Data.Aeson qualified as Aeson
+import Data.Aeson.Key qualified as Key
+import Data.Aeson.KeyMap qualified as KeyMap
+import Data.Text qualified as Text
 import Core.Types.Basic
     ( Commit (..)
     , Directory (..)
@@ -67,6 +71,10 @@ spec = do
                         , slack = Nothing
                         , faults_enabled = True
                         , is_haskell = False
+                        , networkFaultExclusion = []
+                        , containerFaultsKillExclusion = []
+                        , containerFaultsPauseExclusion = []
+                        , containerFaultsStopExclusion = []
                         }
                 (cmd, args) = renderPostToAntithesis auth body
             cmd `shouldBe` "curl"
@@ -82,3 +90,77 @@ spec = do
                            , "-d"
                            , "{\"params\":{\"antithesis.config_image\":\"registry/cardano-moog-config:dummy\",\"antithesis.description\":\"{\\\"testRun\\\":{\\\"commitId\\\":\\\"abcdef1234567890\\\",\\\"directory\\\":\\\"tests\\\",\\\"platform\\\":\\\"github\\\",\\\"repository\\\":{\\\"organization\\\":\\\"cardano-foundation\\\",\\\"repo\\\":\\\"moog\\\"},\\\"requester\\\":\\\"alice\\\",\\\"try\\\":1,\\\"type\\\":\\\"test-run\\\"},\\\"testRunId\\\":\\\"test-run-001\\\"}\",\"antithesis.duration\":3600,\"antithesis.report.recipients\":\"hal@cardanofoundation.org\",\"antithesis.source\":\"dummy\",\"custom.faults_enabled\":true,\"custom.is_haskell\":false}}"
                            ]
+    describe "PostTestRunRequest exclusion serialization" $ do
+        it "omits exclusion keys when all exclusion lists are empty" $ do
+            exclusionParams basePostTestRunRequest
+                `shouldBe` [ Nothing
+                           , Nothing
+                           , Nothing
+                           , Nothing
+                           ]
+
+        it "serializes only the non-empty kill exclusion list" $ do
+            let request =
+                    basePostTestRunRequest
+                        { containerFaultsKillExclusion =
+                            ["asteria-game", "tx-generator"]
+                        }
+            exclusionParams request
+                `shouldBe` [ Nothing
+                           , Just
+                                $ Aeson.String
+                                $ Text.pack "asteria-game,tx-generator"
+                           , Nothing
+                           , Nothing
+                           ]
+
+        it "serializes all exclusion lists independently" $ do
+            let request =
+                    basePostTestRunRequest
+                        { networkFaultExclusion = ["net-a", "net-b"]
+                        , containerFaultsKillExclusion = ["kill-a"]
+                        , containerFaultsPauseExclusion =
+                            ["pause-a", "pause-b"]
+                        , containerFaultsStopExclusion = ["stop-a"]
+                        }
+            exclusionParams request
+                `shouldBe` [ Just $ Aeson.String $ Text.pack "net-a,net-b"
+                           , Just $ Aeson.String $ Text.pack "kill-a"
+                           , Just
+                                $ Aeson.String
+                                $ Text.pack "pause-a,pause-b"
+                           , Just $ Aeson.String $ Text.pack "stop-a"
+                           ]
+
+basePostTestRunRequest :: PostTestRunRequest
+basePostTestRunRequest =
+    PostTestRunRequest
+        { description = "description"
+        , duration = 3600
+        , config_image = "registry/cardano-moog-config:dummy"
+        , recipients = ["hal@cardanofoundation.org"]
+        , source = "dummy"
+        , slack = Nothing
+        , faults_enabled = True
+        , is_haskell = False
+        , networkFaultExclusion = []
+        , containerFaultsKillExclusion = []
+        , containerFaultsPauseExclusion = []
+        , containerFaultsStopExclusion = []
+        }
+
+exclusionParams :: PostTestRunRequest -> [Maybe Aeson.Value]
+exclusionParams request =
+    fmap
+        (`lookupParam` request)
+        [ "custom.network_fault_exclusion"
+        , "custom.container_faults_kill_exclusion"
+        , "custom.container_faults_pause_exclusion"
+        , "custom.container_faults_stop_exclusion"
+        ]
+
+lookupParam :: String -> PostTestRunRequest -> Maybe Aeson.Value
+lookupParam name request = do
+    Aeson.Object topLevel <- Aeson.decode $ Aeson.encode request
+    Aeson.Object params <- KeyMap.lookup (Key.fromString "params") topLevel
+    KeyMap.lookup (Key.fromString name) params
