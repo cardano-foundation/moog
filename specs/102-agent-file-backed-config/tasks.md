@@ -62,11 +62,11 @@ git diff --check
 
 Tasks:
 
-- [ ] T102-S3 Document the complete agent YAML shape in `docs/user/secrets-management.md`, including newly file-backed runtime keys and existing secret keys.
-- [ ] T102-S3 Document the stable `/secrets/moog-agent/current -> old|new` rotation pattern in `docs/ops/deployment.md`.
-- [ ] T102-S3 Align the agent operations configuration table in `docs/ops/agent-role.md` if it would otherwise contradict the new file-backed configuration path.
-- [ ] T102-S3 Update `CD/moog-agent/docker-compose.yaml` so the canonical compose example uses `/secrets/moog-agent/current/...` stable paths.
-- [ ] T102-S3 Run the branch gate before committing.
+- [X] T102-S3 Document the complete agent YAML shape in `docs/user/secrets-management.md`, including newly file-backed runtime keys and existing secret keys.
+- [X] T102-S3 Document the stable `/secrets/moog-agent/current -> old|new` rotation pattern in `docs/ops/deployment.md`.
+- [X] T102-S3 Align the agent operations configuration table in `docs/ops/agent-role.md` if it would otherwise contradict the new file-backed configuration path.
+- [X] T102-S3 Update `CD/moog-agent/docker-compose.yaml` so the canonical compose example uses `/secrets/moog-agent/current/...` stable paths.
+- [X] T102-S3 Run the branch gate before committing.
 
 ## Branch Gate
 

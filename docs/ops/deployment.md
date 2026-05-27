@@ -102,28 +102,61 @@ Look for log lines showing successful polling and validation cycles. The oracle 
 
 ## Agent Deployment
 
-### Secrets setup
+### Stable-path layout for rotation
 
-Create the secrets directory:
+The agent's secrets directory uses a stable-path layout so that rotating credentials, the wallet, or tenant-specific configuration never requires editing the compose file. The compose file always mounts `/secrets/moog-agent/current/...`; `current` is a symlink that the operator points at the version currently in use.
 
-```bash
-mkdir -p /secrets/moog-agent/docker
+```text
+/secrets/moog-agent/
+├── current -> new/                      # symlink: active version
+├── new/
+│   ├── agent.json                       # wallet JSON
+│   ├── secrets.yaml                     # runtime settings + secrets
+│   └── docker/
+│       └── config.json                  # Docker registry credentials
+└── old/
+    ├── agent.json
+    ├── secrets.yaml
+    └── docker/
+        └── config.json
 ```
 
-**`/secrets/moog-agent/agent.json`** — the agent wallet file.
+Create the layout once at install time:
 
-**`/secrets/moog-agent/docker/config.json`** — Docker registry credentials for pulling/pushing Antithesis images.
+```bash
+sudo mkdir -p /secrets/moog-agent/old/docker /secrets/moog-agent/new/docker
+sudo ln -sfn new /secrets/moog-agent/current
+```
 
-**`/secrets/moog-agent/secrets.yaml`**:
+Then populate `/secrets/moog-agent/new/` with the three files described below. Subsequent rotations alternate which side is "live" — see [Rotation](#rotation) below.
+
+**`/secrets/moog-agent/current/agent.json`** — the agent wallet file (from `moog wallet create`).
+
+**`/secrets/moog-agent/current/docker/config.json`** — Docker registry credentials for pulling/pushing Antithesis images.
+
+**`/secrets/moog-agent/current/secrets.yaml`** — runtime settings and secrets together. The full key reference lives in [Secrets management](../user/secrets-management.md#all-supported-keys); a typical agent file looks like:
 
 ```yaml
+# --- Runtime settings (file-backed) ---
+tokenId: <moog-token-asset-id>
+mpfsHost: https://mpfs.plutimus.com
+walletFile: /run/secrets/agent-wallet
+wait: 240
+mpfsTimeoutSeconds: 120
+pollIntervalSeconds: 60
+minutes: 1440
+registry: us-central1-docker.pkg.dev/<project>/<tenant-repository>
+antithesisUser: cardano
+antithesisLaunchUrl: https://amaru-cardano.antithesis.com/api/v1/launch/cardano
+
+# --- Secrets ---
 agentEmail: agent@example.com
-agentEmailPassword: xxxx-xxxx-xxxx-xxxx  # Google app password
+agentEmailPassword: xxxx-xxxx-xxxx-xxxx     # Google app password
 githubPAT: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 antithesisPassword: your_antithesis_password
-antithesisLaunchUrl: https://amaru-cardano.antithesis.com/api/v1/launch/cardano
-slackWebhook: https://hooks.slack.com/services/...  # optional
-trustedRequesters:  # optional, ignored when --trust-all-requesters is used
+walletPassphrase: your_wallet_passphrase    # if wallet is encrypted
+slackWebhook: https://hooks.slack.com/services/...   # optional
+trustedRequesters:                                    # optional, ignored under --trust-all-requesters
   - requester_pkh_1
   - requester_pkh_2
 ```
@@ -142,31 +175,27 @@ services:
       - source: docker
         target: /run/secrets/docker/config.json
     environment:
-      - MOOG_MPFS_HOST=https://mpfs.plutimus.com
-      - MOOG_WALLET_FILE=/run/secrets/agent-wallet
-      - MOOG_TOKEN_ID=<your-token-id>
       - MOOG_SECRETS_FILE=/run/secrets/secrets
-      - MOOG_WAIT=240
-      - MOOG_ANTITHESIS_USER=cardano
-      - MOOG_REGISTRY=us-central1-docker.pkg.dev/<project>/<tenant-repository>
       - DOCKER_CONFIG=/run/secrets/docker
     restart: always
     privileged: true
-    command: "--poll-interval 60 --minutes 1440 --trust-all-requesters"
+    command: "--trust-all-requesters"
     volumes:
       - tmp:/tmp
       - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
       - /var/run/docker.sock:/var/run/docker.sock:rw
 secrets:
   agent-wallet:
-    file: /secrets/moog-agent/agent.json
+    file: /secrets/moog-agent/current/agent.json
   secrets:
-    file: /secrets/moog-agent/secrets.yaml
+    file: /secrets/moog-agent/current/secrets.yaml
   docker:
-    file: /secrets/moog-agent/docker/config.json
+    file: /secrets/moog-agent/current/docker/config.json
 volumes:
   tmp:
 ```
+
+All tenant-specific values (`tokenId`, `mpfsHost`, `registry`, `antithesisUser`, `antithesisLaunchUrl`, poll/timeout tunables) live in `secrets.yaml` and are rotated with it; the compose file itself is identical across tenants.
 
 !!! warning "Privileged mode and Docker socket"
     The agent container requires privileged mode and access to the Docker socket because it runs `docker compose` to validate test assets locally before pushing them to Antithesis. See [Security](security.md#docker-security) for implications.
@@ -180,6 +209,29 @@ docker compose logs -f moog-agent
 ```
 
 The agent polls for pending test runs every `--poll-interval` seconds (default 60) and checks for email results within the `--minutes` window.
+
+### Rotation
+
+To rotate credentials, the wallet, or any tenant-specific runtime setting (`tokenId`, `antithesisLaunchUrl`, `registry`, …), prepare the new files alongside the current ones and flip the `current` symlink — the compose file never changes.
+
+1. Populate the inactive side (`new/` if `current` points at `old/`, and vice versa):
+   ```bash
+   sudo cp /path/to/new-secrets.yaml /secrets/moog-agent/new/secrets.yaml
+   sudo cp /path/to/new-agent.json   /secrets/moog-agent/new/agent.json
+   sudo cp /path/to/new-config.json  /secrets/moog-agent/new/docker/config.json
+   ```
+2. Atomically repoint `current`:
+   ```bash
+   sudo ln -sfn new /secrets/moog-agent/current
+   ```
+3. Re-create the container so it re-reads the symlink target:
+   ```bash
+   docker compose up -d --force-recreate moog-agent
+   ```
+4. To roll back, repoint `current` at `old/` and run the same `--force-recreate` command.
+
+!!! warning "`restart` is not enough"
+    Docker materialises swarm-style `secrets:` entries into a tmpfs at container *create* time, not at start time. `docker compose restart moog-agent` reuses the existing container, which still carries the *previous* symlink target. **You must `docker compose up -d --force-recreate moog-agent`** (or `down`/`up`) to pick up the new files. Operators have repeatedly tripped on this: a rotation appears to "do nothing" until the next full recreate.
 
 ## Environment Variables Reference
 
@@ -294,10 +346,12 @@ docker compose up -d
 
 ### Configuration changes
 
-For changes to `secrets.yaml` or environment variables, restart the service:
+For changes to environment variables in `docker-compose.yaml`, restart the service:
 
 ```bash
 docker compose restart
 ```
 
-No state is lost on restart — the service resumes polling from the current on-chain state.
+For changes to `secrets.yaml`, the wallet file, or `docker/config.json` on the agent, follow the [stable-path rotation procedure](#rotation) above — `docker compose restart` is **not** enough because the secrets tmpfs is captured at container create time. The oracle has the same caveat: update its files in place and run `docker compose up -d --force-recreate moog-oracle`.
+
+No state is lost across rotation or recreate — both services resume polling from the current on-chain state.
