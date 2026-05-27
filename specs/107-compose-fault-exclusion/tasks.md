@@ -2,11 +2,11 @@
 
 ## Slice 1 — Compose-label parser
 
-- [ ] T107-S1.1 Add `Docker.FaultExclusion` to `moog.cabal` `library` `exposed-modules` and add the corresponding spec module to `test-suite unit-tests` `other-modules`.
-- [ ] T107-S1.2 RED: write `test/Docker/FaultExclusionSpec.hs` with these cases — empty compose / no labels → all four lists empty; one service labeled `"network"` → only network list contains it; one service labeled `"network,kill,pause,stop"` → all four lists contain it; two services labeled disjoint classes → each class list contains its service; whitespace-padded value `" network , kill "` → parsed identically to `"network,kill"`; empty token between commas (`"network,,kill"`) → parsed as `["network","kill"]`; unknown token `"netwrk"` → `Left` naming the service + the offending token; missing compose file → `Left` with path. Tests fail because module + types don't exist yet.
-- [ ] T107-S1.3 GREEN: implement `Docker.FaultExclusion` (`FaultClass`, `FaultExclusions`, `parseFaultExclusions`, pure helper `classifyServices :: Yaml.Value -> Either String FaultExclusions`, `emptyFaultExclusions`).
-- [ ] T107-S1.4 Run `./gate.sh` green. WIP.md milestone: `Slice 1 gate green`.
-- [ ] T107-S1.5 Commit (signed) with subject `feat(agent): compose-label-driven fault-exclusion parser` and trailer `Tasks: T107-S1`.
+- [X] T107-S1.1 Add `Docker.FaultExclusion` to `moog.cabal` `library` `exposed-modules` and add the corresponding spec module to `test-suite unit-tests` `other-modules`.
+- [X] T107-S1.2 RED: write `test/Docker/FaultExclusionSpec.hs` with these cases — empty compose / no labels → all four lists empty; one service labeled `"network"` → only network list contains it; one service labeled `"network,kill,pause,stop"` → all four lists contain it; two services labeled disjoint classes → each class list contains its service; whitespace-padded value `" network , kill "` → parsed identically to `"network,kill"`; empty token between commas (`"network,,kill"`) → parsed as `["network","kill"]`; unknown token `"netwrk"` → `Left` naming the service + the offending token; missing compose file → `Left` with path. Tests fail because module + types don't exist yet.
+- [X] T107-S1.3 GREEN: implement `Docker.FaultExclusion` (`FaultClass`, `FaultExclusions`, `parseFaultExclusions`, pure helper `classifyServices :: Yaml.Value -> Either String FaultExclusions`, `emptyFaultExclusions`).
+- [X] T107-S1.4 Run `./gate.sh` green. WIP.md milestone: `Slice 1 gate green`.
+- [X] T107-S1.5 Commit (signed) with subject `feat(agent): compose-label-driven fault-exclusion parser` and trailer `Tasks: T107-S1`.
 
 ## Slice 2 — PostTestRunRequest fields + JSON serializer
 

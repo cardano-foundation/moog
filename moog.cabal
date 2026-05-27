@@ -106,6 +106,7 @@ library
     Core.Types.VKey
     Core.Types.Wallet
     Docker
+    Docker.FaultExclusion
     Effects
     Effects.DownloadFile
     Effects.RegisterRole
@@ -385,6 +386,7 @@ test-suite unit-tests
     Core.EncryptionSpec
     Core.Types.FactSpec
     Core.Types.VKeySpec
+    Docker.FaultExclusionSpec
     Lib.CryptoBoxSpec
     Lib.EdToCurveSpec
     Lib.JSON.Canonical.AesonSpec
@@ -446,6 +448,7 @@ test-suite unit-tests
     , temporary
     , text
     , time
+    , yaml
 
   build-tool-depends: hspec-discover:hspec-discover
 
