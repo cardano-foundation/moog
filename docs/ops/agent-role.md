@@ -44,17 +44,21 @@ See the [Deployment Guide](deployment.md#agent-deployment) for full setup instru
 
 ### Environment variables
 
-| Variable | Description |
-|---|---|
-| `MOOG_MPFS_HOST` | URL of the MPFS service |
-| `MOOG_WALLET_FILE` | Path to the agent wallet JSON file |
-| `MOOG_TOKEN_ID` | The moog token asset ID |
-| `MOOG_SECRETS_FILE` | Path to `secrets.yaml` |
-| `MOOG_WAIT` | Seconds between polling cycles (alternative to `--poll-interval`) |
-| `MOOG_ANTITHESIS_USER` | Antithesis platform username |
-| `MOOG_ANTITHESIS_LAUNCH_URL` | Antithesis tenant launch URL |
-| `MOOG_REGISTRY` | Registry URL where the agent pushes the config image |
-| `DOCKER_CONFIG` | Path to Docker config directory (for private registries) |
+Each of the variables below — except `MOOG_SECRETS_FILE` and `DOCKER_CONFIG` — has a matching YAML key in `secrets.yaml` and a matching CLI flag. The parser combines all three sources in the order **CLI > env > YAML**, so a value set on the command line wins over an env variable, which in turn wins over the YAML file. See [Secrets management](../user/secrets-management.md#all-supported-keys) for the full key reference.
+
+| Variable | YAML key | Description |
+|---|---|---|
+| `MOOG_MPFS_HOST` | `mpfsHost` | URL of the MPFS service |
+| `MOOG_WALLET_FILE` | `walletFile` | Path to the agent wallet JSON file |
+| `MOOG_TOKEN_ID` | `tokenId` | The moog token asset ID |
+| `MOOG_SECRETS_FILE` | — | Path to `secrets.yaml` (bootstrap; cannot itself live in the YAML) |
+| `MOOG_WAIT` | `wait` | Number of MPFS poll cycles to wait for tx inclusion |
+| `MOOG_MPFS_TIMEOUT_SECONDS` | `mpfsTimeoutSeconds` | Per-request MPFS HTTP timeout in seconds |
+| `POLL_INTERVAL_SECONDS` | `pollIntervalSeconds` | Agent poll interval (alternative to `--poll-interval`) |
+| `MOOG_ANTITHESIS_USER` | `antithesisUser` | Antithesis platform username |
+| `MOOG_ANTITHESIS_LAUNCH_URL` | `antithesisLaunchUrl` | Antithesis tenant launch URL |
+| `MOOG_REGISTRY` | `registry` | Registry URL where the agent pushes the config image |
+| `DOCKER_CONFIG` | — | Path to Docker config directory (for private registries) |
 
 ### Docker socket and privileged mode
 
