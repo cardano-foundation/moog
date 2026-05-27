@@ -37,18 +37,18 @@ data MPFSClient = MPFSClient
     }
 
 newMPFSClient :: Parser (String, IfToWait, Int)
-newMPFSClient = do
-    host <-
-        setting
+newMPFSClient =
+    (\host mWaitCycles timeoutSeconds ->
+        (host, maybe NoWait Wait mWaitCycles, timeoutSeconds))
+        <$> setting
             [ env "MOOG_MPFS_HOST"
             , conf "mpfsHost"
             , metavar "HOST"
             , help "The host of the MPFS server"
             , reader str
             ]
-    mWaitCycles <-
-        optional
-            $ setting
+        <*> optional
+            ( setting
                 [ env "MOOG_WAIT"
                 , conf "wait"
                 , metavar "WAIT"
@@ -57,8 +57,8 @@ newMPFSClient = do
                     \to be included in a block (omit to skip waiting)"
                 , reader auto
                 ]
-    timeoutSeconds <-
-        setting
+            )
+        <*> setting
             [ metavar "SECONDS"
             , help "Timeout in seconds for MPFS requests"
             , env "MOOG_MPFS_TIMEOUT_SECONDS"
@@ -66,8 +66,6 @@ newMPFSClient = do
             , reader auto
             , value 120
             ]
-    let wait = maybe NoWait Wait mWaitCycles
-    pure (host, wait, timeoutSeconds)
 
 timeout :: Int -> ManagerSettings -> ManagerSettings
 timeout tOut r =
