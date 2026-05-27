@@ -43,11 +43,11 @@ nix develop --quiet -c cabal test unit-tests --test-show-details=direct --test-o
 
 Tasks:
 
-- [ ] T102-S2 Add failing unit coverage showing the rendered Antithesis launch request uses the configured launch URL in `test/User/Agent/PushTestSpec.hs` or a focused neighboring test module.
-- [ ] T102-S2 Add `--launch-url`, `MOOG_ANTITHESIS_LAUNCH_URL`, and `antithesisLaunchUrl` support in `src/User/Agent/Options.hs`.
-- [ ] T102-S2 Store the launch URL with `AntithesisAuth` and thread it into the Antithesis request rendering path in `src/User/Agent/PushTest.hs` and any call sites that construct or pattern-match `AntithesisAuth`.
-- [ ] T102-S2 Ensure required tenant-specific launch URL configuration fails closed when absent rather than silently using the previous tenant.
-- [ ] T102-S2 Run the focused unit test and the branch gate before committing.
+- [X] T102-S2 Add failing unit coverage showing the rendered Antithesis launch request uses the configured launch URL in `test/User/Agent/PushTestSpec.hs` or a focused neighboring test module.
+- [X] T102-S2 Add `--launch-url`, `MOOG_ANTITHESIS_LAUNCH_URL`, and `antithesisLaunchUrl` support in `src/User/Agent/Options.hs`.
+- [X] T102-S2 Store the launch URL with `AntithesisAuth` and thread it into the Antithesis request rendering path in `src/User/Agent/PushTest.hs` and any call sites that construct or pattern-match `AntithesisAuth`.
+- [X] T102-S2 Ensure required tenant-specific launch URL configuration fails closed when absent rather than silently using the previous tenant.
+- [X] T102-S2 Run the focused unit test and the branch gate before committing.
 
 ## Slice 3 — Deployment Documentation
 
