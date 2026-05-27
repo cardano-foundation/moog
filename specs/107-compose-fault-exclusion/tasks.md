@@ -17,10 +17,10 @@
 
 ## Slice 3 — Wire parser into pushTestToAntithesisIO
 
-- [ ] T107-S3.1 RED: integration test in `PushTestSpec` — set up a `withSystemTempDirectory` containing a stub `docker-compose.yaml` with one labeled service, run the relevant slice of `pushTestToAntithesisIO`'s logic (the part that builds `PostTestRunRequest` from `Directory context`; factor out a pure helper if needed to make it testable without doing the HTTP POST), assert the request carries the service in all four exclusion fields.
-- [ ] T107-S3.2 GREEN: in `pushTestToAntithesisIO`, call `parseFaultExclusions ((unDirectory context) </> "docker-compose.yaml")`. On `Left`, throw `PushFailure` (new constructor `ComposeFaultExclusionParseFailure String`). On `Right`, populate the four fields on `PostTestRunRequest`. Remove the `[]` placeholders from the call site introduced in Slice 2.
-- [ ] T107-S3.3 Run `./gate.sh` green. WIP.md milestone: `Slice 3 gate green` + a note recording the integration test's tmpdir compose content for posterity.
-- [ ] T107-S3.4 Commit (signed) with subject `feat(agent): wire compose fault-exclusion parser into push payload` and trailer `Tasks: T107-S3`.
+- [X] T107-S3.1 RED: integration test in `PushTestSpec` — set up a `withSystemTempDirectory` containing a stub `docker-compose.yaml` with one labeled service, run the relevant slice of `pushTestToAntithesisIO`'s logic (the part that builds `PostTestRunRequest` from `Directory context`; factor out a pure helper if needed to make it testable without doing the HTTP POST), assert the request carries the service in all four exclusion fields.
+- [X] T107-S3.2 GREEN: in `pushTestToAntithesisIO`, call `parseFaultExclusions ((unDirectory context) </> "docker-compose.yaml")`. On `Left`, throw `PushFailure` (new constructor `ComposeFaultExclusionParseFailure String`). On `Right`, populate the four fields on `PostTestRunRequest`. Remove the `[]` placeholders from the call site introduced in Slice 2.
+- [X] T107-S3.3 Run `./gate.sh` green. WIP.md milestone: `Slice 3 gate green` + a note recording the integration test's tmpdir compose content for posterity.
+- [X] T107-S3.4 Commit (signed) with subject `feat(agent): wire compose fault-exclusion parser into push payload` and trailer `Tasks: T107-S3`.
 
 ## Finalization (orchestrator)
 
