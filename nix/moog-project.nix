@@ -79,6 +79,8 @@ in {
   packages.moog-agent = project.hsPkgs.moog.components.exes.moog-agent;
   packages.moog-mpfs-v2-canary =
     project.hsPkgs.moog.components.exes.moog-mpfs-v2-canary;
+  packages.moog-github-device-flow-smoke =
+    project.hsPkgs.moog.components.exes.moog-github-device-flow-smoke;
   packages.bech32 = project.hsPkgs.bech32.components.exes.bech32;
   packages.cardano-address =
     project.hsPkgs.cardano-addresses.components.exes.cardano-address;
