@@ -374,6 +374,29 @@ executable moog-github-device-flow-smoke
   -- Base language which the package is written in.
   default-language: Haskell2010
 
+executable moog-github-auth-smoke
+  -- Import common warning flags.
+  import:           warnings
+
+  -- .hs or .lhs file containing the Main module.
+  main-is:          moog-github-auth-smoke.hs
+
+  -- Modules included in this executable, other than Main.
+  other-modules:    Moog.GitHub.AuthSmoke
+
+  -- Other library packages from which modules are imported.
+  build-depends:
+    , base
+    , bytestring
+    , moog
+    , text
+
+  -- Directories containing source files.
+  hs-source-dirs:   app
+
+  -- Base language which the package is written in.
+  default-language: Haskell2010
+
 test-suite e2e-tests
   -- Import common warning flags.
   import:           warnings
@@ -420,6 +443,7 @@ test-suite unit-tests
     Docker.FaultExclusionSpec
     Lib.CryptoBoxSpec
     Lib.EdToCurveSpec
+    Lib.GitHub.Auth.AuthSmokeSpec
     Lib.GitHub.Auth.DeviceFlow
     Lib.GitHub.Auth.DeviceFlow.Internal
     Lib.GitHub.Auth.DeviceFlowSmokeSpec
