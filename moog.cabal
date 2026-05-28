@@ -87,6 +87,7 @@ library
   import:           warnings
   other-modules:
     Lib.GitHub.Auth.DeviceFlow.Internal
+    Lib.GitHub.Auth.TeamCheck.Internal
     Paths_moog
 
   -- Modules exported by the library.
@@ -119,6 +120,8 @@ library
     Lib.EdToCurve
     Lib.GitHub
     Lib.GitHub.Auth.DeviceFlow
+    Lib.GitHub.Auth.Identify
+    Lib.GitHub.Auth.TeamCheck
     Lib.JSON.Canonical.Aeson
     Lib.JSON.Canonical.Extra
     Lib.Options.Secrets
@@ -420,6 +423,10 @@ test-suite unit-tests
     Lib.GitHub.Auth.DeviceFlow.Internal
     Lib.GitHub.Auth.DeviceFlowSmokeSpec
     Lib.GitHub.Auth.DeviceFlowSpec
+    Lib.GitHub.Auth.Identify
+    Lib.GitHub.Auth.TeamCheck
+    Lib.GitHub.Auth.TeamCheck.Internal
+    Lib.GitHub.Auth.TeamCheckSpec
     Lib.JSON.Canonical.AesonSpec
     Lib.JSON.Canonical.ExtraSpec
     Lib.SSH.KeySpec

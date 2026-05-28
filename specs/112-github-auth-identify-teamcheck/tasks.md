@@ -11,13 +11,13 @@
 
 ## Slice 1 - Team membership API and fixture matrix
 
-- [ ] T112-S1.1 Add `Lib.GitHub.Auth.TeamCheck` to the library exposed modules and add a testable internal module as needed.
-- [ ] T112-S1.2 Add any cabal module declarations needed for the new source and test modules.
-- [ ] T112-S1.3 RED: add `test/Lib/GitHub/Auth/TeamCheckSpec.hs` covering active, pending, not member, token invalid, SSO required, and other error fixture responses.
-- [ ] T112-S1.4 GREEN: implement `Org`, `TeamSlug`, `MembershipResult`, `checkTeamMembership`, token auth, status mapping, and SSO URL extraction.
-- [ ] T112-S1.5 Run the focused TeamCheck unit tests and `./gate.sh` green.
-- [ ] T112-S1.6 Commit with subject `feat(auth): add GitHub team membership check` and trailer `Tasks: T112-S1`.
-- [ ] T112-S1.7 Announce `NOTE RELEASE: membership-result-type-pinned at <commit-or-PR-url>` in `/tmp/epic-109/moog-112/STATUS.md`.
+- [X] T112-S1.1 Add `Lib.GitHub.Auth.TeamCheck` to the library exposed modules and add a testable internal module as needed.
+- [X] T112-S1.2 Add any cabal module declarations needed for the new source and test modules.
+- [X] T112-S1.3 RED: add `test/Lib/GitHub/Auth/TeamCheckSpec.hs` covering active, pending, not member, token invalid, SSO required, and other error fixture responses.
+- [X] T112-S1.4 GREEN: implement `Org`, `TeamSlug`, `MembershipResult`, `checkTeamMembership`, token auth, status mapping, and SSO URL extraction.
+- [X] T112-S1.5 Run the focused TeamCheck unit tests and `./gate.sh` green.
+- [X] T112-S1.6 Commit with subject `feat(auth): add GitHub team membership check` and trailer `Tasks: T112-S1`.
+- [X] T112-S1.7 Announce `NOTE RELEASE: membership-result-type-pinned at <commit-or-PR-url>` in `/tmp/epic-109/moog-112/STATUS.md`.
 
 ## Slice 2 - GitHub identity API
 
