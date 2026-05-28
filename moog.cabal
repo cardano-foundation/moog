@@ -87,6 +87,7 @@ library
   import:           warnings
   other-modules:
     Lib.GitHub.Auth.DeviceFlow.Internal
+    Lib.GitHub.Auth.Identify.Internal
     Lib.GitHub.Auth.TeamCheck.Internal
     Paths_moog
 
@@ -424,6 +425,8 @@ test-suite unit-tests
     Lib.GitHub.Auth.DeviceFlowSmokeSpec
     Lib.GitHub.Auth.DeviceFlowSpec
     Lib.GitHub.Auth.Identify
+    Lib.GitHub.Auth.Identify.Internal
+    Lib.GitHub.Auth.IdentifySpec
     Lib.GitHub.Auth.TeamCheck
     Lib.GitHub.Auth.TeamCheck.Internal
     Lib.GitHub.Auth.TeamCheckSpec
