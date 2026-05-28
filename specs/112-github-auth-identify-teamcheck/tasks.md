@@ -24,7 +24,7 @@
 - [ ] T112-S2.1 Add `Lib.GitHub.Auth.Identify` to the library exposed modules and add a testable internal module as needed.
 - [ ] T112-S2.2 Add any cabal module declarations needed for the new source and test modules.
 - [ ] T112-S2.3 RED: add `test/Lib/GitHub/Auth/IdentifySpec.hs` covering a successful fixture `/user` response and a non-success response.
-- [ ] T112-S2.4 GREEN: implement `GitHubError` and `whoami :: OAuthToken -> IO (Either GitHubError GH.Login)`.
+- [ ] T112-S2.4 GREEN: implement `GitHubError` and `whoami :: OAuthToken -> IO (Either GitHubError Login)`.
 - [ ] T112-S2.5 Run the focused Identify unit tests and `./gate.sh` green.
 - [ ] T112-S2.6 Commit with subject `feat(auth): add GitHub whoami lookup` and trailer `Tasks: T112-S2`.
 
