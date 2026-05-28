@@ -42,6 +42,14 @@
 - [X] T111-R1.4 Run `./gate.sh` green.
 - [X] T111-R1.5 Commit with subject `fix(auth): make device-flow mock tests pass in CI` and trailer `Tasks: T111-R1`.
 
+## Repair Slice R2 — Runnable smoke executable
+
+- [X] T111-R2.1 RED: prove `nix run .#moog-github-device-flow-smoke -- --client-id <id>` currently fails because the smoke executable is not exposed as a flake package/app.
+- [X] T111-R2.2 GREEN: expose the existing `moog-github-device-flow-smoke` executable through the flake package outputs without changing the production library API.
+- [X] T111-R2.3 Prove `nix run .#moog-github-device-flow-smoke -- --client-id <id>` starts the live device flow and emits a GitHub verification URI/user code.
+- [X] T111-R2.4 Run `./gate.sh` green.
+- [X] T111-R2.5 Commit with subject `fix(auth): expose device-flow smoke executable` and trailer `Tasks: T111-R2`.
+
 ## Finalization (orchestrator)
 
 - [ ] T111-F1 Audit the PR body against delivered behavior and test evidence.
