@@ -21,6 +21,7 @@ test/Lib/GitHub/Auth/IdentifySpec.hs             # NEW fixture tests for /user.
 app/Moog/GitHub/AuthSmoke.hs                     # NEW live-boundary smoke helper.
 app/moog-github-auth-smoke.hs                    # NEW executable entry point.
 test/Lib/GitHub/Auth/AuthSmokeSpec.hs            # NEW token-output redaction tests.
+nix/moog-project.nix                             # Expose smoke executable for nix run.
 ```
 
 Public consumers should import only `Lib.GitHub.Auth.TeamCheck`, `Lib.GitHub.Auth.Identify`, and `Lib.GitHub.Auth.DeviceFlow`.
@@ -75,6 +76,8 @@ Add a Cabal-runnable smoke executable that accepts a token and expected login, c
 RED: add unit-level output-safety or argument-parsing tests for the smoke helper.
 
 GREEN: implement the smoke helper and executable stanza.
+
+Expose the executable through the flake package set so the operator can run `nix run .#moog-github-auth-smoke`.
 
 After the slice lands locally, raise a parent Q-file asking the operator to run the live smoke with the real OAuth App/token. Do not block earlier implementation slices on this operator-run proof.
 
