@@ -1,19 +1,25 @@
--- | GitHub identity types shared across the auth modules.
+-- | GitHub identity types and the @whoami@ boundary.
 --
--- Slice 1 of #112 introduces only the 'Login' newtype, which pins the
--- public login parameter of 'Lib.GitHub.Auth.TeamCheck.checkTeamMembership'.
--- The @whoami@ boundary that produces a 'Login' is added in a later slice.
+-- Slice 1 of #112 introduced the 'Login' newtype, which pins the public
+-- login parameter of 'Lib.GitHub.Auth.TeamCheck.checkTeamMembership'.
+-- This module re-exports 'Login' (now defined in
+-- "Lib.GitHub.Auth.Identify.Internal") alongside 'whoami', which
+-- resolves the login of the token holder via @GET https://api.github.com/user@.
 module Lib.GitHub.Auth.Identify
     ( Login (..)
+    , GitHubError (..)
+    , whoami
     ) where
 
-import Data.Aeson (FromJSON, ToJSON)
-import Data.String (IsString)
-import Data.Text (Text)
+import Lib.GitHub.Auth.DeviceFlow (OAuthToken)
+import Lib.GitHub.Auth.Identify.Internal
+    ( GitHubError (..)
+    , Login (..)
+    , githubIdentifyEndpoint
+    , whoamiWith
+    )
 
--- | A GitHub login (username). A distinct newtype so it cannot be
--- confused with an 'Lib.GitHub.Auth.TeamCheck.Org' or
--- 'Lib.GitHub.Auth.TeamCheck.TeamSlug' at a call site.
-newtype Login = Login {unLogin :: Text}
-    deriving stock (Show, Eq, Ord)
-    deriving newtype (IsString, ToJSON, FromJSON)
+-- | Look up the login of the authenticated user, using the supplied
+-- OAuth token against the live GitHub REST API.
+whoami :: OAuthToken -> IO (Either GitHubError Login)
+whoami = whoamiWith githubIdentifyEndpoint
