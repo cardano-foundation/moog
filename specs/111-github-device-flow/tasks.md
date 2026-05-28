@@ -20,11 +20,11 @@
 
 ## Slice 2 — Live-boundary smoke harness
 
-- [ ] T111-S2.1 Add the cabal executable stanza for `moog-github-device-flow-smoke`.
-- [ ] T111-S2.2 RED: add a focused test proving smoke output redacts the token to first 4 characters plus total length and never includes the full token.
-- [ ] T111-S2.3 GREEN: implement `app/moog-github-device-flow-smoke.hs` using the exported `runDeviceFlow` API and a required `--client-id` argument.
-- [ ] T111-S2.4 Run `./gate.sh` green.
-- [ ] T111-S2.5 Commit with subject `feat(auth): add GitHub device-flow live smoke` and trailer `Tasks: T111-S2`.
+- [X] T111-S2.1 Add the cabal executable stanza for `moog-github-device-flow-smoke`.
+- [X] T111-S2.2 RED: add a focused test proving smoke output redacts the token to first 4 characters plus total length and never includes the full token.
+- [X] T111-S2.3 GREEN: implement `app/moog-github-device-flow-smoke.hs` using the exported `runDeviceFlow` API and a required `--client-id` argument.
+- [X] T111-S2.4 Run `./gate.sh` green.
+- [X] T111-S2.5 Commit with subject `feat(auth): add GitHub device-flow live smoke` and trailer `Tasks: T111-S2`.
 
 ## Slice 3 — Real OAuth App smoke proof
 
