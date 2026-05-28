@@ -28,11 +28,11 @@
 
 ## Slice 3 — Real OAuth App smoke proof
 
-- [ ] T111-S3.1 Obtain the #110 OAuth App client id from the parent epic via Q/A file if it is not already available.
-- [ ] T111-S3.2 Run `cabal run moog-github-device-flow-smoke -- --client-id <id>` against github.com.
-- [ ] T111-S3.3 Record the redacted transcript artifact in `WIP.md` and the PR body; verify it contains only token first 4 characters and length.
-- [ ] T111-S3.4 Run `./gate.sh` green after recording PR metadata.
-- [ ] T111-S3.5 Commit any final PR metadata updates with subject `docs(#111): record device-flow live smoke proof`.
+- [X] T111-S3.1 Obtain the #110 OAuth App client id from the parent epic via Q/A file if it is not already available.
+- [X] T111-S3.2 Run `nix run .#moog-github-device-flow-smoke -- --client-id <id>` against github.com.
+- [X] T111-S3.3 Record the redacted transcript artifact in `WIP.md` and the PR body; verify it contains only token first 4 characters and length.
+- [X] T111-S3.4 Run `./gate.sh` green after recording PR metadata.
+- [X] T111-S3.5 Commit any final PR metadata updates with subject `docs(#111): record device-flow live smoke proof`.
 
 ## Repair Slice R1 — CI unit-test runner parity
 
