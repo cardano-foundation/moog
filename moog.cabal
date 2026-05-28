@@ -347,6 +347,29 @@ executable moog-mpfs-v2-canary
   -- Base language which the package is written in.
   default-language: Haskell2010
 
+executable moog-github-device-flow-smoke
+  -- Import common warning flags.
+  import:           warnings
+
+  -- .hs or .lhs file containing the Main module.
+  main-is:          moog-github-device-flow-smoke.hs
+
+  -- Modules included in this executable, other than Main.
+  other-modules:    Moog.GitHub.DeviceFlowSmoke
+
+  -- Other library packages from which modules are imported.
+  build-depends:
+    , base
+    , bytestring
+    , moog
+    , text
+
+  -- Directories containing source files.
+  hs-source-dirs:   app
+
+  -- Base language which the package is written in.
+  default-language: Haskell2010
+
 test-suite e2e-tests
   -- Import common warning flags.
   import:           warnings
@@ -394,6 +417,7 @@ test-suite unit-tests
     Lib.EdToCurveSpec
     Lib.GitHub.Auth.DeviceFlow
     Lib.GitHub.Auth.DeviceFlow.Internal
+    Lib.GitHub.Auth.DeviceFlowSmokeSpec
     Lib.GitHub.Auth.DeviceFlowSpec
     Lib.JSON.Canonical.AesonSpec
     Lib.JSON.Canonical.ExtraSpec
@@ -430,6 +454,7 @@ test-suite unit-tests
   hs-source-dirs:
     test
     src
+    app
 
   -- The entrypoint to the test suite.
   main-is:            Main.hs
