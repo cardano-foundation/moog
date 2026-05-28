@@ -85,7 +85,9 @@ common warnings
 library
   -- Import common warning flags.
   import:           warnings
-  other-modules:    Paths_moog
+  other-modules:
+    Lib.GitHub.Auth.DeviceFlow.Internal
+    Paths_moog
 
   -- Modules exported by the library.
   exposed-modules:
@@ -116,6 +118,7 @@ library
     Lib.CryptoBox
     Lib.EdToCurve
     Lib.GitHub
+    Lib.GitHub.Auth.DeviceFlow
     Lib.JSON.Canonical.Aeson
     Lib.JSON.Canonical.Extra
     Lib.Options.Secrets
@@ -389,6 +392,9 @@ test-suite unit-tests
     Docker.FaultExclusionSpec
     Lib.CryptoBoxSpec
     Lib.EdToCurveSpec
+    Lib.GitHub.Auth.DeviceFlow
+    Lib.GitHub.Auth.DeviceFlow.Internal
+    Lib.GitHub.Auth.DeviceFlowSpec
     Lib.JSON.Canonical.AesonSpec
     Lib.JSON.Canonical.ExtraSpec
     Lib.SSH.KeySpec
@@ -421,7 +427,9 @@ test-suite unit-tests
   type:               exitcode-stdio-1.0
 
   -- Directories containing source files.
-  hs-source-dirs:     test
+  hs-source-dirs:
+    test
+    src
 
   -- The entrypoint to the test suite.
   main-is:            Main.hs
@@ -430,24 +438,66 @@ test-suite unit-tests
   build-depends:
     , aeson
     , base
+    , base16-bytestring
+    , base64-bytestring
     , bech32
+    , binary
     , bytestring
     , canonical-json
+    , cardano-addresses
+    , cardano-crypto
+    , cardano-crypto-class
+    , cardano-ledger-api
+    , cardano-ledger-binary
+    , cardano-ledger-core
+    , cardano-ledger-mary
+    , cardano-mpfs-api
+    , cardano-mpfs-cage
+    , cardano-mpfs-client
+    , cardano-slotting
+    , cardano-tx-tools
     , case-insensitive
+    , containers
     , crypton
+    , crypton-box
     , directory
+    , exceptions
     , filepath
+    , github
+    , haskeline
+    , HaskellNet
+    , HaskellNet-SSL
+    , html-parse
     , hspec
+    , http-client
+    , http-client-tls
+    , http-types
     , lens
     , memory
+    , mmark
     , moog
     , moog:test-lib
+    , monad-control
+    , old-time
+    , opt-env-conf
+    , path
+    , plutus-tx
+    , process
+    , purebred-email
     , QuickCheck
+    , random
     , scientific
+    , servant
+    , servant-client
+    , streaming
     , string-qq
     , temporary
     , text
     , time
+    , transformers
+    , vector
+    , wai
+    , warp
     , yaml
 
   build-tool-depends: hspec-discover:hspec-discover

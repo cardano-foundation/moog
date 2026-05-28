@@ -11,12 +11,12 @@
 
 ## Slice 1 — Public API + mock-server unit coverage
 
-- [ ] T111-S1.1 Add `Lib.GitHub.Auth.DeviceFlow` to the library exposed modules and add a testable internal module as needed.
-- [ ] T111-S1.2 Add the cabal dependencies needed for JSON HTTP client behavior and embedded WAI mock-server tests.
-- [ ] T111-S1.3 RED: add `test/Lib/GitHub/Auth/DeviceFlowSpec.hs` covering `authorization_pending -> success`, `slow_down -> success`, `expired_token`, `access_denied`, malformed JSON, callback fields, and parameter-sourced `client_id`.
-- [ ] T111-S1.4 GREEN: implement the device-code request, callback invocation, polling loop, interval slow-down behavior, terminal errors, success token parsing, and network/decode error mapping.
-- [ ] T111-S1.5 Run `./gate.sh` green.
-- [ ] T111-S1.6 Commit with subject `feat(auth): add GitHub OAuth device flow client` and trailer `Tasks: T111-S1`.
+- [X] T111-S1.1 Add `Lib.GitHub.Auth.DeviceFlow` to the library exposed modules and add a testable internal module as needed.
+- [X] T111-S1.2 Add the cabal dependencies needed for JSON HTTP client behavior and embedded WAI mock-server tests.
+- [X] T111-S1.3 RED: add `test/Lib/GitHub/Auth/DeviceFlowSpec.hs` covering `authorization_pending -> success`, `slow_down -> success`, `expired_token`, `access_denied`, malformed JSON, callback fields, and parameter-sourced `client_id`.
+- [X] T111-S1.4 GREEN: implement the device-code request, callback invocation, polling loop, interval slow-down behavior, terminal errors, success token parsing, and network/decode error mapping.
+- [X] T111-S1.5 Run `./gate.sh` green.
+- [X] T111-S1.6 Commit with subject `feat(auth): add GitHub OAuth device flow client` and trailer `Tasks: T111-S1`.
 
 ## Slice 2 — Live-boundary smoke harness
 
