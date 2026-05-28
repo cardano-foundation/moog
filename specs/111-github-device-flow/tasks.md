@@ -34,6 +34,14 @@
 - [ ] T111-S3.4 Run `./gate.sh` green after recording PR metadata.
 - [ ] T111-S3.5 Commit any final PR metadata updates with subject `docs(#111): record device-flow live smoke proof`.
 
+## Repair Slice R1 — CI unit-test runner parity
+
+- [X] T111-R1.1 RED: make `./gate.sh` run the unit-test executable like CI (`nix run .#unit-tests`) and reproduce the six `Lib.GitHub.Auth.DeviceFlow` failures locally.
+- [X] T111-R1.2 Diagnose why the WAI/Warp mock-server tests fail under the CI-style runner while the build-only gate passed.
+- [X] T111-R1.3 GREEN: fix the test harness or test-suite runtime settings so the DeviceFlow mock-server tests pass under `nix run .#unit-tests -- --match Lib.GitHub.Auth.DeviceFlow`.
+- [X] T111-R1.4 Run `./gate.sh` green.
+- [X] T111-R1.5 Commit with subject `fix(auth): make device-flow mock tests pass in CI` and trailer `Tasks: T111-R1`.
+
 ## Finalization (orchestrator)
 
 - [ ] T111-F1 Audit the PR body against delivered behavior and test evidence.

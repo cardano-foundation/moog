@@ -403,6 +403,7 @@ test-suite e2e-tests
 test-suite unit-tests
   -- Import common warning flags.
   import:             warnings
+  ghc-options:        -threaded
 
   -- Base language which the package is written in.
   default-language:   Haskell2010
