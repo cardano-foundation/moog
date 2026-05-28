@@ -30,13 +30,13 @@
 
 ## Slice 3 - Live-boundary auth smoke
 
-- [ ] T112-S3.1 Add the cabal executable stanza for `moog-github-auth-smoke`.
-- [ ] T112-S3.2 RED: add focused tests proving smoke output redacts token material and reports expected-login/membership outcomes.
-- [ ] T112-S3.3 GREEN: implement `app/Moog/GitHub/AuthSmoke.hs` and `app/moog-github-auth-smoke.hs` using the exported `whoami` and `checkTeamMembership` APIs.
-- [ ] T112-S3.4 Expose `moog-github-auth-smoke` through the flake package set for `nix run .#moog-github-auth-smoke`.
-- [ ] T112-S3.5 Run the focused smoke tests and `./gate.sh` green.
-- [ ] T112-S3.6 Commit with subject `feat(auth): add GitHub auth live smoke` and trailer `Tasks: T112-S3`.
-- [ ] T112-S3.7 Raise a parent Q-file asking the operator to run the live smoke with a real token for `pragma/antithesis`.
+- [X] T112-S3.1 Add the cabal executable stanza for `moog-github-auth-smoke`.
+- [X] T112-S3.2 RED: add focused tests proving smoke output redacts token material and reports expected-login/membership outcomes.
+- [X] T112-S3.3 GREEN: implement `app/Moog/GitHub/AuthSmoke.hs` and `app/moog-github-auth-smoke.hs` using the exported `whoami` and `checkTeamMembership` APIs.
+- [X] T112-S3.4 Expose `moog-github-auth-smoke` through the flake package set for `nix run .#moog-github-auth-smoke`.
+- [X] T112-S3.5 Run the focused smoke tests and `./gate.sh` green.
+- [X] T112-S3.6 Commit with subject `feat(auth): add GitHub auth live smoke` and trailer `Tasks: T112-S3`.
+- [X] T112-S3.7 Raise a parent Q-file asking the operator to run the live smoke with a real token for `pragma/antithesis`.
 
 ## Finalization (orchestrator)
 

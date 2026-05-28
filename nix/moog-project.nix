@@ -81,6 +81,8 @@ in {
     project.hsPkgs.moog.components.exes.moog-mpfs-v2-canary;
   packages.moog-github-device-flow-smoke =
     project.hsPkgs.moog.components.exes.moog-github-device-flow-smoke;
+  packages.moog-github-auth-smoke =
+    project.hsPkgs.moog.components.exes.moog-github-auth-smoke;
   packages.bech32 = project.hsPkgs.bech32.components.exes.bech32;
   packages.cardano-address =
     project.hsPkgs.cardano-addresses.components.exes.cardano-address;
