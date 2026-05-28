@@ -2,4 +2,4 @@
 set -euo pipefail
 
 git diff --check
-nix build --quiet .#unit-tests --no-link
+nix run .#unit-tests
