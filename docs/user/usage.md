@@ -191,6 +191,41 @@ i.e. if you have an asset file `myconfig.json` in the test directory, it will be
       - ./myconfig.json:/etc/myapp/config.json:ro
 ```
 
+### Excluding services from fault injection
+
+By default, Antithesis injects faults (network drops, container kill/pause/stop) against every service in your `docker-compose.yaml`. If your testnet contains services that aren't part of the system under test — load generators, diagnostic sidecars, etc. — you can opt them out by adding a `labels:` block on the service:
+
+```yaml
+services:
+  tx-generator:
+    image: …
+    container_name: tx-generator
+    labels:
+      com.antithesis.exclude_from_faults: "network,kill,pause,stop"
+    # …rest unchanged
+```
+
+The label value is a comma-separated subset of:
+
+| Token | Excludes container from |
+|---|---|
+| `network` | network faults (clog, partition, restore, latency) |
+| `kill` | docker-kill termination |
+| `pause` | docker-pause |
+| `stop` | docker-stop (graceful) |
+
+Any subset works (`"kill"` alone, `"network,kill"`, all four). Both YAML label forms are accepted — the map form above or `labels: ["com.antithesis.exclude_from_faults=network,kill,pause,stop"]`.
+
+Rules:
+
+- **Opt-in per service.** A service with no label is faulted normally; a compose with no labels of this kind is equivalent to the pre-feature behavior.
+- **One labelled service per class = you own that class.** If any service in your compose carries `kill` in its label, the launch payload includes a `custom.container_faults_kill_exclusion` parameter with every service that opted in. The platform's built-in default for that class is replaced. Label every service you want to keep excluded.
+- **Unknown tokens fail the launch.** A typo like `"netwrk"` is rejected with `ComposeFaultExclusionParseFailure` naming the service and the bad token.
+- **Service identity is the YAML key**, not `container_name:`.
+- **CPU throttling is not covered.** Labelled containers can still be CPU-throttled.
+
+You do not need to change your `moog requester create-test …` invocation — the labels are read from the compose at the commit you specify and forwarded to Antithesis by the agent automatically.
+
 ### Requesting a test-run
 
 To request a test-run, you can use the `moog requester create-test` command.
