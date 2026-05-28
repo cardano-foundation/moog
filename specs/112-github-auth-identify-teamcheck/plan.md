@@ -25,6 +25,8 @@ test/Lib/GitHub/Auth/AuthSmokeSpec.hs            # NEW token-output redaction te
 
 Public consumers should import only `Lib.GitHub.Auth.TeamCheck`, `Lib.GitHub.Auth.Identify`, and `Lib.GitHub.Auth.DeviceFlow`.
 
+Q-002 decision: because `github-0.30.0.2` does not expose the issue-body shorthand `GH.Login`, #112 owns `newtype Login = Login Text` in `Lib.GitHub.Auth.Identify`. `Lib.GitHub.Auth.TeamCheck` re-exports it, and `checkTeamMembership` takes `Login`.
+
 ## Response mapping
 
 `checkTeamMembership` must produce exactly these outcomes:
@@ -58,9 +60,9 @@ After this slice is accepted and pushed, append `NOTE RELEASE: membership-result
 
 ### Slice 2 - GitHub identity API
 
-Add `Lib.GitHub.Auth.Identify`, a testable internal module, cabal module declarations, and fixture tests for `GET /user`.
+Add `Lib.GitHub.Auth.Identify`, a testable internal module, cabal module declarations, and fixture tests for `GET /user`. Preserve the `Login` newtype introduced by Slice 1.
 
-RED: add tests proving a fixture user response returns the expected `GH.Login` and a non-success response returns `Left GitHubError`.
+RED: add tests proving a fixture user response returns the expected `Login` and a non-success response returns `Left GitHubError`.
 
 GREEN: implement `whoami` using the shared OAuth token conversion and GitHub user response parsing.
 
