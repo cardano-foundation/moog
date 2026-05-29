@@ -114,7 +114,8 @@ jsonServer cfg =
   where
     c = antithesisProxyJsonClient
     jsonHandlers =
-        listRuns c
+        getOpenApi c
+            :<|> listRuns c
             :<|> getRun c
             :<|> getProperties c
 

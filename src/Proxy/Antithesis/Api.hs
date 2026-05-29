@@ -95,14 +95,18 @@ instance MimeRender PlainStream ByteString where
 instance MimeUnrender PlainStream ByteString where
     mimeUnrender _ = Right . LBS.toStrict
 
--- | JSON sub-API. All three handlers return decoded 'Aeson.Value's.
+-- | JSON sub-API. All handlers return decoded 'Aeson.Value's.
 type AntithesisProxyJsonAPI =
     "api"
         :> "v0"
-        :> "runs"
-        :> QueryParam "limit" Int
-        :> QueryParam "cursor" Text
+        :> "openapi.json"
         :> Get '[PlainJSON] Value
+        :<|> "api"
+            :> "v0"
+            :> "runs"
+            :> QueryParam "limit" Int
+            :> QueryParam "cursor" Text
+            :> Get '[PlainJSON] Value
         :<|> "api"
             :> "v0"
             :> "runs"
@@ -155,17 +159,19 @@ antithesisProxyStreamAPI = Proxy
 -- | Auto-derived JSON-endpoint client (regular non-streaming
 -- 'Servant.Client.ClientM').
 data JsonClient = JsonClient
-    { listRuns :: Maybe Int -> Maybe Text -> ClientM Value
+    { getOpenApi :: ClientM Value
+    , listRuns :: Maybe Int -> Maybe Text -> ClientM Value
     , getRun :: Text -> ClientM Value
     , getProperties :: Text -> ClientM Value
     }
 
 antithesisProxyJsonClient :: JsonClient
 antithesisProxyJsonClient =
-    let listRuns_ :<|> getRun_ :<|> getProperties_ =
+    let getOpenApi_ :<|> listRuns_ :<|> getRun_ :<|> getProperties_ =
             client antithesisProxyJsonAPI
      in JsonClient
-            { listRuns = listRuns_
+            { getOpenApi = getOpenApi_
+            , listRuns = listRuns_
             , getRun = getRun_
             , getProperties = getProperties_
             }
