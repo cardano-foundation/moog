@@ -29,7 +29,7 @@ services:
       - traefik.http.routers.moog-antithesis-proxy.rule=Host(`antithesis-proxy.plutimus.com`)
       - traefik.http.routers.moog-antithesis-proxy.entrypoints=websecure
       - traefik.http.routers.moog-antithesis-proxy.tls=true
-      - traefik.http.routers.moog-antithesis-proxy.tls.certresolver=letsencrypt
+      - traefik.http.routers.moog-antithesis-proxy.tls.certresolver=le
       - traefik.http.services.moog-antithesis-proxy.loadbalancer.server.port=8080
     logging:
       driver: json-file
