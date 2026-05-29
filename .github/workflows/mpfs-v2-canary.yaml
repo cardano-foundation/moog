@@ -7,9 +7,6 @@ on:
         description: "cardano-mpfs-offchain ref to pair with MOOG"
         required: false
         default: "main"
-  pull_request:
-    branches:
-      - main
 
 jobs:
   boot-end-canary:
