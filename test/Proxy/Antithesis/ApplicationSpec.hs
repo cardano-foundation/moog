@@ -21,14 +21,14 @@ import Network.HTTP.Client (defaultManagerSettings, newManager)
 import Network.HTTP.Types
     ( RequestHeaders
     , hAuthorization
+    , parseQuery
     , status200
     , status401
-    , status404
     , status503
     )
 import Network.Wai
     ( Application
-    , Request (pathInfo, rawPathInfo, rawQueryString, requestHeaders, requestMethod)
+    , Request (pathInfo, queryString, rawPathInfo, rawQueryString, requestHeaders, requestMethod)
     , responseLBS
     )
 import Network.Wai.Handler.Warp (testWithApplication)
@@ -44,8 +44,12 @@ import Proxy.Antithesis.Application
     , proxyApplication
     )
 import Proxy.Antithesis.Cache (newMembershipCache)
-import Proxy.Antithesis.Handler.Runs (RunsConfig (..))
 import Proxy.Antithesis.Middleware.Auth (AuthConfig (..))
+import Proxy.Antithesis.Server
+    ( UpstreamConfig (..)
+    , makeServantApp
+    )
+import Servant.Client (parseBaseUrl)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec :: Spec
@@ -66,16 +70,18 @@ spec =
             simpleStatus notReady `shouldBe` status503
             simpleBody notReady `shouldBe` "not ready"
 
-        it "returns 404 for unknown routes" $ do
+        it "rejects unauthenticated requests for any non-public path" $ do
+            -- /missing is not in the Servant API. Auth runs first; without
+            -- a token, the proxy returns 401 (we don't leak whether the
+            -- path would have matched).
             response <- runProxyApp True True (requestFor "/missing" [])
 
-            simpleStatus response `shouldBe` status404
-            simpleBody response `shouldBe` "not found"
+            simpleStatus response `shouldBe` status401
 
         it "protects and routes GET /api/v0/runs" $ do
             seenRef <- newIORef Nothing
             response <-
-                withUpstream (captureRuns seenRef) $ \baseUrl ->
+                withUpstream (captureUpstream seenRef "[1,2,3]") $ \baseUrl ->
                     runProxyAppWithUpstream
                         baseUrl
                         ( requestFor
@@ -83,14 +89,16 @@ spec =
                             [(hAuthorization, "Bearer gh-token")]
                         )
                             { rawQueryString = "?limit=2"
+                            , queryString = parseQuery "?limit=2"
                             }
 
             simpleStatus response `shouldBe` status200
-            simpleBody response `shouldBe` "runs-body"
+            simpleBody response `shouldBe` "[1,2,3]"
             seen <- readIORef seenRef
             seen
                 `shouldBe` Just
-                    ( "?limit=2"
+                    ( "/api/v0/runs"
+                    , "?limit=2"
                     , Just "Bearer test-api-key"
                     )
 
@@ -122,6 +130,14 @@ testApplication :: String -> Bool -> Bool -> IO Application
 testApplication baseUrl antithesisReady githubReady = do
     manager <- newManager defaultManagerSettings
     cache <- newMembershipCache 60
+    parsedBase <- parseBaseUrl baseUrl
+    let cfg =
+            UpstreamConfig
+                { upstreamBaseUrl = parsedBase
+                , upstreamApiKey = "test-api-key"
+                , upstreamManager = manager
+                }
+        servantApp = makeServantApp cfg
     pure $
         proxyApplication
             ProxyApplicationConfig
@@ -134,12 +150,7 @@ testApplication baseUrl antithesisReady githubReady = do
                         , authWhoami = const $ pure $ Right $ Login "octocat"
                         , authCheckTeamMembership = activeMembership
                         }
-                , proxyRunsConfig =
-                    RunsConfig
-                        { runsAntithesisUrl = baseUrl
-                        , runsAntithesisApiKey = "test-api-key"
-                        , runsManager = manager
-                        }
+                , proxyServantApp = servantApp
                 , proxyReadinessConfig =
                     ReadinessConfig
                         { readinessAntithesis = pure antithesisReady
@@ -178,17 +189,19 @@ withUpstream upstream action =
     testWithApplication (pure upstream) $ \port ->
         action $ "http://127.0.0.1:" <> show port
 
-captureRuns
-    :: IORef (Maybe (BC.ByteString, Maybe BC.ByteString))
+captureUpstream
+    :: IORef (Maybe (BC.ByteString, BC.ByteString, Maybe BC.ByteString))
+    -> BC.ByteString
     -> Application
-captureRuns seenRef request' respond = do
+captureUpstream seenRef body request' respond = do
     writeIORef
         seenRef
         $ Just
-            ( rawQueryString request'
+            ( rawPathInfo request'
+            , rawQueryString request'
             , lookup hAuthorization $ requestHeaders request'
             )
-    respond $ responseLBS status200 [] "runs-body"
+    respond $ responseLBS status200 [("content-type", "text/plain")] $ BC.fromStrict body
 
 baseTime :: UTCTime
 baseTime = UTCTime (toEnum 0) (secondsToDiffTime 0)
