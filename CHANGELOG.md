@@ -1,5 +1,51 @@
 # Changelog for moog-cli
 
+### v0.5.1.0 - 2026-05-29
+
+#### Added
+
+- **`moog-antithesis-proxy` daemon**: a GitHub-team-gated HTTP proxy at
+  `antithesis-proxy.plutimus.com` that lets `pragma-org/antithesis-access`
+  members read the Antithesis tenant API without holding the tenant API
+  key. Auth: GitHub OAuth device-flow tokens → `whoami` + team membership
+  check → Bearer-keyed forward to upstream.
+- **`moog antithesis …` CLI subcommand group** on the moog binary,
+  derived from the same Servant `AntithesisProxyAPI` the proxy serves:
+  - `moog antithesis runs [--limit N] [--cursor S]` — paginated runs list
+  - `moog antithesis run --run-id RUN_ID` — single-run detail
+  - `moog antithesis properties --run-id RUN_ID` — property pass/fail
+    (404 for in-progress runs)
+  - `moog antithesis events --run-id RUN_ID [--q QUERY]` — NDJSON event
+    search streamed verbatim to stdout
+  - `moog antithesis logs --run-id RUN_ID [--input-hash …] [--vtime …]`
+    — NDJSON logs at a moment, streamed
+  - `moog antithesis build-logs --run-id RUN_ID` — NDJSON build log
+    stream
+- Proxied `GET /api/v0/openapi.json` so team members can read the
+  Antithesis OpenAPI spec via their GitHub OAuth token (no Antithesis API
+  key required).
+- First-time `moog antithesis …` invocation runs the GitHub OAuth
+  device flow against the `lambdasistemi`-owned `moog` OAuth App
+  (client ID `Ov23liVVFVtdBez1QDxq`) and caches the token at
+  `~/.config/moog/github-oauth.json` (mode 0600).
+- `docs/antithesis-proxy.md` — full deployment + endpoint + CLI runbook.
+
+#### Operations
+
+- New compose service `moog-antithesis-proxy` on plutimus, fronted by
+  Traefik (`certresolver=le`), reachable at
+  `https://antithesis-proxy.plutimus.com`.
+- New secret `/secrets/moog-antithesis-proxy/{new,old}/antithesis-api-key`
+  carrying the Antithesis API key; consumed by the proxy via
+  `MOOG_ANTITHESIS_API_KEY_FILE`.
+
+#### CI
+
+- `Build without nix` workflow made dispatch-only (was flaky on PRs).
+- `MPFS v2 Canary` workflow made dispatch-only (was flaky on PRs).
+
+---
+
 ### v0.5.0.0 - 2026-02-24
 
 #### Breaking Changes
