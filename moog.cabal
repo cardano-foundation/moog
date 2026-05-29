@@ -171,6 +171,8 @@ library
     User.Agent.PushTest
     User.Agent.Types
     User.Antithesis.Cli
+    User.Antithesis.Constants
+    User.Antithesis.Login
     User.Requester.Cli
     User.Requester.Options
     User.Types
@@ -212,6 +214,7 @@ library
     , crypton-box
     , directory
     , exceptions
+    , filepath
     , github
     , haskeline
     , HaskellNet
@@ -240,6 +243,7 @@ library
     , text
     , time
     , transformers
+    , unix
     , vector
     , vault
     , wai
@@ -509,6 +513,7 @@ test-suite unit-tests
     User.Agent.PushTestSpec
     User.Agent.TypesSpec
     User.Antithesis.CliSpec
+    User.Antithesis.LoginSpec
     User.Requester.CliSpec
     User.TypesSpec
     Wallet.CliSpec
@@ -589,6 +594,7 @@ test-suite unit-tests
     , text
     , time
     , transformers
+    , unix
     , vector
     , vault
     , wai

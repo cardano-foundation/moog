@@ -11,11 +11,11 @@
 
 ## Slice 2: Login token cache
 
-- [ ] T114-S2 Add OAuth constants and token cache helpers.
-- [ ] T114-S2 Implement `ensureToken` with device-flow fallback and stderr
+- [X] T114-S2 Add OAuth constants and token cache helpers.
+- [X] T114-S2 Implement `ensureToken` with device-flow fallback and stderr
   prompt callback.
-- [ ] T114-S2 Add unit tests for cache write, cache read, and mode `0600`.
-- [ ] T114-S2 Run the focused RED/GREEN test and `./gate.sh`.
+- [X] T114-S2 Add unit tests for cache write, cache read, and mode `0600`.
+- [X] T114-S2 Run the focused RED/GREEN test and `./gate.sh`.
 
 ## Slice 3: Proxy client and runtime command
 
