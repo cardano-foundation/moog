@@ -18,5 +18,5 @@ spec =
             Box (Options _ command) <-
                 withArgs ["antithesis", "runs"] $ parseArgs version
             case command of
-                AntithesisCommand Runs -> pure ()
+                AntithesisCommand (Runs Nothing Nothing) -> pure ()
                 _ -> expectationFailure "expected AntithesisCommand Runs"

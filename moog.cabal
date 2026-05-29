@@ -156,12 +156,13 @@ library
     Oracle.Validate.Requests.TestRun.Create
     Oracle.Validate.Requests.TestRun.Update
     Oracle.Validate.Types
-    Proxy.Antithesis.Audit
+    Proxy.Antithesis.Api
     Proxy.Antithesis.Application
+    Proxy.Antithesis.Audit
     Proxy.Antithesis.Cache
     Proxy.Antithesis.Config
-    Proxy.Antithesis.Handler.Runs
     Proxy.Antithesis.Middleware.Auth
+    Proxy.Antithesis.Server
     Submitting
     User.Agent.Cli
     User.Agent.Lib
@@ -238,6 +239,8 @@ library
     , scientific
     , servant
     , servant-client
+    , servant-server
+    , http-media
     , streaming
     , string-qq
     , temporary
@@ -508,7 +511,7 @@ test-suite unit-tests
     Proxy.Antithesis.AuthSpec
     Proxy.Antithesis.CacheSpec
     Proxy.Antithesis.ConfigSpec
-    Proxy.Antithesis.Handler.RunsSpec
+    Proxy.Antithesis.ServerSpec
     User.Agent.ProcessOptionsSpec
     User.Agent.PublishResults.EmailSpec
     User.Agent.PushTestSpec
@@ -590,6 +593,7 @@ test-suite unit-tests
     , scientific
     , servant
     , servant-client
+    , servant-server
     , streaming
     , string-qq
     , temporary
@@ -599,6 +603,7 @@ test-suite unit-tests
     , unix
     , vector
     , vault
+    , http-media
     , wai
     , wai-extra
     , warp

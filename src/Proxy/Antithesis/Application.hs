@@ -2,6 +2,10 @@
 {-# LANGUAGE TypeApplications #-}
 
 -- | WAI application assembly for the Antithesis proxy daemon.
+--
+-- The proxy is a Servant 'AntithesisProxyAPI' server wrapped in a
+-- GitHub-team-gate WAI middleware. Two trivial routes live outside the
+-- Servant subtree: @/healthz@ and @/readyz@.
 module Proxy.Antithesis.Application
     ( ProxyApplicationConfig (..)
     , ReadinessConfig (..)
@@ -16,7 +20,6 @@ import Data.ByteString (ByteString)
 import Data.ByteString.Lazy qualified as LBS
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Maybe (fromMaybe)
-import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
 import Data.Text.Encoding.Error (lenientDecode)
 import Data.Time.Clock (UTCTime, diffUTCTime, getCurrentTime)
@@ -34,7 +37,6 @@ import Network.HTTP.Types
     , hUserAgent
     , methodGet
     , status200
-    , status404
     , status503
     , statusCode
     )
@@ -45,29 +47,30 @@ import Network.Wai
     , responseLBS
     )
 import Network.Wai.Internal (Response (..))
-import Proxy.Antithesis.Cache (newMembershipCache)
-import Proxy.Antithesis.Config
-    ( Settings (..)
-    )
 import Proxy.Antithesis.Audit
     ( AuditEvent (..)
     , RequestId (..)
     , renderAuditEvent
     )
-import Proxy.Antithesis.Handler.Runs
-    ( RunsConfig (..)
-    , runsHandler
+import Proxy.Antithesis.Cache (newMembershipCache)
+import Proxy.Antithesis.Config
+    ( Settings (..)
     )
 import Proxy.Antithesis.Middleware.Auth
     ( AuthConfig (..)
     , authMiddleware
     , authorizedLoginKey
     )
+import Proxy.Antithesis.Server
+    ( UpstreamConfig (..)
+    , makeServantApp
+    )
+import Servant.Client (parseBaseUrl)
 import System.IO (hFlush, stdout)
 
 data ProxyApplicationConfig = ProxyApplicationConfig
     { proxyAuthConfig :: AuthConfig
-    , proxyRunsConfig :: RunsConfig
+    , proxyServantApp :: Application
     , proxyReadinessConfig :: ReadinessConfig
     }
 
@@ -94,40 +97,44 @@ proxyApplication config request respond =
                     else plain status503 "not ready"
                 )
                 respond
-        ("GET", ["api", "v0", "runs"]) -> do
-            authHandled <- newIORef False
-            start <- getCurrentTime
-            authMiddleware
-                (proxyAuthConfig config)
-                ( \authorizedRequest authorizedRespond -> do
-                    writeIORef authHandled True
-                    runsHandler
-                        (proxyRunsConfig config)
-                        authorizedRequest
-                        $ \response ->
-                            auditAndRespond
-                                authorizedRequest
-                                start
-                                (Just $ waiResponseStatus response)
-                                response
-                                authorizedRespond
-                )
-                request
-                ( \response -> do
-                    handled <- readIORef authHandled
-                    if handled
-                        then respond response
-                        else
-                            auditAndRespond
-                                request
-                                start
-                                Nothing
-                                response
-                                respond
-                )
-        _ -> do
-            start <- getCurrentTime
-            auditAndRespond request start Nothing (plain status404 "not found") respond
+        _ -> protectedRoute (proxyAuthConfig config) (proxyServantApp config) request respond
+
+-- | Run the auth middleware against the request; on success pass the
+-- (auth-attached) request to @innerApp@, audit the response status, and
+-- forward to the caller. On failure, audit the rejection and pass it
+-- through.
+protectedRoute
+    :: AuthConfig
+    -> Application
+    -> Application
+protectedRoute authCfg innerApp request respond = do
+    authHandled <- newIORef False
+    start <- getCurrentTime
+    authMiddleware
+        authCfg
+        ( \authorizedRequest authorizedRespond -> do
+            writeIORef authHandled True
+            innerApp authorizedRequest $ \response ->
+                auditAndRespond
+                    authorizedRequest
+                    start
+                    (Just $ waiResponseStatus response)
+                    response
+                    authorizedRespond
+        )
+        request
+        ( \response -> do
+            handled <- readIORef authHandled
+            if handled
+                then respond response
+                else
+                    auditAndRespond
+                        request
+                        start
+                        Nothing
+                        response
+                        respond
+        )
 
 readinessCheck :: ReadinessConfig -> IO Bool
 readinessCheck config =
@@ -141,6 +148,14 @@ productionApplication settings = do
     cache <-
         newMembershipCache $
             fromIntegral (settingsMembershipTtlSeconds settings)
+    baseUrl <- parseBaseUrl (settingsAntithesisUrl settings)
+    let upstreamCfg =
+            UpstreamConfig
+                { upstreamBaseUrl = baseUrl
+                , upstreamApiKey = settingsAntithesisApiKey settings
+                , upstreamManager = manager
+                }
+        servantApp = makeServantApp upstreamCfg
     pure $
         proxyApplication
             ProxyApplicationConfig
@@ -153,13 +168,7 @@ productionApplication settings = do
                         , authWhoami = whoami
                         , authCheckTeamMembership = checkTeamMembership
                         }
-                , proxyRunsConfig =
-                    RunsConfig
-                        { runsAntithesisUrl = settingsAntithesisUrl settings
-                        , runsAntithesisApiKey =
-                            settingsAntithesisApiKey settings
-                        , runsManager = manager
-                        }
+                , proxyServantApp = servantApp
                 , proxyReadinessConfig =
                     productionReadinessConfig settings manager
                 }
