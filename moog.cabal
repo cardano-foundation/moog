@@ -330,6 +330,8 @@ executable moog-antithesis-proxy
   -- .hs or .lhs file containing the Main module.
   main-is:          app/moog-antithesis-proxy.hs
 
+  ghc-options:      -threaded
+
   -- Other library packages from which modules are imported.
   build-depends:
     , base
