@@ -20,8 +20,7 @@ data Settings = Settings
     { settingsBindAddr :: String
     , settingsBindPort :: Int
     , settingsAntithesisUrl :: String
-    , settingsAntithesisUser :: BC.ByteString
-    , settingsAntithesisPassword :: BC.ByteString
+    , settingsAntithesisApiKey :: BC.ByteString
     , settingsAuthorizedOrg :: Org
     , settingsAuthorizedTeam :: TeamSlug
     , settingsMembershipTtlSeconds :: Int
@@ -37,12 +36,12 @@ loadSettingsWith
     -> (FilePath -> IO BC.ByteString)
     -> IO Settings
 loadSettingsWith lookupSetting readSecret = do
-    passwordFile <-
+    apiKeyFile <-
         settingString
             lookupSetting
-            "MOOG_ANTITHESIS_PASSWORD_FILE"
-            "/run/secrets/antithesis-password"
-    password <- stripTrailingNewline <$> readSecret passwordFile
+            "MOOG_ANTITHESIS_API_KEY_FILE"
+            "/run/secrets/antithesis-api-key"
+    apiKey <- stripTrailingNewline <$> readSecret apiKeyFile
     Settings
         <$> settingString lookupSetting "MOOG_PROXY_BIND_ADDR" "0.0.0.0"
         <*> settingInt lookupSetting "MOOG_PROXY_BIND_PORT" 8080
@@ -50,13 +49,7 @@ loadSettingsWith lookupSetting readSecret = do
             lookupSetting
             "MOOG_ANTITHESIS_URL"
             "https://amaru-cardano.antithesis.com"
-        <*> ( BC.pack
-                <$> settingString
-                    lookupSetting
-                    "MOOG_ANTITHESIS_USER"
-                    "pragma"
-            )
-        <*> pure password
+        <*> pure apiKey
         <*> ( Org . T.pack
                 <$> settingString
                     lookupSetting

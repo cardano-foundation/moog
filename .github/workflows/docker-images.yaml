@@ -43,9 +43,9 @@ jobs:
       - name: Smoke test Antithesis proxy docker image
         run: |
           IMAGE=$(docker load < moog-antithesis-proxy-image | grep "Loaded image:" | awk '{print $3}')
-          printf '%s\n' test-password > antithesis-password
+          printf '%s\n' test-api-key > antithesis-api-key
           CID=$(docker run -d -p 127.0.0.1::8080 \
-            -v "$PWD/antithesis-password:/run/secrets/antithesis-password:ro" \
+            -v "$PWD/antithesis-api-key:/run/secrets/antithesis-api-key:ro" \
             "$IMAGE")
           trap 'docker logs "$CID"; docker rm -f "$CID"' EXIT
           PORT=$(docker port "$CID" 8080/tcp | sed 's/.*://')
@@ -97,9 +97,9 @@ jobs:
       - name: Smoke test Antithesis proxy docker image
         run: |
           IMAGE=$(docker load < moog-antithesis-proxy-image-aarch64 | grep "Loaded image:" | awk '{print $3}')
-          printf '%s\n' test-password > antithesis-password
+          printf '%s\n' test-api-key > antithesis-api-key
           CID=$(docker run -d -p 127.0.0.1::8080 \
-            -v "$PWD/antithesis-password:/run/secrets/antithesis-password:ro" \
+            -v "$PWD/antithesis-api-key:/run/secrets/antithesis-api-key:ro" \
             "$IMAGE")
           trap 'docker logs "$CID"; docker rm -f "$CID"' EXIT
           PORT=$(docker port "$CID" 8080/tcp | sed 's/.*://')

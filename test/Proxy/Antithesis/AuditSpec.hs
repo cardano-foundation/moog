@@ -33,7 +33,7 @@ spec =
                         AuditEvent
                             { auditTimestamp = baseTime
                             , auditLogin = Just (Login "octocat")
-                            , auditPath = "/api/v1/runs"
+                            , auditPath = "/api/v0/runs"
                             , auditStatus = status200
                             , auditUpstreamStatus = Just status200
                             , auditLatencyMs = 12
@@ -44,7 +44,7 @@ spec =
             decoded rendered
                 `shouldBe` Right
                     ( "octocat"
-                    , "/api/v1/runs"
+                    , "/api/v0/runs"
                     , 200
                     , Just 200
                     , 12

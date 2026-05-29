@@ -37,7 +37,7 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 spec :: Spec
 spec =
     describe "Proxy.Antithesis.Handler.Runs" $ do
-        it "forwards GET /api/v1/runs with query and basic auth" $ do
+        it "forwards GET /api/v0/runs with query and bearer auth" $ do
             seenRef <- newIORef Nothing
             response <-
                 withUpstream
@@ -54,7 +54,7 @@ spec =
             seen
                 `shouldBe` Just
                     ( "?limit=5&cursor=a%2Fb"
-                    , Just "Basic cHJhZ21hOnNlY3JldA=="
+                    , Just "Bearer test-api-key"
                     )
 
         it "sanitizes upstream 5xx bodies" $ do
@@ -78,8 +78,7 @@ runProxy baseUrl = do
         $ runsHandler
             RunsConfig
                 { runsAntithesisUrl = baseUrl
-                , runsAntithesisUser = "pragma"
-                , runsAntithesisPassword = "secret"
+                , runsAntithesisApiKey = "test-api-key"
                 , runsManager = manager
                 }
 

@@ -13,7 +13,6 @@ where
 
 import Control.Exception (SomeException, try)
 import Data.ByteString (ByteString)
-import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Lazy qualified as LBS
 import Data.IORef (newIORef, readIORef, writeIORef)
 import Data.Maybe (fromMaybe)
@@ -95,7 +94,7 @@ proxyApplication config request respond =
                     else plain status503 "not ready"
                 )
                 respond
-        ("GET", ["api", "v1", "runs"]) -> do
+        ("GET", ["api", "v0", "runs"]) -> do
             authHandled <- newIORef False
             start <- getCurrentTime
             authMiddleware
@@ -157,9 +156,8 @@ productionApplication settings = do
                 , proxyRunsConfig =
                     RunsConfig
                         { runsAntithesisUrl = settingsAntithesisUrl settings
-                        , runsAntithesisUser = settingsAntithesisUser settings
-                        , runsAntithesisPassword =
-                            settingsAntithesisPassword settings
+                        , runsAntithesisApiKey =
+                            settingsAntithesisApiKey settings
                         , runsManager = manager
                         }
                 , proxyReadinessConfig =
@@ -173,7 +171,7 @@ productionReadinessConfig settings manager =
             probeEndpoint
                 manager
                 (antithesisRunsUrl settings)
-                [(hAuthorization, antithesisBasicAuthorization settings)]
+                [(hAuthorization, antithesisBearerAuthorization settings)]
         , readinessGitHub =
             probeEndpoint
                 manager
@@ -199,16 +197,11 @@ probeEndpoint manager url headers = do
 
 antithesisRunsUrl :: Settings -> String
 antithesisRunsUrl settings =
-    stripTrailingSlash (settingsAntithesisUrl settings) <> "/api/v1/runs"
+    stripTrailingSlash (settingsAntithesisUrl settings) <> "/api/v0/runs"
 
-antithesisBasicAuthorization :: Settings -> ByteString
-antithesisBasicAuthorization settings =
-    "Basic "
-        <> Base64.encode
-            ( settingsAntithesisUser settings
-                <> ":"
-                <> settingsAntithesisPassword settings
-            )
+antithesisBearerAuthorization :: Settings -> ByteString
+antithesisBearerAuthorization settings =
+    "Bearer " <> settingsAntithesisApiKey settings
 
 plain :: Status -> ByteString -> Response
 plain status body =
