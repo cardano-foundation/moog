@@ -1,0 +1,42 @@
+services:
+  moog-antithesis-proxy:
+    image: ghcr.io/cardano-foundation/moog/moog-antithesis-proxy:${MOOG_VERSION:?pin-to-a-commit-or-release-tag}
+    restart: unless-stopped
+    networks:
+      - web
+    environment:
+      - MOOG_PROXY_BIND_ADDR=0.0.0.0
+      - MOOG_PROXY_BIND_PORT=8080
+      - MOOG_ANTITHESIS_URL=https://amaru-cardano.antithesis.com
+      - MOOG_ANTITHESIS_USER=pragma
+      - MOOG_ANTITHESIS_PASSWORD_FILE=/run/secrets/antithesis-password
+      - MOOG_PROXY_AUTHORIZED_ORG=pragma-org
+      - MOOG_PROXY_AUTHORIZED_TEAM=antithesis-access
+      - MOOG_PROXY_MEMBERSHIP_TTL_SEC=60
+      - MOOG_PROXY_LOG_LEVEL=info
+    volumes:
+      - /secrets/moog-antithesis-proxy/new:/run/secrets:ro
+      - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.moog-antithesis-proxy.rule=Host(`antithesis-proxy.plutimus.com`)
+      - traefik.http.routers.moog-antithesis-proxy.entrypoints=websecure
+      - traefik.http.routers.moog-antithesis-proxy.tls=true
+      - traefik.http.routers.moog-antithesis-proxy.tls.certresolver=letsencrypt
+      - traefik.http.services.moog-antithesis-proxy.loadbalancer.server.port=8080
+    logging:
+      driver: json-file
+      options:
+        max-size: 50m
+        max-file: "10"
+
+networks:
+  web:
+    external: true

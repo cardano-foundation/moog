@@ -107,6 +107,10 @@
               moog-agent-docker-image = import ./nix/moog-agent-docker.nix {
                 inherit pkgs project version;
               };
+              moog-antithesis-proxy-docker-image =
+                import ./nix/moog-antithesis-proxy-docker.nix {
+                  inherit pkgs project version;
+                };
               moog-docker-image = import ./nix/moog-docker.nix {
                 inherit pkgs version project;
               };
