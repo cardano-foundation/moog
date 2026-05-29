@@ -29,11 +29,11 @@
 
 ## Slice 4 - Application Assembly and Readiness
 
-- [ ] T113-S4 Add failing application tests for `/healthz`, `/readyz`,
+- [X] T113-S4 Add failing application tests for `/healthz`, `/readyz`,
   `GET /api/v1/runs`, and unknown routes.
-- [ ] T113-S4 Assemble the WAI app, readiness checks, and Warp
+- [X] T113-S4 Assemble the WAI app, readiness checks, and Warp
   executable entrypoint.
-- [ ] T113-S4 Run focused tests, executable build, and `./gate.sh`, then
+- [X] T113-S4 Run focused tests, executable build, and `./gate.sh`, then
   commit.
 
 ## Slice 5 - Final Verification and PR Metadata
