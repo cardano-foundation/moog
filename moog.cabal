@@ -159,6 +159,7 @@ library
     Proxy.Antithesis.Audit
     Proxy.Antithesis.Cache
     Proxy.Antithesis.Config
+    Proxy.Antithesis.Middleware.Auth
     Submitting
     User.Agent.Cli
     User.Agent.Lib
@@ -237,6 +238,8 @@ library
     , time
     , transformers
     , vector
+    , vault
+    , wai
     , yaml
 
   -- Directories containing source files.
@@ -490,6 +493,7 @@ test-suite unit-tests
     Oracle.Validate.Requests.TestRun.Lib
     Oracle.Validate.Requests.TestRun.RejectSpec
     Proxy.Antithesis.AuditSpec
+    Proxy.Antithesis.AuthSpec
     Proxy.Antithesis.CacheSpec
     Proxy.Antithesis.ConfigSpec
     User.Agent.ProcessOptionsSpec
@@ -577,7 +581,9 @@ test-suite unit-tests
     , time
     , transformers
     , vector
+    , vault
     , wai
+    , wai-extra
     , warp
     , yaml
 

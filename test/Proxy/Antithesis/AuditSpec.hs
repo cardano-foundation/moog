@@ -7,7 +7,6 @@ where
 
 import Data.Aeson
     ( FromJSON (parseJSON)
-    , Value (..)
     , eitherDecode
     , withObject
     , (.:)
