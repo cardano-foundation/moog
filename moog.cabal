@@ -170,6 +170,7 @@ library
     User.Agent.PublishResults.Email
     User.Agent.PushTest
     User.Agent.Types
+    User.Antithesis.Cli
     User.Requester.Cli
     User.Requester.Options
     User.Types
@@ -507,6 +508,7 @@ test-suite unit-tests
     User.Agent.PublishResults.EmailSpec
     User.Agent.PushTestSpec
     User.Agent.TypesSpec
+    User.Antithesis.CliSpec
     User.Requester.CliSpec
     User.TypesSpec
     Wallet.CliSpec

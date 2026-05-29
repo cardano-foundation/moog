@@ -67,6 +67,7 @@ import Path
 import System.Directory (makeAbsolute)
 import User.Agent.Options (agentCommandParser, testRunIdOption)
 import User.Agent.Types (TestRunId)
+import User.Antithesis.Cli (antithesisCommandParser)
 import User.Requester.Options
     ( requesterCommandParser
     , sshClientOption
@@ -124,6 +125,8 @@ commandParser =
                 <*> tokenIdOption
         , command "ssh-selectors" "List key selectors for an SSH key file"
             $ Box . SSHSelectors <$> sshClientOptionWithoutSelector
+        , command "antithesis" "Manage Antithesis proxy operations"
+            $ fmapBox AntithesisCommand <$> antithesisCommandParser
         ]
 
 factsSelectionParser :: Parser (Box FactsSelection)
