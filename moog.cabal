@@ -157,6 +157,7 @@ library
     Oracle.Validate.Requests.TestRun.Update
     Oracle.Validate.Types
     Proxy.Antithesis.Audit
+    Proxy.Antithesis.Application
     Proxy.Antithesis.Cache
     Proxy.Antithesis.Config
     Proxy.Antithesis.Handler.Runs
@@ -333,6 +334,7 @@ executable moog-antithesis-proxy
   build-depends:
     , base
     , moog
+    , warp
 
   -- Base language which the package is written in.
   default-language: Haskell2010
@@ -494,6 +496,7 @@ test-suite unit-tests
     Oracle.Validate.Requests.TestRun.Lib
     Oracle.Validate.Requests.TestRun.RejectSpec
     Proxy.Antithesis.AuditSpec
+    Proxy.Antithesis.ApplicationSpec
     Proxy.Antithesis.AuthSpec
     Proxy.Antithesis.CacheSpec
     Proxy.Antithesis.ConfigSpec
