@@ -38,6 +38,6 @@
 
 ## Slice 5 - Final Verification and PR Metadata
 
-- [ ] T113-S5 Run final `./gate.sh`, build/smoke
+- [X] T113-S5 Run final `./gate.sh`, build/smoke
   `moog-antithesis-proxy`, update PR metadata, and mark the ticket
   complete.
