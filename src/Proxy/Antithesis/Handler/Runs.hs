@@ -1,6 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Handler for proxying Antithesis run listings.
+--
+-- Forwards client `GET /api/v0/runs` to the same path on the Antithesis
+-- upstream, attaching the server-held Antithesis API key as a
+-- `Authorization: Bearer …` header.
 module Proxy.Antithesis.Handler.Runs
     ( RunsConfig (..)
     , runsHandler
@@ -10,7 +14,6 @@ where
 import Control.Monad (unless)
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
-import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Builder qualified as Builder
 import Data.ByteString.Char8 qualified as BC
 import Network.HTTP.Client
@@ -40,8 +43,7 @@ import Network.Wai
 
 data RunsConfig = RunsConfig
     { runsAntithesisUrl :: String
-    , runsAntithesisUser :: ByteString
-    , runsAntithesisPassword :: ByteString
+    , runsAntithesisApiKey :: ByteString
     , runsManager :: Manager
     }
 
@@ -52,7 +54,7 @@ runsHandler config request respond = do
         upstreamRequest
             { method = "GET"
             , requestHeaders =
-                [(hAuthorization, basicAuthorization config)]
+                [(hAuthorization, bearerAuthorization config)]
             }
         (runsManager config)
         $ \upstreamResponse ->
@@ -73,14 +75,12 @@ runsHandler config request respond = do
 runsUrl :: RunsConfig -> ByteString -> String
 runsUrl config query =
     stripTrailingSlash (runsAntithesisUrl config)
-        <> "/api/v1/runs"
+        <> "/api/v0/runs"
         <> BC.unpack query
 
-basicAuthorization :: RunsConfig -> ByteString
-basicAuthorization config =
-    "Basic "
-        <> Base64.encode
-            (runsAntithesisUser config <> ":" <> runsAntithesisPassword config)
+bearerAuthorization :: RunsConfig -> ByteString
+bearerAuthorization config =
+    "Bearer " <> runsAntithesisApiKey config
 
 forwardedHeaders :: [Header] -> [Header]
 forwardedHeaders =

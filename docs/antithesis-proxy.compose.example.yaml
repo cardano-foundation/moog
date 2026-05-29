@@ -8,8 +8,7 @@ services:
       - MOOG_PROXY_BIND_ADDR=0.0.0.0
       - MOOG_PROXY_BIND_PORT=8080
       - MOOG_ANTITHESIS_URL=https://amaru-cardano.antithesis.com
-      - MOOG_ANTITHESIS_USER=pragma
-      - MOOG_ANTITHESIS_PASSWORD_FILE=/run/secrets/antithesis-password
+      - MOOG_ANTITHESIS_API_KEY_FILE=/run/secrets/antithesis-api-key
       - MOOG_PROXY_AUTHORIZED_ORG=pragma-org
       - MOOG_PROXY_AUTHORIZED_TEAM=antithesis-access
       - MOOG_PROXY_MEMBERSHIP_TTL_SEC=60

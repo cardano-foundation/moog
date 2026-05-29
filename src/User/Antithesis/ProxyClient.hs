@@ -113,7 +113,7 @@ classifyResponse response =
 
 runsUrl :: ProxyUrl -> String
 runsUrl (ProxyUrl baseUrl) =
-    stripTrailingSlash baseUrl <> "/api/v1/runs"
+    stripTrailingSlash baseUrl <> "/api/v0/runs"
 
 stripTrailingSlash :: String -> String
 stripTrailingSlash =

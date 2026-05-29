@@ -72,14 +72,14 @@ spec =
             simpleStatus response `shouldBe` status404
             simpleBody response `shouldBe` "not found"
 
-        it "protects and routes GET /api/v1/runs" $ do
+        it "protects and routes GET /api/v0/runs" $ do
             seenRef <- newIORef Nothing
             response <-
                 withUpstream (captureRuns seenRef) $ \baseUrl ->
                     runProxyAppWithUpstream
                         baseUrl
                         ( requestFor
-                            "/api/v1/runs"
+                            "/api/v0/runs"
                             [(hAuthorization, "Bearer gh-token")]
                         )
                             { rawQueryString = "?limit=2"
@@ -91,11 +91,11 @@ spec =
             seen
                 `shouldBe` Just
                     ( "?limit=2"
-                    , Just "Basic cHJhZ21hOnNlY3JldA=="
+                    , Just "Bearer test-api-key"
                     )
 
-        it "applies auth to GET /api/v1/runs" $ do
-            response <- runProxyApp True True (requestFor "/api/v1/runs" [])
+        it "applies auth to GET /api/v0/runs" $ do
+            response <- runProxyApp True True (requestFor "/api/v0/runs" [])
 
             simpleStatus response `shouldBe` status401
 
@@ -137,8 +137,7 @@ testApplication baseUrl antithesisReady githubReady = do
                 , proxyRunsConfig =
                     RunsConfig
                         { runsAntithesisUrl = baseUrl
-                        , runsAntithesisUser = "pragma"
-                        , runsAntithesisPassword = "secret"
+                        , runsAntithesisApiKey = "test-api-key"
                         , runsManager = manager
                         }
                 , proxyReadinessConfig =
