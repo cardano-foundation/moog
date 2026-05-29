@@ -24,6 +24,7 @@ and `403` for tokens whose owner is not an active team member.
 |---|---|---|
 | `GET /healthz` | `200 ok` | no auth |
 | `GET /readyz` | `200 ready` / `503 not ready` | no auth; probes Antithesis + GitHub reachability |
+| `GET /api/v0/openapi.json` | JSON | live OpenAPI spec from the Antithesis tenant — the authoritative schema for every other endpoint |
 | `GET /api/v0/runs` | JSON | supports `?limit=` (max 100 upstream) and `?cursor=`; the response body carries `next_cursor` for follow-up calls |
 | `GET /api/v0/runs/{run_id}` | JSON | single run detail; includes `failure_moment` for `incomplete` runs |
 | `GET /api/v0/runs/{run_id}/properties` | JSON | pass/fail per property; **404 for `in_progress` runs** (Antithesis-side rule) |
@@ -230,6 +231,40 @@ combining `Get` and `StreamGet` cannot be derived under a single one.
 Splitting at the API-type level lets the JSON and streaming halves
 each pick their natural transport while still sharing all path
 fragments and Capture / QueryParam types.
+
+## Upstream documentation
+
+The Antithesis tenant is the source of truth for the data shapes. The
+proxy passes payloads through verbatim, so the upstream schema is also
+the proxy's schema.
+
+- **Live OpenAPI spec** — `GET /api/v0/openapi.json` on the proxy
+  returns the tenant's own OpenAPI document. Team members can fetch
+  it without holding the API key:
+
+  ```bash
+  TOK=$(jq -r .access_token ~/.config/moog/github-oauth.json)
+  curl -sS -H "Authorization: Bearer $TOK" \
+    https://antithesis-proxy.plutimus.com/api/v0/openapi.json \
+    | jq '.paths | keys'
+  ```
+
+  Equivalently, operators with the Antithesis API key can dump the
+  spec directly with `anti openapi` from the `antithesis-api` skill.
+
+- **`antithesis-api` skill** — sibling skill in this repo's operator
+  toolkit. It carries the human-friendly recipes (`anti runs`,
+  `anti properties`, `anti events`, `anti logs`, `anti report-url`)
+  and the per-endpoint response-shape notes that don't fit in an
+  OpenAPI doc (e.g. the embedded-JSON `description` field on a run,
+  the `failure_moment` semantics for incomplete runs, the
+  free-text-only nature of `events?q=`, and the 50-result cap).
+
+- **Triage report URL** — every run object's `links.triage_report`
+  field is a ready-to-open browser URL on the tenant
+  (`https://amaru-cardano.antithesis.com/report/…`). The
+  authorisation token is baked into the URL itself; no separate
+  Antithesis SSO login is required to view it.
 
 ## Live Deployment Status
 
