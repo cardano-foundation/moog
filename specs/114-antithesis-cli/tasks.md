@@ -19,10 +19,10 @@
 
 ## Slice 3: Proxy client and runtime command
 
-- [ ] T114-S3 Implement proxy URL resolution, runs HTTP request, JSON decode,
+- [X] T114-S3 Implement proxy URL resolution, runs HTTP request, JSON decode,
   and error classification.
-- [ ] T114-S3 Implement 401 cache eviction and one reauth retry.
-- [ ] T114-S3 Map runtime outcomes to stdout/stderr and exit codes 0/2/3/4.
-- [ ] T114-S3 Add unit coverage for cache eviction on 401 and retry.
-- [ ] T114-S3 Run focused RED/GREEN tests, `./gate.sh`, and record smoke
+- [X] T114-S3 Implement 401 cache eviction and one reauth retry.
+- [X] T114-S3 Map runtime outcomes to stdout/stderr and exit codes 0/2/3/4.
+- [X] T114-S3 Add unit coverage for cache eviction on 401 and retry.
+- [X] T114-S3 Run focused RED/GREEN tests, `./gate.sh`, and record smoke
   status.

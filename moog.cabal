@@ -173,6 +173,7 @@ library
     User.Antithesis.Cli
     User.Antithesis.Constants
     User.Antithesis.Login
+    User.Antithesis.ProxyClient
     User.Requester.Cli
     User.Requester.Options
     User.Types
@@ -514,6 +515,7 @@ test-suite unit-tests
     User.Agent.TypesSpec
     User.Antithesis.CliSpec
     User.Antithesis.LoginSpec
+    User.Antithesis.ProxyClientSpec
     User.Requester.CliSpec
     User.TypesSpec
     Wallet.CliSpec
