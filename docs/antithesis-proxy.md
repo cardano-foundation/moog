@@ -98,4 +98,21 @@ Expected results:
 - `/api/v1/runs` with a valid `pragma-org/antithesis-access` member token
   returns `200` and an Antithesis JSON body.
 
+## Live Deployment Status
+
+The proxy is deployed and healthy on plutimus. Operators can verify the
+public health endpoint at
+`https://antithesis-proxy.plutimus.com/healthz`.
+
+As of the #115 deployment, three of the four acceptance curls validate the
+live auth gate: `/healthz` returns `200 ok`, unauthenticated `/api/v1/runs`
+returns the proxy's bearer challenge, and a garbage bearer token returns
+`401`. A valid team-member token resolves through GitHub as `login:paolino`
+in the proxy audit log, proving `whoami` and
+`pragma-org/antithesis-access` membership succeeded before forwarding.
+The forwarded `/api/v1/runs` request currently receives `403` from the
+Antithesis upstream because that tenant endpoint is not exposed yet. Track
+that Antithesis-side blocker in
+[issue #78](https://github.com/cardano-foundation/moog/issues/78).
+
 The full smoke script and failure-mode runbook are owned by #116.
