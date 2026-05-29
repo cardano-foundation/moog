@@ -38,6 +38,29 @@ jobs:
         with:
           name: moog-agent-image
           path: ./moog-agent-image
+      - name: Build Antithesis proxy docker image
+        run: nix --quiet build .#moog-antithesis-proxy-docker-image -o moog-antithesis-proxy-image
+      - name: Smoke test Antithesis proxy docker image
+        run: |
+          IMAGE=$(docker load < moog-antithesis-proxy-image | grep "Loaded image:" | awk '{print $3}')
+          printf '%s\n' test-password > antithesis-password
+          CID=$(docker run -d -p 127.0.0.1::8080 \
+            -v "$PWD/antithesis-password:/run/secrets/antithesis-password:ro" \
+            "$IMAGE")
+          trap 'docker logs "$CID"; docker rm -f "$CID"' EXIT
+          PORT=$(docker port "$CID" 8080/tcp | sed 's/.*://')
+          for _ in $(seq 1 20); do
+            if curl -fsS "http://127.0.0.1:$PORT/healthz" | grep -x ok; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+      - name: Upload Antithesis proxy artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: moog-antithesis-proxy-image
+          path: ./moog-antithesis-proxy-image
   build-aarch64:
     name: Build and upload ARM64 docker images
     runs-on: ubuntu-24.04-arm
@@ -69,3 +92,26 @@ jobs:
         with:
           name: moog-agent-image-aarch64
           path: ./moog-agent-image-aarch64
+      - name: Build Antithesis proxy docker image
+        run: nix --quiet build .#moog-antithesis-proxy-docker-image -o moog-antithesis-proxy-image-aarch64
+      - name: Smoke test Antithesis proxy docker image
+        run: |
+          IMAGE=$(docker load < moog-antithesis-proxy-image-aarch64 | grep "Loaded image:" | awk '{print $3}')
+          printf '%s\n' test-password > antithesis-password
+          CID=$(docker run -d -p 127.0.0.1::8080 \
+            -v "$PWD/antithesis-password:/run/secrets/antithesis-password:ro" \
+            "$IMAGE")
+          trap 'docker logs "$CID"; docker rm -f "$CID"' EXIT
+          PORT=$(docker port "$CID" 8080/tcp | sed 's/.*://')
+          for _ in $(seq 1 20); do
+            if curl -fsS "http://127.0.0.1:$PORT/healthz" | grep -x ok; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+      - name: Upload Antithesis proxy artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: moog-antithesis-proxy-image-aarch64
+          path: ./moog-antithesis-proxy-image-aarch64

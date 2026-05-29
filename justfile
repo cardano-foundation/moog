@@ -219,6 +219,16 @@ build-moog-agent tag='latest':
     docker image tag ghcr.io/cardano-foundation/moog/moog-agent:"$version" \
         "ghcr.io/cardano-foundation/moog/moog-agent:latest"
 
+build-moog-antithesis-proxy tag='latest':
+    #!/usr/bin/env bash
+    nix build .#moog-antithesis-proxy-docker-image
+    docker load < result
+    version=$(nix eval --raw .#version)
+    docker image tag ghcr.io/cardano-foundation/moog/moog-antithesis-proxy:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog-antithesis-proxy:{{ tag }}"
+    docker image tag ghcr.io/cardano-foundation/moog/moog-antithesis-proxy:"$version" \
+        "ghcr.io/cardano-foundation/moog/moog-antithesis-proxy:latest"
+
 build-moog tag='latest':
     #!/usr/bin/env bash
     nix build .#moog-docker-image
@@ -304,6 +314,7 @@ build-docker-images:
     just build-moog "$tag"
     just build-moog-light "$tag"
     just build-moog-agent "$tag"
+    just build-moog-antithesis-proxy "$tag"
     just build-moog-oracle "$tag"
 
 push-docker-images:
@@ -314,8 +325,10 @@ push-docker-images:
     docker push "ghcr.io/cardano-foundation/moog/moog-light:$tag"
     docker push "ghcr.io/cardano-foundation/moog/moog-light:latest"
     docker push "ghcr.io/cardano-foundation/moog/moog-agent:$tag"
+    docker push "ghcr.io/cardano-foundation/moog/moog-antithesis-proxy:$tag"
     docker push "ghcr.io/cardano-foundation/moog/moog-oracle:$tag"
     docker push "ghcr.io/cardano-foundation/moog/moog-agent:latest"
+    docker push "ghcr.io/cardano-foundation/moog/moog-antithesis-proxy:latest"
     docker push "ghcr.io/cardano-foundation/moog/moog-oracle:latest"
 
 cabal-version:

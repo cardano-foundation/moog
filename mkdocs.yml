@@ -87,6 +87,7 @@ nav:
     - Deployment: ops/deployment.md
     - Oracle Role: ops/oracle-role.md
     - Agent Role: ops/agent-role.md
+    - Antithesis Proxy: antithesis-proxy.md
     - MPFS v2 Canary: ops/mpfs-v2-canary.md
     - Real World: ops/real-world.md
     - Security: ops/security.md
