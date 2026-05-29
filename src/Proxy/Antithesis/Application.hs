@@ -15,17 +15,16 @@ import Control.Exception (SomeException, try)
 import Data.ByteString (ByteString)
 import Data.ByteString.Base64 qualified as Base64
 import Data.ByteString.Lazy qualified as LBS
-import Data.Time.Clock (getCurrentTime)
+import Data.IORef (newIORef, readIORef, writeIORef)
+import Data.Maybe (fromMaybe)
+import Data.Text qualified as T
+import Data.Text.Encoding qualified as T
+import Data.Text.Encoding.Error (lenientDecode)
+import Data.Time.Clock (UTCTime, diffUTCTime, getCurrentTime)
+import Data.Vault.Lazy qualified as Vault
 import Lib.GitHub.Auth.Identify (whoami)
 import Lib.GitHub.Auth.TeamCheck (checkTeamMembership)
-import Network.HTTP.Client
-    ( Manager
-    , Request (method, requestHeaders)
-    , httpLbs
-    , newManager
-    , parseRequest
-    , responseStatus
-    )
+import Network.HTTP.Client qualified as HC
 import Network.HTTP.Client.TLS (tlsManagerSettings)
 import Network.HTTP.Types
     ( RequestHeaders
@@ -42,13 +41,19 @@ import Network.HTTP.Types
     )
 import Network.Wai
     ( Application
-    , Request (pathInfo, requestMethod)
+    , Request (pathInfo, rawPathInfo, requestHeaders, requestMethod, vault)
     , Response
     , responseLBS
     )
+import Network.Wai.Internal (Response (..))
 import Proxy.Antithesis.Cache (newMembershipCache)
 import Proxy.Antithesis.Config
     ( Settings (..)
+    )
+import Proxy.Antithesis.Audit
+    ( AuditEvent (..)
+    , RequestId (..)
+    , renderAuditEvent
     )
 import Proxy.Antithesis.Handler.Runs
     ( RunsConfig (..)
@@ -57,7 +62,9 @@ import Proxy.Antithesis.Handler.Runs
 import Proxy.Antithesis.Middleware.Auth
     ( AuthConfig (..)
     , authMiddleware
+    , authorizedLoginKey
     )
+import System.IO (hFlush, stdout)
 
 data ProxyApplicationConfig = ProxyApplicationConfig
     { proxyAuthConfig :: AuthConfig
@@ -73,22 +80,55 @@ data ReadinessConfig = ReadinessConfig
 proxyApplication :: ProxyApplicationConfig -> Application
 proxyApplication config request respond =
     case (requestMethod request, pathInfo request) of
-        ("GET", ["healthz"]) ->
-            respond $ plain status200 "ok"
+        ("GET", ["healthz"]) -> do
+            start <- getCurrentTime
+            auditAndRespond request start Nothing (plain status200 "ok") respond
         ("GET", ["readyz"]) -> do
+            start <- getCurrentTime
             ready <- readinessCheck $ proxyReadinessConfig config
-            respond $
-                if ready
+            auditAndRespond
+                request
+                start
+                Nothing
+                ( if ready
                     then plain status200 "ready"
                     else plain status503 "not ready"
-        ("GET", ["api", "v1", "runs"]) ->
+                )
+                respond
+        ("GET", ["api", "v1", "runs"]) -> do
+            authHandled <- newIORef False
+            start <- getCurrentTime
             authMiddleware
                 (proxyAuthConfig config)
-                (runsHandler $ proxyRunsConfig config)
+                ( \authorizedRequest authorizedRespond -> do
+                    writeIORef authHandled True
+                    runsHandler
+                        (proxyRunsConfig config)
+                        authorizedRequest
+                        $ \response ->
+                            auditAndRespond
+                                authorizedRequest
+                                start
+                                (Just $ waiResponseStatus response)
+                                response
+                                authorizedRespond
+                )
                 request
-                respond
-        _ ->
-            respond $ plain status404 "not found"
+                ( \response -> do
+                    handled <- readIORef authHandled
+                    if handled
+                        then respond response
+                        else
+                            auditAndRespond
+                                request
+                                start
+                                Nothing
+                                response
+                                respond
+                )
+        _ -> do
+            start <- getCurrentTime
+            auditAndRespond request start Nothing (plain status404 "not found") respond
 
 readinessCheck :: ReadinessConfig -> IO Bool
 readinessCheck config =
@@ -98,7 +138,7 @@ readinessCheck config =
 
 productionApplication :: Settings -> IO Application
 productionApplication settings = do
-    manager <- newManager tlsManagerSettings
+    manager <- HC.newManager tlsManagerSettings
     cache <-
         newMembershipCache $
             fromIntegral (settingsMembershipTtlSeconds settings)
@@ -126,7 +166,7 @@ productionApplication settings = do
                     productionReadinessConfig settings manager
                 }
 
-productionReadinessConfig :: Settings -> Manager -> ReadinessConfig
+productionReadinessConfig :: Settings -> HC.Manager -> ReadinessConfig
 productionReadinessConfig settings manager =
     ReadinessConfig
         { readinessAntithesis =
@@ -143,18 +183,18 @@ productionReadinessConfig settings manager =
                 ]
         }
 
-probeEndpoint :: Manager -> String -> RequestHeaders -> IO Bool
+probeEndpoint :: HC.Manager -> String -> RequestHeaders -> IO Bool
 probeEndpoint manager url headers = do
     result <- try @SomeException $ do
-        baseRequest <- parseRequest url
+        baseRequest <- HC.parseRequest url
         response <-
-            httpLbs
+            HC.httpLbs
                 baseRequest
-                    { method = methodGet
-                    , requestHeaders = headers
+                    { HC.method = methodGet
+                    , HC.requestHeaders = headers
                     }
                 manager
-        pure $ statusCode (responseStatus response) < 500
+        pure $ statusCode (HC.responseStatus response) < 500
     pure $ either (const False) id result
 
 antithesisRunsUrl :: Settings -> String
@@ -177,3 +217,49 @@ plain status body =
 stripTrailingSlash :: String -> String
 stripTrailingSlash =
     reverse . dropWhile (== '/') . reverse
+
+auditAndRespond
+    :: Request
+    -> UTCTime
+    -> Maybe Status
+    -> Response
+    -> (Response -> IO responseReceived)
+    -> IO responseReceived
+auditAndRespond request start upstreamStatus response respond = do
+    end <- getCurrentTime
+    LBS.putStr $
+        renderAuditEvent
+            AuditEvent
+                { auditTimestamp = end
+                , auditLogin =
+                    Vault.lookup authorizedLoginKey (vault request)
+                , auditPath =
+                    T.decodeUtf8With lenientDecode $ rawPathInfo request
+                , auditStatus = waiResponseStatus response
+                , auditUpstreamStatus = upstreamStatus
+                , auditLatencyMs =
+                    floor $ diffUTCTime end start * 1000
+                , auditRequestId = requestId request
+                }
+    hFlush stdout
+    respond response
+
+requestId :: Request -> RequestId
+requestId request =
+    RequestId $
+        T.decodeUtf8With lenientDecode $
+            fromMaybe "-" $
+                lookup "X-Request-Id" $
+                    requestHeaders request
+
+waiResponseStatus :: Response -> Status
+waiResponseStatus response =
+    case response of
+        ResponseFile status _ _ _ ->
+            status
+        ResponseBuilder status _ _ ->
+            status
+        ResponseStream status _ _ ->
+            status
+        ResponseRaw _ fallback ->
+            waiResponseStatus fallback
