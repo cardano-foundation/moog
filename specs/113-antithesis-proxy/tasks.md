@@ -12,12 +12,12 @@
 
 ## Slice 2 - Auth Middleware
 
-- [ ] T113-S2 Add failing auth middleware tests for missing/malformed
+- [X] T113-S2 Add failing auth middleware tests for missing/malformed
   token, invalid token, pending, not-member, SSO-required, other error,
   and success.
-- [ ] T113-S2 Implement bearer auth, membership caching, vault login
+- [X] T113-S2 Implement bearer auth, membership caching, vault login
   attachment, and failure response mapping.
-- [ ] T113-S2 Run focused tests and `./gate.sh`, then commit.
+- [X] T113-S2 Run focused tests and `./gate.sh`, then commit.
 
 ## Slice 3 - Runs Handler
 
