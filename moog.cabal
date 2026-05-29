@@ -156,6 +156,9 @@ library
     Oracle.Validate.Requests.TestRun.Create
     Oracle.Validate.Requests.TestRun.Update
     Oracle.Validate.Types
+    Proxy.Antithesis.Audit
+    Proxy.Antithesis.Cache
+    Proxy.Antithesis.Config
     Submitting
     User.Agent.Cli
     User.Agent.Lib
@@ -311,6 +314,21 @@ executable moog-agent
     , moog
 
   -- Directories containing source files.
+
+  -- Base language which the package is written in.
+  default-language: Haskell2010
+
+executable moog-antithesis-proxy
+  -- Import common warning flags.
+  import:           warnings
+
+  -- .hs or .lhs file containing the Main module.
+  main-is:          app/moog-antithesis-proxy.hs
+
+  -- Other library packages from which modules are imported.
+  build-depends:
+    , base
+    , moog
 
   -- Base language which the package is written in.
   default-language: Haskell2010
@@ -471,6 +489,9 @@ test-suite unit-tests
     Oracle.Validate.Requests.TestRun.FinishSpec
     Oracle.Validate.Requests.TestRun.Lib
     Oracle.Validate.Requests.TestRun.RejectSpec
+    Proxy.Antithesis.AuditSpec
+    Proxy.Antithesis.CacheSpec
+    Proxy.Antithesis.ConfigSpec
     User.Agent.ProcessOptionsSpec
     User.Agent.PublishResults.EmailSpec
     User.Agent.PushTestSpec

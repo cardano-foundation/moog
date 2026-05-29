@@ -77,6 +77,8 @@ in {
   packages.moog = project.hsPkgs.moog.components.exes.moog;
   packages.moog-oracle = project.hsPkgs.moog.components.exes.moog-oracle;
   packages.moog-agent = project.hsPkgs.moog.components.exes.moog-agent;
+  packages.moog-antithesis-proxy =
+    project.hsPkgs.moog.components.exes.moog-antithesis-proxy;
   packages.moog-mpfs-v2-canary =
     project.hsPkgs.moog.components.exes.moog-mpfs-v2-canary;
   packages.moog-github-device-flow-smoke =
