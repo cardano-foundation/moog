@@ -21,11 +21,11 @@
 
 ## Slice 3 - Runs Handler
 
-- [ ] T113-S3 Add failing runs handler tests with a WAI mock upstream.
-- [ ] T113-S3 Implement query-preserving forwarding, Antithesis basic
+- [X] T113-S3 Add failing runs handler tests with a WAI mock upstream.
+- [X] T113-S3 Implement query-preserving forwarding, Antithesis basic
   auth, pass-through headers, streamed response handling, and sanitized
   upstream 5xx responses.
-- [ ] T113-S3 Run focused tests and `./gate.sh`, then commit.
+- [X] T113-S3 Run focused tests and `./gate.sh`, then commit.
 
 ## Slice 4 - Application Assembly and Readiness
 

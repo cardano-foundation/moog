@@ -159,6 +159,7 @@ library
     Proxy.Antithesis.Audit
     Proxy.Antithesis.Cache
     Proxy.Antithesis.Config
+    Proxy.Antithesis.Handler.Runs
     Proxy.Antithesis.Middleware.Auth
     Submitting
     User.Agent.Cli
@@ -496,6 +497,7 @@ test-suite unit-tests
     Proxy.Antithesis.AuthSpec
     Proxy.Antithesis.CacheSpec
     Proxy.Antithesis.ConfigSpec
+    Proxy.Antithesis.Handler.RunsSpec
     User.Agent.ProcessOptionsSpec
     User.Agent.PublishResults.EmailSpec
     User.Agent.PushTestSpec
