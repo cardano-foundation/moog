@@ -2,12 +2,12 @@
 
 ## Slice 1: Parser and command wiring
 
-- [ ] T114-S1 Add `User.Antithesis.Cli` command type and parser for
+- [X] T114-S1 Add `User.Antithesis.Cli` command type and parser for
   `antithesis runs`.
-- [ ] T114-S1 Wire the command group into `Options.commandParser` and
+- [X] T114-S1 Wire the command group into `Options.commandParser` and
   `Cli.Command`.
-- [ ] T114-S1 Add a parser unit test that observes the new command.
-- [ ] T114-S1 Run the focused RED/GREEN test and `./gate.sh`.
+- [X] T114-S1 Add a parser unit test that observes the new command.
+- [X] T114-S1 Run the focused RED/GREEN test and `./gate.sh`.
 
 ## Slice 2: Login token cache
 

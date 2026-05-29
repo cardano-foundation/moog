@@ -50,6 +50,10 @@ import User.Agent.Cli
     , IsReady (NotReady)
     , agentCmd
     )
+import User.Antithesis.Cli
+    ( AntithesisCommand
+    , antithesisCmd
+    )
 import User.Requester.Cli
     ( RequesterCommand
     , requesterCmd
@@ -77,6 +81,7 @@ data Command a where
         -> Command
             (AValidationResult TokenInfoFailure (Token WithValidation))
     SSHSelectors :: SSHClient 'WithoutSelector -> Command [Selection]
+    AntithesisCommand :: AntithesisCommand a -> Command a
 
 deriving instance Show (Token WithValidation)
 deriving instance Eq (Token WithValidation)
@@ -161,6 +166,8 @@ cmd = \case
                                 pure $ WithValidation r req
                         lift $ fmapMToken f token
     SSHSelectors sshClient -> sshKeySelectors sshClient
+    AntithesisCommand antithesisCommand ->
+        liftIO $ antithesisCmd antithesisCommand
 
 data TokenInfoFailure
     = TokenInfoTokenNotParsable TokenId
