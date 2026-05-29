@@ -63,13 +63,13 @@ spec = do
                     (const False)
 
     describe "parseSmokeArgs" $ do
-        it "defaults org and team to pragma/antithesis" $ do
+        it "defaults org and team to pragma-org/antithesis-access" $ do
             parseSmokeArgs ["--expected-login", "alice"]
                 `shouldBe` Right
                     SmokeConfig
                         { expectedLogin = Login "alice"
-                        , org = Org "pragma"
-                        , team = TeamSlug "antithesis"
+                        , org = Org "pragma-org"
+                        , team = TeamSlug "antithesis-access"
                         }
 
         it "accepts explicit org and team overrides" $ do

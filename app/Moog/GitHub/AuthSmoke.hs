@@ -55,9 +55,10 @@ tokenEnvVar :: String
 tokenEnvVar = "MOOG_GITHUB_OAUTH_TOKEN"
 
 -- | Parse the smoke arguments. @--expected-login@ is required; @--org@
--- and @--team@ default to @pragma@ and @antithesis@.
+-- and @--team@ default to @pragma-org@ and @antithesis-access@.
 parseSmokeArgs :: [String] -> Either Text SmokeConfig
-parseSmokeArgs = go Nothing (Org "pragma") (TeamSlug "antithesis")
+parseSmokeArgs =
+    go Nothing (Org "pragma-org") (TeamSlug "antithesis-access")
   where
     go mLogin o t args = case args of
         [] -> case mLogin of
