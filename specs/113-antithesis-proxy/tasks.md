@@ -2,13 +2,13 @@
 
 ## Slice 1 - Config, Cache, Audit, Cabal Scaffold
 
-- [ ] T113-S1 Add failing tests for settings parsing, membership cache,
+- [X] T113-S1 Add failing tests for settings parsing, membership cache,
   and audit rendering.
-- [ ] T113-S1 Implement `Proxy.Antithesis.Config`,
+- [X] T113-S1 Implement `Proxy.Antithesis.Config`,
   `Proxy.Antithesis.Cache`, and `Proxy.Antithesis.Audit`.
-- [ ] T113-S1 Add cabal exposure and a skeletal
+- [X] T113-S1 Add cabal exposure and a skeletal
   `moog-antithesis-proxy` executable.
-- [ ] T113-S1 Run focused tests and `./gate.sh`, then commit.
+- [X] T113-S1 Run focused tests and `./gate.sh`, then commit.
 
 ## Slice 2 - Auth Middleware
 
