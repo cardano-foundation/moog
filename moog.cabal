@@ -165,6 +165,7 @@ library
     Proxy.Antithesis.Server
     Submitting
     User.Agent.Antithesis.Client
+    User.Agent.Antithesis.Plan
     User.Agent.Antithesis.State
     User.Agent.Cli
     User.Agent.Lib
@@ -515,6 +516,7 @@ test-suite unit-tests
     Proxy.Antithesis.ConfigSpec
     Proxy.Antithesis.ServerSpec
     User.Agent.Antithesis.ClientSpec
+    User.Agent.Antithesis.PlanSpec
     User.Agent.Antithesis.StateSpec
     User.Agent.ProcessOptionsSpec
     User.Agent.PublishResults.EmailSpec
