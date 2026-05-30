@@ -140,11 +140,51 @@ spec =
                     OutcomeFailure
                     (URL "https://report.example/run-1")
 
-        it "waits instead of finishing when the report URL is absent" $ do
+        it "stays conservative on completed runs without a report URL" $ do
+            -- Success is never attested without the report link: a terminal
+            -- `completed` run missing `links.triage_report` keeps waiting.
             let observed =
                     run
                         "run-1"
                         RunCompleted
+                        (Just matchingDescription)
+                        Nothing
+
+            runningDecision testRun [observed] `shouldBe` RunningWait
+
+        it "finishes incomplete runs without a report as failure" $ do
+            let observed =
+                    run
+                        "run-1"
+                        RunIncomplete
+                        (Just matchingDescription)
+                        Nothing
+
+            runningDecision testRun [observed]
+                `shouldBe` RunningFinish
+                    observed
+                    OutcomeFailure
+                    (URL "antithesis://runs/run-1/no-triage-report")
+
+        it "finishes cancelled runs without a report as failure" $ do
+            let observed =
+                    run
+                        "run-1"
+                        RunCancelled
+                        (Just matchingDescription)
+                        Nothing
+
+            runningDecision testRun [observed]
+                `shouldBe` RunningFinish
+                    observed
+                    OutcomeFailure
+                    (URL "antithesis://runs/run-1/no-triage-report")
+
+        it "keeps waiting on non-terminal runs without a report" $ do
+            let observed =
+                    run
+                        "run-1"
+                        RunInProgress
                         (Just matchingDescription)
                         Nothing
 
