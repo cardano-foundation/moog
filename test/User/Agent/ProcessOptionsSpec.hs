@@ -35,6 +35,11 @@ import User.Agent.Process
     ( ProcessOptions (..)
     , parseArgs
     )
+import User.Agent.Antithesis.Client
+    ( AntithesisApiConfig (..)
+    , AntithesisApiKey (..)
+    , AntithesisApiUrl (..)
+    )
 import User.Agent.PublishResults.Email (Minutes (..))
 import User.Agent.PushTest
     ( AntithesisAuth (..)
@@ -61,6 +66,8 @@ agentEnvVars =
     , "MOOG_ANTITHESIS_USER"
     , "MOOG_ANTITHESIS_PASSWORD"
     , "MOOG_ANTITHESIS_LAUNCH_URL"
+    , "MOOG_ANTITHESIS_API_KEY"
+    , "MOOG_ANTITHESIS_API_URL"
     , "MOOG_REGISTRY"
     , "MOOG_SLACK_WEBHOOK"
     , "MOOG_WALLET_PASSPHRASE"
@@ -113,6 +120,7 @@ agentYamlContent walletPath =
         , "antithesisUser: ant-user"
         , "antithesisPassword: ant-pass"
         , "antithesisLaunchUrl: https://example.invalid/api/v1/launch/cardano"
+        , "antithesisApiKey: yaml-api-key"
         , "agentEmail: agent@example.invalid"
         , "agentEmailPassword: email-pass"
         , "trustedRequesters:"
@@ -169,6 +177,11 @@ spec = describe "agent file-backed configuration" $ do
                         LaunchUrl
                             "https://example.invalid/api/v1/launch/cardano"
                     }
+            poAntithesisApiConfig opts
+                `shouldBe` AntithesisApiConfig
+                    { antithesisApiUrl = AntithesisApiUrl "https://example.invalid"
+                    , antithesisApiKey = AntithesisApiKey "yaml-api-key"
+                    }
     it "lets MOOG_TOKEN_ID override the YAML tokenId value" $ do
         withScrubbedEnv $ withEnv "MOOG_TOKEN_ID" "env-token" $ do
             withSystemTempDirectory "moog-agent-conf-prec" $ \tmp -> do
@@ -180,6 +193,25 @@ spec = describe "agent file-backed configuration" $ do
                         ]
                 opts <- withArgs args parseArgs
                 poTokenId opts `shouldBe` TokenId "env-token"
+    it "lets Antithesis API environment variables override YAML/defaults" $ do
+        withScrubbedEnv
+            $ withEnv "MOOG_ANTITHESIS_API_KEY" "env-api-key"
+            $ withEnv "MOOG_ANTITHESIS_API_URL" "https://api.example.invalid"
+            $ withSystemTempDirectory "moog-agent-conf-api-env"
+            $ \tmp -> do
+                (_walletPath, yamlPath) <- writeFixtures tmp
+                let args =
+                        [ "--secrets-file"
+                        , yamlPath
+                        , "--trust-all-requesters"
+                        ]
+                opts <- withArgs args parseArgs
+                poAntithesisApiConfig opts
+                    `shouldBe` AntithesisApiConfig
+                        { antithesisApiUrl =
+                            AntithesisApiUrl "https://api.example.invalid"
+                        , antithesisApiKey = AntithesisApiKey "env-api-key"
+                        }
     it "fails closed when no launch URL is supplied" $ do
         withScrubbedEnv
             $ withSystemTempDirectory "moog-agent-conf-no-url"

@@ -9,6 +9,8 @@ module User.Agent.Options
     , testRunIdOption
     , registryOption
     , antithesisAuthOption
+    , antithesisApiKeyOption
+    , antithesisApiUrlOption
     ) where
 
 import Core.Options
@@ -21,6 +23,7 @@ import Core.Options
     )
 import Core.Types.Basic (Duration (..), Success)
 import Core.Types.Tx (WithTxHash)
+import Data.ByteString.Char8 qualified as BC
 import Lib.Box (Box (..))
 import Lib.Options.Secrets (secretsParser)
 import OptEnvConf
@@ -68,6 +71,10 @@ import User.Agent.PushTest
     , PushFailure
     , Registry (..)
     , SlackWebhook (..)
+    )
+import User.Agent.Antithesis.Client
+    ( AntithesisApiKey (..)
+    , AntithesisApiUrl (..)
     )
 import User.Agent.Types (TestRunMap)
 import User.Types
@@ -213,6 +220,33 @@ antithesisAuthOption = do
             "antithesisPassword"
     launchUrl <- launchUrlOption
     pure AntithesisAuth{username, password, launchUrl}
+
+antithesisApiKeyOption :: Parser AntithesisApiKey
+antithesisApiKeyOption =
+    AntithesisApiKey . BC.pack
+        <$> secretsParser
+            "Enter the Antithesis read API key"
+            "The Antithesis read API key"
+            "MOOG_ANTITHESIS_API_KEY"
+            "ANTITHESIS_API_KEY"
+            "ask-antithesis-api-key"
+            "antithesisApiKey"
+
+antithesisApiUrlOption :: Parser (Maybe AntithesisApiUrl)
+antithesisApiUrlOption =
+    optional $
+        AntithesisApiUrl
+            <$> setting
+                [ env "MOOG_ANTITHESIS_API_URL"
+                , conf "antithesisApiUrl"
+                , long "antithesis-api-url"
+                , metavar "ANTITHESIS_API_URL"
+                , help
+                    "Antithesis tenant read API base URL. Defaults to the \
+                    \base URL derived from the launch URL."
+                , reader str
+                , option
+                ]
 
 antithesisUserOption :: Parser String
 antithesisUserOption =
