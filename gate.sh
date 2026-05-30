@@ -2,4 +2,4 @@
 set -euo pipefail
 
 git diff --check
-nix run .#unit-tests
+nix build --quiet --no-link .#moog-agent .#unit-tests
