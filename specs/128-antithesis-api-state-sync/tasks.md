@@ -14,11 +14,11 @@
 
 ## Slice 2 — Agent configuration and direct read API client
 
-- [ ] T128-S2 Add RED tests for API config parsing and launch-URL base derivation.
-- [ ] T128-S2 Add the direct Bearer API-key run-list client with pagination.
-- [ ] T128-S2 Thread API config through `ProcessOptions`.
-- [ ] T128-S2 Run the focused unit tests and `./gate.sh`.
-- [ ] T128-S2 Commit the accepted slice with `Tasks: T128-S2`.
+- [X] T128-S2 Add RED tests for API config parsing and launch-URL base derivation.
+- [X] T128-S2 Add the direct Bearer API-key run-list client with pagination.
+- [X] T128-S2 Thread API config through `ProcessOptions`.
+- [X] T128-S2 Run the focused unit tests and `./gate.sh`.
+- [X] T128-S2 Commit the accepted slice with `Tasks: T128-S2`.
 
 ## Slice 3 — Service loop synchronization
 

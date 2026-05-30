@@ -73,10 +73,18 @@ import User.Agent.Cli
     ( AgentCommand (..)
     , ReportFailure
     )
+import User.Agent.Antithesis.Client
+    ( AntithesisApiConfig (..)
+    , AntithesisApiKey
+    , AntithesisApiUrl
+    , deriveAntithesisApiUrl
+    )
 import User.Agent.Lib (testRunDuration)
 import User.Agent.Options
     ( agentEmailOption
     , agentEmailPasswordOption
+    , antithesisApiKeyOption
+    , antithesisApiUrlOption
     , antithesisAuthOption
     , minutesOption
     , registryOption
@@ -90,7 +98,7 @@ import User.Agent.PublishResults.Email
     , readEmailsWithSummary
     )
 import User.Agent.PushTest
-    ( AntithesisAuth
+    ( AntithesisAuth (..)
     , PushFailure
     , Registry
     )
@@ -147,6 +155,7 @@ data ProcessOptions = ProcessOptions
     , poTrustedRequesters :: Requesters
     , poRegistry :: Registry
     , poAntithesisAuth :: AntithesisAuth
+    , poAntithesisApiConfig :: AntithesisApiConfig
     , poVerbose :: Bool
     }
 
@@ -157,7 +166,7 @@ data EmailPoll = EmailPoll
 
 processOptionsParser :: Parser ProcessOptions
 processOptionsParser =
-    ProcessOptions
+    mkProcessOptions
         <$> githubAuthOption
         <*> pollIntervalOption
         <*> walletOption
@@ -169,7 +178,63 @@ processOptionsParser =
         <*> requestersOption
         <*> registryOption
         <*> antithesisAuthOption
+        <*> antithesisApiKeyOption
+        <*> antithesisApiUrlOption
         <*> verboseOption
+
+mkProcessOptions
+    :: Auth
+    -> Int
+    -> Wallet
+    -> TokenId
+    -> MPFSClient
+    -> EmailUser
+    -> EmailPassword
+    -> Minutes
+    -> Requesters
+    -> Registry
+    -> AntithesisAuth
+    -> AntithesisApiKey
+    -> Maybe AntithesisApiUrl
+    -> Bool
+    -> ProcessOptions
+mkProcessOptions
+    poAuth
+    poPollIntervalSeconds
+    poWallet
+    poTokenId
+    poMPFSClient
+    poAntithesisEmail
+    poAntithesisEmailPassword
+    poMinutes
+    poTrustedRequesters
+    poRegistry
+    poAntithesisAuth
+    apiKey
+    maybeApiUrl
+    poVerbose =
+        ProcessOptions
+            { poAuth
+            , poPollIntervalSeconds
+            , poWallet
+            , poTokenId
+            , poMPFSClient
+            , poAntithesisEmail
+            , poAntithesisEmailPassword
+            , poMinutes
+            , poTrustedRequesters
+            , poRegistry
+            , poAntithesisAuth
+            , poAntithesisApiConfig =
+                AntithesisApiConfig
+                    { antithesisApiUrl =
+                        fromMaybe
+                            (deriveAntithesisApiUrl $ launchUrl poAntithesisAuth)
+                            maybeApiUrl
+                    , antithesisApiKey = apiKey
+                    }
+            , poVerbose
+            }
 
 verboseOption :: Parser Bool
 verboseOption =
