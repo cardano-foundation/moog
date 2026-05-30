@@ -1,5 +1,21 @@
 # Changelog for moog-cli
 
+### v0.5.1.1 - 2026-05-30
+
+#### Fixed
+
+- **`moog antithesis` JSON output is now valid JSON.** The JSON
+  subcommands (`runs`, `run`, `properties`) routed through the
+  canonical-JSON renderer, which did not escape control characters
+  inside string values. Any upstream payload containing embedded
+  LF/CR (e.g. multi-line property descriptions) produced output that
+  `jq` rejected. The CLI now writes responses via `Aeson.encode`
+  (which always escapes control chars). (#136)
+- **Streaming subcommands no longer append a trailing `null`.**
+  `events`, `logs`, and `build-logs` previously printed `null` after
+  the NDJSON stream, which broke `jq -s` consumers. The CLI now
+  exits cleanly after the byte stream ends. (#136)
+
 ### v0.5.1.0 - 2026-05-29
 
 #### Added
