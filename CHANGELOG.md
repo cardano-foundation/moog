@@ -1,5 +1,20 @@
 # Changelog for moog-cli
 
+### v0.5.1.2 - 2026-05-30
+
+#### Fixed
+
+- **Terminal Antithesis runs without a triage report now finish
+  on-chain instead of waiting forever.** `moog-agent` treated any API
+  run missing `links.triage_report` as still running, so a terminal
+  `incomplete`/`cancelled` run left its on-chain test-run stuck in
+  `accepted` indefinitely. The agent now finishes such failure-class
+  runs as `OutcomeFailure` with a deterministic synthetic URL
+  `antithesis://runs/<run_id>/no-triage-report`; `completed` without a
+  report stays conservative (it keeps waiting, since success must not be
+  attested without the report link). Agent logs no longer claim "still
+  running" for terminal runs. (#138)
+
 ### v0.5.1.1 - 2026-05-30
 
 #### Fixed
