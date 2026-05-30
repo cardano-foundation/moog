@@ -22,8 +22,8 @@
 
 ## Slice 3 — Service loop synchronization
 
-- [ ] T128-S3 Add RED tests for one-poll agent actions: no duplicate POST, delayed accepted, finished from API, duplicate fail-closed.
-- [ ] T128-S3 Replace email-result service-loop decisions with API-backed reconciliation.
-- [ ] T128-S3 Keep legacy email commands untouched for #129.
-- [ ] T128-S3 Run the focused unit tests and `./gate.sh`.
-- [ ] T128-S3 Commit the accepted slice with `Tasks: T128-S3`.
+- [X] T128-S3 Add RED tests for one-poll agent actions: no duplicate POST, delayed accepted, finished from API, duplicate fail-closed.
+- [X] T128-S3 Replace email-result service-loop decisions with API-backed reconciliation.
+- [X] T128-S3 Keep legacy email commands untouched for #129.
+- [X] T128-S3 Run the focused unit tests and `./gate.sh`.
+- [X] T128-S3 Commit the accepted slice with `Tasks: T128-S3`.

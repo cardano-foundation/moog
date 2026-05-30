@@ -21,7 +21,7 @@ module User.Agent.Process
 import Cli (Command (..), TokenInfoFailure, WithValidation (..), cmd)
 import Control.Applicative (Alternative (..), optional)
 import Control.Concurrent (threadDelay)
-import Control.Monad (forever, when)
+import Control.Monad (forever)
 import Control.Monad.IO.Class (MonadIO (..))
 import Control.Monad.Trans.Except (runExceptT, throwE)
 import Core.Options (tokenIdOption, walletOption)
@@ -38,9 +38,10 @@ import Core.Types.Tx (WithTxHash)
 import Core.Types.Wallet (Wallet)
 import Data.CaseInsensitive (mk)
 import Data.Either (partitionEithers)
-import Data.Foldable (find, for_)
+import Data.Foldable (for_)
 import Data.Maybe (fromMaybe, mapMaybe)
 import Data.String.QQ (s)
+import Data.List (intercalate)
 import Data.Text qualified as T
 import Facts (All (..), FactsSelection (..), TestRunSelection (..))
 import GitHub (Auth)
@@ -78,6 +79,16 @@ import User.Agent.Antithesis.Client
     , AntithesisApiKey
     , AntithesisApiUrl
     , deriveAntithesisApiUrl
+    , listAllRuns
+    )
+import User.Agent.Antithesis.Plan
+    ( PendingAction (..)
+    , PollPlan (..)
+    , RunningAction (..)
+    , planAgentPoll
+    )
+import User.Agent.Antithesis.State
+    ( AntithesisRun (..)
     )
 import User.Agent.Lib (testRunDuration)
 import User.Agent.Options
@@ -106,15 +117,16 @@ import User.Agent.Types
     ( TestRunId (..)
     , mkTestRunId
     )
-import User.Types (Phase (..), TestRun (..), TestRunState, URL (..))
+import User.Types (Outcome, Phase (..), TestRun (..), TestRunState, URL (..))
 
 intro :: String
 intro =
     [s|
     Cardano Antithesis Agent Process
 
-    This process will run indefinitely, polling the recipient email for results,
-    and changing the relative test-run facts to published when results are found.
+    This process will run indefinitely, polling Antithesis API state and
+    test-run facts, then mirroring API-observed accepted and finished states
+    on-chain.
 
     To stop the process, simply interrupt it (Ctrl+C).
 
@@ -289,17 +301,24 @@ agentProcess
 agentProcess
     opts@ProcessOptions
         { poPollIntervalSeconds
-        , poVerbose
         , poTrustedRequesters
+        , poAntithesisApiConfig
         } = do
         putStrLn "Starting agent process service..."
         forever $ runExceptT $ do
-            EmailPoll
-                { emailPollResults = results
-                , emailPollSummary
-                } <-
-                liftIO $ pollEmails opts
-            loggin $ emailPollSummaryMessage emailPollSummary
+            apiRuns <-
+                liftIO (listAllRuns poAntithesisApiConfig) >>= \case
+                    Left err -> do
+                        loggin $
+                            "Failed to get Antithesis API runs: "
+                                ++ show err
+                        pure Nothing
+                    Right runs -> do
+                        loggin $
+                            "Found "
+                                ++ show (length runs)
+                                ++ " Antithesis API runs."
+                        pure $ Just runs
             efacts <- liftIO $ pollTestRuns opts
             (pendingTests, runningTests, doneTests, stateChanging) <- case efacts of
                 ValidationFailure err -> do
@@ -317,110 +336,19 @@ agentProcess
                     ++ " done tests (excluding changing state). and "
                     ++ show (length stateChanging)
                     ++ " changing state tests."
-            for_ results $ \result@Result{description} -> do
-                let sameKey :: [Fact TestRun v] -> Maybe (Fact TestRun v)
-                    sameKey = find $ (description ==) . factKey
-                    matchingTests =
-                        Left <$> sameKey runningTests
-                            <|> Right <$> sameKey doneTests
-                    TestRunId trId = mkTestRunId description
-                case matchingTests of
-                    Nothing ->
-                        loggin
-                            $ "No matching test-run found in facts for email result: "
-                                ++ trId
-                    Just (Left (Fact testRun testState _)) -> do
-                        loggin
-                            $ "Publishing result for test-run: "
-                                ++ show testRun
-                        eres <- liftIO $ submitDone opts (testRunDuration testState) result
-                        case eres of
-                            ValidationFailure err ->
-                                loggin
-                                    $ "Failed to publish result for test-run "
-                                        ++ trId
-                                        ++ ": "
-                                        ++ show err
-                            ValidationSuccess txHash ->
-                                loggin
-                                    $ "Published result for test-run "
-                                        ++ trId
-                                        ++ " in transaction "
-                                        ++ show txHash
-                    Just (Right _) -> when poVerbose $ do
-                        loggin
-                            $ "Test-run "
-                                ++ trId
-                                ++ " has email result and is already in done state."
-            for_ pendingTests $ \(Fact testRun _ _) -> runExceptT $ do
-                let TestRunId trId = mkTestRunId testRun
-                    user = requester testRun
-                    testId = mkTestRunId testRun
-                if allowRequester poTrustedRequesters user
-                    then do
-                        loggin
-                            $ "Test-run "
-                                ++ trId
-                                ++ " is pending from trusted requester "
-                                ++ show user
-                                ++ ", starting it."
-                        withSystemTempDirectory "moog-agent-" $ \directoryPath -> do
-                            let directory = Directory directoryPath
-                            dres <- liftIO $ downloadAssets opts directory testId
-                            case dres of
-                                ValidationFailure err -> do
-                                    loggin
-                                        $ "Failed to download assets for test-run "
-                                            ++ trId
-                                            ++ ": "
-                                            ++ show err
-                                    throwE ()
-                                ValidationSuccess _ -> pure ()
-                            pushes <- liftIO $ pushTest opts directory testId
-                            case pushes of
-                                ValidationFailure err -> do
-                                    loggin
-                                        $ "Failed to push test-run "
-                                            ++ trId
-                                            ++ ": "
-                                            ++ show err
-                                    throwE ()
-                                ValidationSuccess _ -> do
-                                    loggin
-                                        $ "Pushed test-run "
-                                            ++ trId
-                                            ++ " to Antithesis."
-                        eres <- liftIO $ submitRunning opts testId
-                        case eres of
-                            ValidationFailure err -> do
-                                loggin
-                                    $ "Failed to accept test-run "
-                                        ++ trId
-                                        ++ ": "
-                                        ++ show err
-                            ValidationSuccess txHash ->
-                                loggin
-                                    $ "Accepted test-run "
-                                        ++ trId
-                                        ++ " in transaction "
-                                        ++ show txHash
-                    else
-                        loggin
-                            $ "Test-run "
-                                ++ trId
-                                ++ " is pending from untrusted requester "
-                                ++ show user
-                                ++ ", waiting for it to start running."
-            for_ runningTests $ \(Fact testRun _ _) -> do
-                let TestRunId trId = mkTestRunId testRun
-                    sameKey = (== testRun) . description
-                case find sameKey results of
-                    Just _ -> pure ()
-                    Nothing ->
-                        loggin
-                            $ "Test-run "
-                                ++ trId
-                                ++ " is still running, waiting for it to complete."
+            case apiRuns of
+                Nothing ->
+                    loggin
+                        "Skipping pending/running transitions because Antithesis API state is unavailable."
+                Just runs -> do
+                    let PollPlan{pendingActions, runningActions} =
+                            planAgentPoll
+                                (allowRequester poTrustedRequesters)
+                                runs
+                                pendingTests
+                                runningTests
+                    for_ pendingActions $ liftIO . executePendingAction opts
+                    for_ runningActions $ liftIO . executeRunningAction opts
             for_ stateChanging $ \testRun -> do
                 let TestRunId trId = mkTestRunId testRun
                 loggin
@@ -435,6 +363,133 @@ agentProcess
 
 loggin :: MonadIO m => String -> m ()
 loggin = liftIO . putStrLn
+
+executePendingAction :: ProcessOptions -> PendingAction -> IO ()
+executePendingAction opts = \case
+    PendingLaunchOnly fact@(Fact testRun _ _) -> do
+        let TestRunId trId = mkTestRunId testRun
+            user = requester testRun
+        loggin
+            $ "Test-run "
+                ++ trId
+                ++ " is pending from trusted requester "
+                ++ show user
+                ++ ", launching it without accepting on-chain in this poll."
+        launchPendingTest opts fact
+    PendingAcceptObserved (Fact testRun _ _) run -> do
+        let testId@(TestRunId trId) = mkTestRunId testRun
+        loggin
+            $ "Accepting test-run "
+                ++ trId
+                ++ " from Antithesis API run "
+                ++ T.unpack (antithesisRunId run)
+                ++ "."
+        eres <- submitRunning opts testId
+        case eres of
+            ValidationFailure err ->
+                loggin
+                    $ "Failed to accept test-run "
+                        ++ trId
+                        ++ ": "
+                        ++ show err
+            ValidationSuccess txHash ->
+                loggin
+                    $ "Accepted test-run "
+                        ++ trId
+                        ++ " in transaction "
+                        ++ show txHash
+    PendingSkipDuplicate (Fact testRun _ _) runs -> do
+        let TestRunId trId = mkTestRunId testRun
+        loggin
+            $ "Test-run "
+                ++ trId
+                ++ " has duplicate Antithesis API runs "
+                ++ runIds runs
+                ++ "; skipping launch and on-chain transition."
+    PendingSkipUntrusted (Fact testRun _ _) ->
+        loggin
+            $ "Test-run "
+                ++ trId
+                ++ " is pending from untrusted requester "
+                ++ show user
+                ++ ", waiting for it to start running."
+      where
+        TestRunId trId = mkTestRunId testRun
+        user = requester testRun
+
+executeRunningAction :: ProcessOptions -> RunningAction -> IO ()
+executeRunningAction opts = \case
+    RunningWait (Fact testRun _ _) -> do
+        let TestRunId trId = mkTestRunId testRun
+        loggin
+            $ "Test-run "
+                ++ trId
+                ++ " is still running according to Antithesis API."
+    RunningFinishObserved (Fact testRun testState _) run outcome url -> do
+        let testId@(TestRunId trId) = mkTestRunId testRun
+        loggin
+            $ "Publishing result for test-run "
+                ++ trId
+                ++ " from Antithesis API run "
+                ++ T.unpack (antithesisRunId run)
+                ++ "."
+        eres <- submitDone opts testId (testRunDuration testState) outcome url
+        case eres of
+            ValidationFailure err ->
+                loggin
+                    $ "Failed to publish result for test-run "
+                        ++ trId
+                        ++ ": "
+                        ++ show err
+            ValidationSuccess txHash ->
+                loggin
+                    $ "Published result for test-run "
+                        ++ trId
+                        ++ " in transaction "
+                        ++ show txHash
+    RunningSkipDuplicate (Fact testRun _ _) runs -> do
+        let TestRunId trId = mkTestRunId testRun
+        loggin
+            $ "Test-run "
+                ++ trId
+                ++ " has duplicate Antithesis API runs "
+                ++ runIds runs
+                ++ "; skipping finished transition."
+
+launchPendingTest
+    :: ProcessOptions
+    -> Fact TestRun (TestRunState 'PendingT)
+    -> IO ()
+launchPendingTest opts (Fact testRun _ _) = do
+    let testId@(TestRunId trId) = mkTestRunId testRun
+    withSystemTempDirectory "moog-agent-" $ \directoryPath -> do
+        let directory = Directory directoryPath
+        dres <- downloadAssets opts directory testId
+        case dres of
+            ValidationFailure err ->
+                loggin
+                    $ "Failed to download assets for test-run "
+                        ++ trId
+                        ++ ": "
+                        ++ show err
+            ValidationSuccess _ -> do
+                pushes <- pushTest opts directory testId
+                case pushes of
+                    ValidationFailure err ->
+                        loggin
+                            $ "Failed to push test-run "
+                                ++ trId
+                                ++ ": "
+                                ++ show err
+                    ValidationSuccess _ ->
+                        loggin
+                            $ "Pushed test-run "
+                                ++ trId
+                                ++ " to Antithesis; waiting for a later API observation before accepting on-chain."
+
+runIds :: [AntithesisRun] -> String
+runIds =
+    intercalate ", " . fmap (T.unpack . antithesisRunId)
 
 emailPollSummaryMessage :: EmailReadSummary -> String
 emailPollSummaryMessage
@@ -522,8 +577,10 @@ pollTestRuns
 
 submitDone
     :: ProcessOptions
+    -> TestRunId
     -> Duration
-    -> Result
+    -> Outcome
+    -> URL
     -> IO
         ( AValidationResult
             ReportFailure
@@ -531,19 +588,20 @@ submitDone
         )
 submitDone
     ProcessOptions{poAuth, poMPFSClient, poWallet, poTokenId}
+    testId
     duration
-    Result{description, link, outcome} =
+    outcome
+    url =
         cmd
             $ AgentCommand poAuth poMPFSClient
             $ Report
                 poTokenId
                 poWallet
-                (mkTestRunId description)
+                testId
                 ()
                 duration
                 outcome
-            $ URL
-            $ T.unpack link
+            $ url
 
 submitRunning
     :: ProcessOptions
