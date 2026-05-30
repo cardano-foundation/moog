@@ -6,11 +6,11 @@
 
 ## Slice 1 — Typed API observation and reconciliation core
 
-- [ ] T128-S1 Add RED unit tests for Antithesis run parsing and matching.
-- [ ] T128-S1 Add RED unit tests for pending/running reconciliation decisions.
-- [ ] T128-S1 Implement the typed observation/reconciliation module.
-- [ ] T128-S1 Run the focused unit tests and `./gate.sh`.
-- [ ] T128-S1 Commit the accepted slice with `Tasks: T128-S1`.
+- [X] T128-S1 Add RED unit tests for Antithesis run parsing and matching.
+- [X] T128-S1 Add RED unit tests for pending/running reconciliation decisions.
+- [X] T128-S1 Implement the typed observation/reconciliation module.
+- [X] T128-S1 Run the focused unit tests and `./gate.sh`.
+- [X] T128-S1 Commit the accepted slice with `Tasks: T128-S1`.
 
 ## Slice 2 — Agent configuration and direct read API client
 
