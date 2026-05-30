@@ -427,11 +427,14 @@ executeRunningAction opts = \case
                 ++ " is still running according to Antithesis API."
     RunningFinishObserved (Fact testRun testState _) run outcome url -> do
         let testId@(TestRunId trId) = mkTestRunId testRun
+            URL urlStr = url
         loggin
             $ "Publishing result for test-run "
                 ++ trId
                 ++ " from Antithesis API run "
                 ++ T.unpack (antithesisRunId run)
+                ++ " with result URL "
+                ++ urlStr
                 ++ "."
         eres <- submitDone opts testId (testRunDuration testState) outcome url
         case eres of
