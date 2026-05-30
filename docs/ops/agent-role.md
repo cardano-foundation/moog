@@ -30,6 +30,7 @@ flowchart TB
 The agent can run as an automated Docker service that continuously polls for and processes test runs.
 
 See the [Deployment Guide](deployment.md#agent-deployment) for full setup instructions including secrets, docker-compose configuration, and startup.
+For production host paths, GAR `config.json` generation, secret rotation, and post-rotation checks, see the [agent/oracle config and secrets runbook](agent-oracle-config-secrets.md).
 
 ### Automation flags
 

@@ -56,9 +56,9 @@ If `remaining` is 0 or the request returns 401, the PAT is expired or rate-limit
    ```yaml
    githubPAT: ghp_new_token_here
    ```
-3. Restart the service:
+3. Recreate the service so Docker remounts the updated secret:
    ```bash
-   docker compose restart
+   docker compose up -d --force-recreate <service>
    ```
 
 !!! warning "Rate limit is per-user, not per-token"

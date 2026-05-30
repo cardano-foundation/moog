@@ -297,7 +297,7 @@ PATs have an expiration date. When a PAT expires:
 
 1. Create a new PAT at [github.com/settings/tokens](https://github.com/settings/tokens)
 2. Update `secrets.yaml` with the new token
-3. Restart the service: `docker compose restart`
+3. Recreate the service so Docker remounts the updated secret: `docker compose up -d --force-recreate <service>`
 
 !!! tip "Set a calendar reminder"
     Create a reminder 1 week before PAT expiry to avoid service disruption.
@@ -346,10 +346,10 @@ docker compose up -d
 
 ### Configuration changes
 
-For changes to environment variables in `docker-compose.yaml`, restart the service:
+For changes to environment variables in `docker-compose.yaml`, recreate the service:
 
 ```bash
-docker compose restart
+docker compose up -d --force-recreate <service>
 ```
 
 For changes to `secrets.yaml`, the wallet file, or `docker/config.json` on the agent, follow the [stable-path rotation procedure](#rotation) above — `docker compose restart` is **not** enough because the secrets tmpfs is captured at container create time. The oracle has the same caveat: update its files in place and run `docker compose up -d --force-recreate moog-oracle`.

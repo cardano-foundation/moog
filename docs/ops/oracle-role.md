@@ -46,6 +46,7 @@ docker run ghcr.io/cardano-foundation/moog/moog-oracle:$version
 ### Running as Docker Service
 
 For production deployment, use Docker Compose. See the [Deployment Guide](deployment.md#oracle-deployment) for full setup instructions including secrets, docker-compose configuration, and startup verification.
+For production host paths, oracle wallet ownership checks, secret rotation, and post-rotation checks, see the [agent/oracle config and secrets runbook](agent-oracle-config-secrets.md).
 
 ## Running oracle commands manually
 
