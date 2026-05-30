@@ -85,6 +85,7 @@ nav:
     - Architecture: ops/architecture.md
     - Protocol: ops/protocol.md
     - Deployment: ops/deployment.md
+    - Agent/Oracle Config & Secrets: ops/agent-oracle-config-secrets.md
     - Oracle Role: ops/oracle-role.md
     - Agent Role: ops/agent-role.md
     - Antithesis Proxy: antithesis-proxy.md

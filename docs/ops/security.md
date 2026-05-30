@@ -41,7 +41,7 @@ PATs should be created with the minimum required scope:
 PATs expire. An expired PAT causes silent failures — the service continues polling but all GitHub validation fails, burning rate limit requests on 401 responses.
 
 - Set PAT expiry to **90 days** and create a calendar reminder 1 week before
-- To rotate: update `githubPAT` in `secrets.yaml` and restart the service
+- To rotate: update `githubPAT` in `secrets.yaml` and recreate the service with `docker compose up -d --force-recreate <service>`
 - See [Troubleshooting](troubleshooting.md#pat-expired-or-rate-limited) for diagnosis
 
 ### Shared rate limits
