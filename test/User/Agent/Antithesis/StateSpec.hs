@@ -8,7 +8,7 @@ where
 import Data.Aeson qualified as Aeson
 import Data.Text (Text)
 import Data.Text qualified as T
-import Test.Hspec (Spec, describe, it, shouldBe)
+import Test.Hspec (Spec, describe, expectationFailure, it, shouldBe)
 import User.Agent.Antithesis.State
     ( AntithesisRun (..)
     , AntithesisRunStatus (..)
@@ -206,6 +206,42 @@ spec =
 
             runningDecision testRun [runA, runB]
                 `shouldBe` RunningDuplicate [runA, runB]
+
+        -- Live-derived regression: the real /api/v0/runs payload captured on
+        -- 2026-05-30 for the stuck Leios run (#138). The fixture has status
+        -- "incomplete" and NO "links" key at all (not even "links": {}). This
+        -- also exercises the real matching path: leiosTestRun must hash to the
+        -- on-chain testRunId 42030238… and render to the run's description.
+        it "finishes the live Leios incomplete run with no triage report" $ do
+            decoded <-
+                Aeson.eitherDecodeFileStrict
+                    "test/data/138-leios-incomplete-no-report.json"
+            value <- either (fail . ("fixture JSON: " <>)) pure decoded
+            page <- either (fail . ("parseRunsPage: " <>)) pure (parseRunsPage value)
+            case runsPageRuns page of
+                [observed] ->
+                    runningDecision leiosTestRun [observed]
+                        `shouldBe` RunningFinish
+                            observed
+                            OutcomeFailure
+                            ( URL
+                                "antithesis://runs/4720e2cc2382cf1c8581b9da13cdd26d-54-7/no-triage-report"
+                            )
+                other -> expectationFailure $ "expected one run, got " <> show other
+
+-- | Reconstructed on-chain test-run for the live Leios fixture (#138). Its
+-- fields must hash (via mkTestRunId) to testRunId 42030238… so matchingRuns
+-- pairs it with the captured Antithesis run.
+leiosTestRun :: TestRun
+leiosTestRun =
+    TestRun
+        { platform = Platform "github"
+        , repository = GithubRepository "input-output-hk" "ouroboros-leios"
+        , directory = Directory "antithesis/testnets/leios-devnet"
+        , commitId = Commit "76f3a47d8c236b8dd208c92593be54d9fe347b1e"
+        , tryIndex = Try 1
+        , requester = GithubUsername "wolf31o2"
+        }
 
 testRun :: TestRun
 testRun =
