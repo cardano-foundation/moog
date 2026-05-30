@@ -50,7 +50,7 @@ import Servant.Client qualified as JsonClient (ClientM)
 import Servant.Client.Streaming qualified as Stream
 import Servant.API (SourceIO)
 import Data.ByteString (ByteString)
-import System.Exit (ExitCode (..), exitWith)
+import System.Exit (ExitCode (..), exitSuccess, exitWith)
 import System.IO (hPutStrLn, stderr, stdout)
 import User.Antithesis.Login
     ( defaultTokenFile
@@ -90,8 +90,12 @@ antithesisCmd = \case
     jc = antithesisProxyJsonClient
     sc = antithesisProxyStreamClient
 
--- | Run a JSON action via the regular 'Servant.Client.ClientM'.
--- Returns the decoded 'Aeson.Value' for the top-level Moog renderer.
+-- | Run a JSON action and write the response to stdout via 'Aeson.encode',
+-- then 'exitSuccess'. We bypass the canonical-JSON renderer in @Main@
+-- because 'Text.JSON.Canonical.renderCanonicalJSON' does not escape
+-- control characters inside string values, producing invalid JSON for
+-- any upstream payload whose strings contain embedded LF/CR (e.g.
+-- multi-line property descriptions).
 runJson :: JsonClient.ClientM Aeson.Value -> IO Aeson.Value
 runJson action = do
     proxyUrl <- proxyUrlFromEnv
@@ -102,14 +106,16 @@ runJson action = do
             (defaultTokenFile >>= evictCachedToken)
             action
     case result of
-        Right value -> pure value
+        Right value -> do
+            LBS8.putStrLn (Aeson.encode value)
+            exitSuccess
         Left err -> do
             hPutStrLn stderr $ renderClientErr err
             exitWith $ ExitFailure $ clientErrExitCode err
 
 -- | Drain a streaming action's 'SourceIO ByteString' directly to
--- stdout, byte-for-byte. Returns 'Aeson.Null' so the top-level renderer
--- emits nothing extra (the streamed bytes are the output).
+-- stdout, byte-for-byte, then 'exitSuccess' so the top-level renderer
+-- does not append a trailing @null@.
 runStream :: Stream.ClientM (SourceIO ByteString) -> IO Aeson.Value
 runStream action = do
     proxyUrl <- proxyUrlFromEnv
@@ -121,7 +127,7 @@ runStream action = do
             action
             (BS.hPut stdout)
     case result of
-        Right () -> pure Aeson.Null
+        Right () -> exitSuccess
         Left err -> do
             hPutStrLn stderr $ renderClientErr err
             exitWith $ ExitFailure $ clientErrExitCode err
