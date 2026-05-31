@@ -1,0 +1,32 @@
+# Tasks: Dev-Assets Release Standard
+
+## Slice 1 — Planning and Decision Gate
+
+- [X] T135-S1 Write the feature specification, implementation plan, and slice task list.
+- [X] T135-S1 Write Q-001 through Q-004 for parent-arbitrated release decisions.
+- [X] T135-S1 Commit the planning artifacts with `Tasks: T135-S1`.
+
+## Slice 2 — Flake Release Packages
+
+- [ ] T135-S2 Add pinned `dev-assets` and `bundlers` inputs to `flake.nix`.
+- [ ] T135-S2 Replace bespoke Linux/Darwin artifact imports with dev-assets lib outputs for `moog`, `moog-oracle`, and `moog-agent`.
+- [ ] T135-S2 Expose Linux release/dev packages and the Linux artifact smoke app.
+- [ ] T135-S2 Expose Darwin release/dev Homebrew packages.
+- [ ] T135-S2 Update `flake.lock` and prove flake evaluation.
+- [ ] T135-S2 Commit the flake package slice with `Tasks: T135-S2`.
+
+## Slice 3 — Release Workflows and CI Gate
+
+- [ ] T135-S3 Add Linux release workflow covering x86_64 and aarch64 for the three release executables.
+- [ ] T135-S3 Add Darwin/Homebrew workflow for the three release executables.
+- [ ] T135-S3 Bump existing `paolino/dev-assets/*` action pins to the approved revision.
+- [ ] T135-S3 Add the aarch64 cached-GHC dry-run gate to CI.
+- [ ] T135-S3 Prove workflow YAML and flake references evaluate locally where possible.
+- [ ] T135-S3 Commit the workflow slice with `Tasks: T135-S3`.
+
+## Slice 4 — Tarball Disposition, Verification, and PR
+
+- [ ] T135-S4 Apply the parent-approved old tarball disposition.
+- [ ] T135-S4 Run final local gates and record any CI-only coverage.
+- [ ] T135-S4 Push the branch and open a draft PR with release/tarball disposition documented.
+- [ ] T135-S4 Commit any final compatibility or documentation edits with `Tasks: T135-S4`.
