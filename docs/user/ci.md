@@ -96,7 +96,8 @@ We then identify the latest available release of Moog,
         repository: cardano-foundation/moog
 ```
 
-retrieve it from GitHub packages,
+retrieve the Linux x86_64 musl artifact for the `moog` executable from the
+GitHub release,
 
 ```
     - name: Download moog from latest release
@@ -104,12 +105,15 @@ retrieve it from GitHub packages,
       with:
         repository: cardano-foundation/moog
         tag: ${{ steps.moog.outputs.release }}
-        fileName: "moog-*-linux64.tar.gz"
+        fileName: "moog-*-x86_64-linux-musl.tar.gz"
         out-file-path: "."
         extract: true
 ```
 
-and ultimately install `moog` executable to be available for later steps.
+and ultimately install the `moog` executable to be available for later steps.
+Release assets are now published per executable. Use the corresponding
+`moog-oracle-*-x86_64-linux-musl.tar.gz` or
+`moog-agent-*-x86_64-linux-musl.tar.gz` asset if your CI needs those commands.
 
 ```
     - name: Install moog

@@ -15,9 +15,32 @@ jobs:
     steps:
       - run: sudo rm -rf /opt&
       - uses: actions/checkout@v6
-      - uses: paolino/dev-assets/setup-nix@v0.0.1
+      - uses: paolino/dev-assets/setup-nix@b901b08ce8d2e290d84e323486f7fa216b190df9
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: Run moog unit tests
         run: nix --quiet run .#unit-tests
+
+  aarch64-eval:
+    name: aarch64-linux evaluates (GHC cached)
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+      - uses: paolino/dev-assets/setup-nix@b901b08ce8d2e290d84e323486f7fa216b190df9
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: Assert the aarch64 GHC is cached (no source build)
+        run: |
+          set -euo pipefail
+          plan="$(nix build --dry-run .#packages.aarch64-linux.moog 2>&1 || true)"
+          printf '%s\n' "$plan"
+          built_ghc="$(printf '%s\n' "$plan" \
+            | awk '/will be fetched/{f=0} /will be built:/{f=1;next} f' \
+            | grep -E '/nix/store/[a-z0-9]+-ghc-[0-9]' || true)"
+          if [ -n "$built_ghc" ]; then
+            echo "::error::aarch64 GHC would be built from source (uncached):"
+            printf '  %s\n' "$built_ghc"
+            exit 1
+          fi
+          echo "aarch64 GHC is cached (no source build planned)"

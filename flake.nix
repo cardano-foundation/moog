@@ -124,11 +124,7 @@
             else
               null;
           mkExeSmokeCommand = spec: ''
-            set +e
-            ${spec.name} >/tmp/${spec.name}.out 2>&1
-            status="$?"
-            set -e
-            test "$status" -ne 0
+            ${spec.name} --help >/tmp/${spec.name}.out 2>&1
             grep -F -- "Usage:" /tmp/${spec.name}.out >/dev/null
           '';
           mkExeLinuxRelease =
@@ -159,7 +155,7 @@
                 };
                 executableNames = [ spec.name ];
                 formulaTest = ''
-                  output = shell_output("#{bin}/${spec.name} 2>&1", 1)
+                  output = shell_output("#{bin}/${spec.name} --help")
                   assert_match "Usage:", output
                 '';
                 smokeCommands = [ (mkExeSmokeCommand spec) ];

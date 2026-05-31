@@ -342,9 +342,11 @@ moog-version:
 release-linux:
     #!/usr/bin/env bash
     set -euo pipefail
-    CI/release.sh "$(just moog-version)" linux64
+    echo "Manual linux64 tarball releases are retired."
+    echo "Push a v* tag to run .github/workflows/release.yml."
 
 release-macos:
     #!/usr/bin/env bash
     set -euo pipefail
-    CI/release.sh "$(just moog-version)" darwin64
+    echo "Manual darwin64 tarball releases are retired."
+    echo "Push a v* tag to run .github/workflows/darwin-release.yml."

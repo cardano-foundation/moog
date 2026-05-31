@@ -1,0 +1,135 @@
+name: Darwin Release
+
+on:
+  push:
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/darwin-release.yml"
+      - "flake.nix"
+      - "flake.lock"
+      - "nix/**"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Release mode"
+        type: choice
+        options: [ "release", "dev-homebrew" ]
+        default: "release"
+      tag:
+        description: "Existing tag to build for release mode, for example v0.5.1.2"
+        required: false
+        type: string
+      publish:
+        description: "Release mode only: upload to the GitHub release and update Homebrew"
+        type: choice
+        options: [ "no", "yes" ]
+        default: "no"
+      update_tap:
+        description: "Dev Homebrew mode only: update lambdasistemi/homebrew-tap"
+        type: choice
+        options: [ "yes", "no" ]
+        default: "yes"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: >-
+    darwin-release-${{
+      github.ref_type == 'tag' && github.ref_name
+      || inputs.tag
+      || github.ref
+    }}-${{ inputs.mode || github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    name: Build aarch64-darwin ${{ matrix.executable.name }} artifacts
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        executable:
+          - name: moog
+            formula-class: Moog
+            dev-tag: dev-homebrew-moog
+          - name: moog-oracle
+            formula-class: MoogOracle
+            dev-tag: dev-homebrew-moog-oracle
+          - name: moog-agent
+            formula-class: MoogAgent
+            dev-tag: dev-homebrew-moog-agent
+    env:
+      TAG: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+      MODE: >-
+        ${{
+          github.event_name == 'pull_request' && 'dev-homebrew'
+          || inputs.mode
+          || 'release'
+        }}
+      PUBLISH: >-
+        ${{
+          github.event_name == 'push'
+          || (inputs.mode != 'dev-homebrew' && inputs.publish == 'yes')
+        }}
+      UPDATE_TAP: ${{ inputs.update_tap || 'yes' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: >-
+            ${{
+              github.ref_type == 'tag' && github.ref_name
+              || inputs.tag
+              || github.ref
+            }}
+
+      - uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            extra-substituters = https://cache.iog.io https://paolino.cachix.org
+            extra-trusted-public-keys = hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ= paolino.cachix.org-1:ecmgO3CXdgSWA2cHlm4srknd/cLFMLmK3i3NrzeDFaE=
+
+      - uses: cachix/cachix-action@v17
+        with:
+          name: paolino
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build, smoke-test, and optionally publish Darwin Homebrew artifacts
+        uses: paolino/dev-assets/darwin-homebrew-release@b901b08ce8d2e290d84e323486f7fa216b190df9
+        with:
+          mode: ${{ env.MODE }}
+          tag: ${{ env.TAG }}
+          publish: ${{ env.PUBLISH }}
+          update-tap: ${{ env.UPDATE_TAP }}
+          dev-tag: ${{ matrix.executable.dev-tag }}
+          release-package: ${{ matrix.executable.name }}-darwin-release-artifacts
+          dev-package: ${{ matrix.executable.name }}-darwin-dev-homebrew-artifacts
+          release-formula: ${{ matrix.executable.name }}.rb
+          dev-formula: ${{ matrix.executable.name }}-dev.rb
+          release-artifact-name: darwin-release-bundle-${{ matrix.executable.name }}
+          dev-artifact-name: darwin-dev-homebrew-artifacts-${{ matrix.executable.name }}
+          tarball-pattern: ${{ matrix.executable.name }}-*-aarch64-darwin.tar.gz
+          installed-commands: ${{ matrix.executable.name }}
+          cleanup-formulae: ${{ matrix.executable.name }} ${{ matrix.executable.name }}-dev
+          tap-name: lambdasistemi/tap
+          tap-repository: lambdasistemi/homebrew-tap
+          github-token: ${{ github.token }}
+          tap-token: ${{ secrets.TAP_TOKEN }}
+          release-check-command: 'test "$(nix eval .#version --raw)" = "${TAG#v}"'
+          release-title: ${{ matrix.executable.name }} ${{ env.TAG }}
+          dev-release-title: ${{ matrix.executable.name }} dev Homebrew
+          tarball-smoke-script: |
+            ${{ matrix.executable.name }} --help >/tmp/exe.out 2>&1
+            cat /tmp/exe.out
+            grep -F -- "Usage:" /tmp/exe.out >/dev/null
+          brew-smoke-script: |
+            ${{ matrix.executable.name }} --help >/tmp/exe.out 2>&1
+            cat /tmp/exe.out
+            grep -F -- "Usage:" /tmp/exe.out >/dev/null
+            otool -L "$(which ${{ matrix.executable.name }})"
