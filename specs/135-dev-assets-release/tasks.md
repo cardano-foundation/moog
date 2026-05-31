@@ -27,6 +27,6 @@
 
 ## Slice 4 — Tarball Disposition, Verification, and PR
 
-- [ ] T135-S4 Run final local gates and record any CI-only coverage.
-- [ ] T135-S4 Push the branch and open a draft PR with release/tarball disposition documented.
-- [ ] T135-S4 Commit any final compatibility or documentation edits with `Tasks: T135-S4`.
+- [X] T135-S4 Run final local gates and record any CI-only coverage.
+- [X] T135-S4 Push the branch and open a draft PR with release/tarball disposition documented.
+- [X] T135-S4 Commit any final compatibility or documentation edits with `Tasks: T135-S4`.
