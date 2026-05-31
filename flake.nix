@@ -2,14 +2,18 @@
   description = "Antithesis CLI";
   nixConfig = {
     extra-substituters = [ "https://cache.iog.io" ];
-    extra-trusted-public-keys =
-      [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
+    extra-trusted-public-keys = [ "hydra.iohk.io:f/Ea+s+dFdN+3Y/G+FDgSq+a5NEWhJGzdjvKNGv0/EQ=" ];
   };
   inputs = {
     haskellNix.url = "github:input-output-hk/haskell.nix";
     nixpkgs.follows = "haskellNix/nixpkgs-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     flake-utils.url = "github:hamishmack/flake-utils/hkm/nested-hydraJobs";
+    bundlers = {
+      url = "github:NixOS/bundlers";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    dev-assets.url = "github:paolino/dev-assets/b901b08ce8d2e290d84e323486f7fa216b190df9";
     iohkNix = {
       url = "github:input-output-hk/iohk-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -25,8 +29,19 @@
     asciinema.url = "github:paolino/dev-assets?dir=asciinema";
   };
 
-  outputs = inputs@{ self, nixpkgs, flake-utils, haskellNix, CHaP, iohkNix
-    , cardano-node-runtime, mkdocs, asciinema, ... }:
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      flake-utils,
+      haskellNix,
+      CHaP,
+      iohkNix,
+      cardano-node-runtime,
+      mkdocs,
+      asciinema,
+      ...
+    }:
     let
       lib = nixpkgs.lib;
       version = self.dirtyShortRev or self.shortRev;
@@ -40,18 +55,18 @@
         };
       };
 
-      perSystem = system:
+      perSystem =
+        system:
         let
           isLinux = builtins.match ".*-linux" system != null;
           isDarwin = builtins.match ".*-darwin" system != null;
 
           node-project =
-            if builtins.hasAttr system (cardano-node-runtime.project or { })
-            then cardano-node-runtime.project.${system}
-            else null;
-          cardano-cli =
-            if node-project != null then node-project.pkgs.cardano-cli
-            else null;
+            if builtins.hasAttr system (cardano-node-runtime.project or { }) then
+              cardano-node-runtime.project.${system}
+            else
+              null;
+          cardano-cli = if node-project != null then node-project.pkgs.cardano-cli else null;
           pkgs = import nixpkgs {
             overlays = [
               iohkNix.overlays.crypto # modified crypto libs
@@ -71,71 +86,172 @@
             asciinema = asciinema.packages.${system};
           };
 
-          linux-artifacts =
-            if system == "x86_64-linux"
-            then import ./nix/moog-linux-artifacts.nix {
-              inherit pkgs node-project version project;
+          packageVersion =
+            let
+              versionLines = builtins.filter (lib.hasPrefix "version:") (
+                lib.splitString "\n" (builtins.readFile ./moog.cabal)
+              );
+            in
+            builtins.elemAt (builtins.match "version:[[:space:]]*([^[:space:]]+)" (builtins.head versionLines)) 0;
+          sourceRevision = self.shortRev or (self.dirtyShortRev or "dirty");
+          devArtifactVersion = "${packageVersion}-${sourceRevision}";
+          mkDarwinHomebrewBundle = inputs.dev-assets.lib.mkDarwinHomebrewBundle { inherit pkgs; };
+          exeSpecs = [
+            {
+              name = "moog";
+              package = project.packages.moog;
+              desc = "CLI to administer Antithesis test execution through Cardano";
+              formulaClass = "Moog";
             }
-            else { packages = { }; };
-
-          linux-aarch64-artifacts =
-            if system == "aarch64-linux"
-            then import ./nix/moog-linux-aarch64-artifacts.nix {
-              inherit pkgs version project;
+            {
+              name = "moog-oracle";
+              package = project.packages.moog-oracle;
+              desc = "Moog oracle service for Antithesis test validation";
+              formulaClass = "MoogOracle";
             }
-            else { packages = { }; };
-
-          macos-artifacts =
-            if isDarwin
-            then
-              let
-                rewrite-libs = import ./CI/rewrite-libs/rewrite-libs.nix {
-                  inherit system;
-                  inherit (inputs) nixpkgs flake-utils haskellNix;
-                };
-              in import ./nix/moog-macos-artifacts.nix {
-                inherit pkgs project node-project version;
-                rewrite-libs = rewrite-libs.packages.default;
+            {
+              name = "moog-agent";
+              package = project.packages.moog-agent;
+              desc = "Moog agent service for Antithesis result publication";
+              formulaClass = "MoogAgent";
+            }
+          ];
+          muslComponents =
+            if system == "x86_64-linux" then
+              project.musl64.moog.components
+            else if system == "aarch64-linux" then
+              project.aarch64-musl.moog.components
+            else
+              null;
+          mkExeSmokeCommand = spec: ''
+            set +e
+            ${spec.name} >/tmp/${spec.name}.out 2>&1
+            status="$?"
+            set -e
+            test "$status" -ne 0
+            grep -F -- "Usage:" /tmp/${spec.name}.out >/dev/null
+          '';
+          mkExeLinuxRelease =
+            spec: extraArgs:
+            inputs.dev-assets.lib.mkLinuxArtifacts (
+              {
+                inherit pkgs system;
+                executableName = spec.name;
+                version = packageVersion;
+                glibcPackage = spec.package;
+                muslPackage = muslComponents.exes.${spec.name};
+                bundlers = inputs.bundlers;
               }
-            else { packages = { }; };
-
-          docker = if isLinux then {
-            packages = {
-              moog-oracle-docker-image = import ./nix/moog-oracle-docker.nix {
-                inherit pkgs version project;
-              };
-              moog-agent-docker-image = import ./nix/moog-agent-docker.nix {
-                inherit pkgs project version;
-              };
-              moog-antithesis-proxy-docker-image =
-                import ./nix/moog-antithesis-proxy-docker.nix {
-                  inherit pkgs project version;
+              // extraArgs
+            );
+          mkExeDarwinHomebrewBundle =
+            spec: args:
+            mkDarwinHomebrewBundle (
+              {
+                pname = spec.name;
+                version = packageVersion;
+                owner = "cardano-foundation";
+                repo = "moog";
+                desc = spec.desc;
+                formulaClass = spec.formulaClass;
+                executables = {
+                  ${spec.name} = spec.package;
                 };
-              moog-docker-image = import ./nix/moog-docker.nix {
-                inherit pkgs version project;
+                executableNames = [ spec.name ];
+                formulaTest = ''
+                  output = shell_output("#{bin}/${spec.name} 2>&1", 1)
+                  assert_match "Usage:", output
+                '';
+                smokeCommands = [ (mkExeSmokeCommand spec) ];
+              }
+              // args
+            );
+          linuxReleasePackages = lib.optionalAttrs pkgs.stdenv.isLinux (
+            (lib.listToAttrs (
+              lib.concatMap (spec: [
+                {
+                  name = "${spec.name}-linux-release-artifacts";
+                  value = mkExeLinuxRelease spec { };
+                }
+                {
+                  name = "${spec.name}-linux-dev-release-artifacts";
+                  value = mkExeLinuxRelease spec {
+                    artifactVersion = devArtifactVersion;
+                  };
+                }
+              ]) exeSpecs
+            ))
+            // {
+              linux-artifact-smoke = inputs.dev-assets.lib.mkLinuxArtifactSmoke {
+                inherit pkgs system;
               };
-              moog-docker-light-image = import ./nix/moog-docker-light.nix {
-                inherit pkgs version project;
-              };
-            };
-          } else { packages = { }; };
+            }
+          );
+          darwinReleasePackages = lib.optionalAttrs pkgs.stdenv.isDarwin (
+            lib.listToAttrs (
+              lib.concatMap (spec: [
+                {
+                  name = "${spec.name}-darwin-release-artifacts";
+                  value = mkExeDarwinHomebrewBundle spec { };
+                }
+                {
+                  name = "${spec.name}-darwin-dev-homebrew-artifacts";
+                  value = mkExeDarwinHomebrewBundle spec {
+                    artifactVersion = devArtifactVersion;
+                    releaseTag = "dev-homebrew-${spec.name}";
+                    formulaName = "${spec.name}-dev";
+                    formulaClass = "${spec.formulaClass}Dev";
+                    formulaVersion = devArtifactVersion;
+                  };
+                }
+              ]) exeSpecs
+            )
+          );
 
-          info.packages = { inherit version; };
+          docker =
+            if isLinux then
+              {
+                packages = {
+                  moog-oracle-docker-image = import ./nix/moog-oracle-docker.nix {
+                    inherit pkgs version project;
+                  };
+                  moog-agent-docker-image = import ./nix/moog-agent-docker.nix {
+                    inherit pkgs project version;
+                  };
+                  moog-antithesis-proxy-docker-image = import ./nix/moog-antithesis-proxy-docker.nix {
+                    inherit pkgs project version;
+                  };
+                  moog-docker-image = import ./nix/moog-docker.nix {
+                    inherit pkgs version project;
+                  };
+                  moog-docker-light-image = import ./nix/moog-docker-light.nix {
+                    inherit pkgs version project;
+                  };
+                };
+              }
+            else
+              { packages = { }; };
+
+          info.packages = {
+            version = packageVersion;
+          };
           fullPackages = lib.mergeAttrsList [
             project.packages
-            linux-artifacts.packages
-            linux-aarch64-artifacts.packages
-            macos-artifacts.packages
+            linuxReleasePackages
+            darwinReleasePackages
             info.packages
             docker.packages
           ];
 
-        in {
+        in
+        {
 
-          packages = fullPackages // { default = project.packages.moog; };
+          packages = fullPackages // {
+            default = project.packages.moog;
+          };
           inherit (project) devShells;
         };
 
-    in flake-utils.lib.eachSystem
-      [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] perSystem;
+    in
+    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" ] perSystem;
 }

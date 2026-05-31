@@ -8,12 +8,12 @@
 
 ## Slice 2 — Flake Release Packages
 
-- [ ] T135-S2 Add pinned `dev-assets` and `bundlers` inputs to `flake.nix`.
-- [ ] T135-S2 Replace bespoke Linux/Darwin artifact imports with dev-assets lib outputs for `moog`, `moog-oracle`, and `moog-agent`.
-- [ ] T135-S2 Expose Linux release/dev packages and the Linux artifact smoke app.
-- [ ] T135-S2 Expose Darwin release/dev Homebrew packages.
-- [ ] T135-S2 Update `flake.lock` and prove flake evaluation.
-- [ ] T135-S2 Commit the flake package slice with `Tasks: T135-S2`.
+- [X] T135-S2 Add pinned `dev-assets` and `bundlers` inputs to `flake.nix`.
+- [X] T135-S2 Replace bespoke Linux/Darwin artifact imports with dev-assets lib outputs for `moog`, `moog-oracle`, and `moog-agent`.
+- [X] T135-S2 Expose Linux release/dev packages and the Linux artifact smoke app.
+- [X] T135-S2 Expose Darwin release/dev Homebrew packages.
+- [X] T135-S2 Update `flake.lock` and prove flake evaluation.
+- [X] T135-S2 Commit the flake package slice with `Tasks: T135-S2`.
 
 ## Slice 3 — Release Workflows and CI Gate
 
