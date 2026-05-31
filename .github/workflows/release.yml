@@ -74,11 +74,11 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag || github.ref }}
 
-      - uses: paolino/dev-assets/setup-nix@b901b08ce8d2e290d84e323486f7fa216b190df9
+      - uses: paolino/dev-assets/setup-nix@v0.1.0
         with:
           cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      - uses: paolino/dev-assets/linux-release@b901b08ce8d2e290d84e323486f7fa216b190df9
+      - uses: paolino/dev-assets/linux-release@v0.1.0
         with:
           mode: >-
             ${{
