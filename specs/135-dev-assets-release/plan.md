@@ -16,8 +16,9 @@ The Linux packages will call `inputs.dev-assets.lib.mkLinuxArtifacts` with:
 - `bundlers = inputs.bundlers`
 
 The Darwin packages will call `inputs.dev-assets.lib.mkDarwinHomebrewBundle`
-per executable. Homebrew tap, tarball disposition, and any release-asset
-integration details are parent-arbitrated through `Q-001` through `Q-004`.
+per executable. Parent answers selected `lambdasistemi/tap`, independent Linux
+and Darwin release workflows, clean replacement of the old combined tarballs,
+and stop-and-Q-file handling for any dev-assets API gap.
 
 ## Slice Breakdown
 
@@ -40,9 +41,8 @@ dry-run gate to CI.
 
 ### Slice 4: Tarball Compatibility and PR Polish
 
-Apply the parent-approved old-tarball disposition, update any workflow names or
-README badges affected by the release workflow replacement, run final local
-gates, push the branch, and open the draft PR.
+Run final local gates, push the branch, and open the draft PR with the breaking
+release-asset-layout migration called out prominently.
 
 ## Validation
 
@@ -59,9 +59,8 @@ gates, push the branch, and open the draft PR.
 - The current branch does not contain a `release-tag.yaml`; only docker-image
   and tarball workflows are present. The release-asset integration answer must
   confirm whether adding independent release workflows is sufficient.
-- Removing old `linux64.tarball`, `linux-aarch64.tarball`, and
-  `darwin64.tarball` outputs may break external consumers unless the parent
-  approves removal or aliases.
+- Removing old combined tarball outputs is an intentional breaking release asset
+  layout change; the PR body must call out the downstream migration.
 - Darwin bundle generation can only be fully proven on macOS CI.
 - A dev-assets lib gap must be escalated through `Q-004`; this ticket must not
   patch the shared repo directly.

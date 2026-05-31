@@ -1,0 +1,105 @@
+name: Linux Release
+
+on:
+  push:
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - ".github/workflows/release.yml"
+      - "flake.nix"
+      - "flake.lock"
+      - "nix/**"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Release mode"
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - dev-linux
+      tag:
+        description: "Existing release tag, for example v0.5.1.2"
+        required: false
+        type: string
+      publish:
+        description: "Upload release assets when mode=release"
+        required: true
+        default: "no"
+        type: choice
+        options:
+          - "no"
+          - "yes"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: linux-release-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name || inputs.tag || inputs.mode }}
+  cancel-in-progress: false
+
+jobs:
+  linux-bundles:
+    name: Build Linux ${{ matrix.executable.name }} (${{ matrix.arch.id }})
+    runs-on: ${{ matrix.arch.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - id: x86_64
+            runner: ubuntu-latest
+          - id: aarch64
+            runner: ubuntu-24.04-arm
+        executable:
+          - name: moog
+            release-output: moog-linux-release-artifacts
+            dev-output: moog-linux-dev-release-artifacts
+            dev-tag: dev-linux-moog
+          - name: moog-oracle
+            release-output: moog-oracle-linux-release-artifacts
+            dev-output: moog-oracle-linux-dev-release-artifacts
+            dev-tag: dev-linux-moog-oracle
+          - name: moog-agent
+            release-output: moog-agent-linux-release-artifacts
+            dev-output: moog-agent-linux-dev-release-artifacts
+            dev-tag: dev-linux-moog-agent
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag || github.ref }}
+
+      - uses: paolino/dev-assets/setup-nix@b901b08ce8d2e290d84e323486f7fa216b190df9
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - uses: paolino/dev-assets/linux-release@b901b08ce8d2e290d84e323486f7fa216b190df9
+        with:
+          mode: >-
+            ${{
+              github.event_name == 'pull_request' && 'dev-linux'
+              || inputs.mode
+              || 'release'
+            }}
+          tag: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+          publish: >-
+            ${{
+              github.event_name == 'push' && 'yes'
+              || inputs.publish
+              || 'no'
+            }}
+          release-output: ${{ matrix.executable.release-output }}
+          dev-output: ${{ matrix.executable.dev-output }}
+          executable-name: ${{ matrix.executable.name }}
+          usage-grep: "Missing"
+          dev-tag: ${{ matrix.executable.dev-tag }}
+          release-version-command: "nix eval .#version --raw"
+          release-check-command: 'test "$(nix eval .#version --raw)" = "${TAG#v}"'
+          release-title: moog ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag }}
+          dev-release-title: ${{ matrix.executable.name }} dev Linux bundles
+          github-token: ${{ github.token }}

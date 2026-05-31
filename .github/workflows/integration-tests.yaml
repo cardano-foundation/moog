@@ -40,7 +40,7 @@ jobs:
               sleep 2
           done
 
-      - uses: paolino/dev-assets/setup-nix@v0.0.1
+      - uses: paolino/dev-assets/setup-nix@b901b08ce8d2e290d84e323486f7fa216b190df9
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 

@@ -17,16 +17,16 @@
 
 ## Slice 3 — Release Workflows and CI Gate
 
-- [ ] T135-S3 Add Linux release workflow covering x86_64 and aarch64 for the three release executables.
-- [ ] T135-S3 Add Darwin/Homebrew workflow for the three release executables.
-- [ ] T135-S3 Bump existing `paolino/dev-assets/*` action pins to the approved revision.
-- [ ] T135-S3 Add the aarch64 cached-GHC dry-run gate to CI.
-- [ ] T135-S3 Prove workflow YAML and flake references evaluate locally where possible.
-- [ ] T135-S3 Commit the workflow slice with `Tasks: T135-S3`.
+- [X] T135-S3 Add Linux release workflow covering x86_64 and aarch64 for the three release executables.
+- [X] T135-S3 Add Darwin/Homebrew workflow for the three release executables.
+- [X] T135-S3 Bump existing `paolino/dev-assets/*` action pins to the approved revision.
+- [X] T135-S3 Add the aarch64 cached-GHC dry-run gate to CI.
+- [X] T135-S3 Retire `tarballs.yaml`, redirect `CI/release.sh` and `justfile`, and update downstream CI docs.
+- [X] T135-S3 Prove workflow YAML and workflow expressions locally where possible.
+- [X] T135-S3 Commit the workflow slice with `Tasks: T135-S3`.
 
 ## Slice 4 — Tarball Disposition, Verification, and PR
 
-- [ ] T135-S4 Apply the parent-approved old tarball disposition.
 - [ ] T135-S4 Run final local gates and record any CI-only coverage.
 - [ ] T135-S4 Push the branch and open a draft PR with release/tarball disposition documented.
 - [ ] T135-S4 Commit any final compatibility or documentation edits with `Tasks: T135-S4`.
