@@ -376,8 +376,8 @@
       },
       "original": {
         "owner": "paolino",
+        "ref": "v0.1.0",
         "repo": "dev-assets",
-        "rev": "b901b08ce8d2e290d84e323486f7fa216b190df9",
         "type": "github"
       }
     },

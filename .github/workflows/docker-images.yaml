@@ -13,7 +13,7 @@ jobs:
     steps:
       - run: sudo rm -rf /opt&
       - uses: actions/checkout@v6
-      - uses: paolino/dev-assets/setup-nix@b901b08ce8d2e290d84e323486f7fa216b190df9
+      - uses: paolino/dev-assets/setup-nix@v0.1.0
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build oracle docker image
@@ -67,7 +67,7 @@ jobs:
     steps:
       - run: sudo rm -rf /opt&
       - uses: actions/checkout@v6
-      - uses: paolino/dev-assets/setup-nix@b901b08ce8d2e290d84e323486f7fa216b190df9
+      - uses: paolino/dev-assets/setup-nix@v0.1.0
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - name: Build oracle docker image
