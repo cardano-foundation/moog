@@ -1,5 +1,19 @@
 # Changelog for moog-cli
 
+### v0.5.1.3 - 2026-06-01
+
+#### Fixed
+
+- **Removed the broken oracle `token boot` / `token end` commands.**
+  These were migrated to the new facts-only MPFS endpoints (`GET
+  /status`, `POST /facts/boot`, `POST /facts/end`), which the production
+  MPFS server (`https://mpfs.plutimus.com`) does not serve — every
+  invocation returned 404. The operator CLI no longer exposes them, so
+  the release advertises only operations that work against the
+  production server. The existing moog token and all other oracle,
+  requester, and agent operations are unaffected. The facts-only cutover
+  for the whole API continues on a dedicated `moog-v2` branch. (#144)
+
 ### v0.5.1.2 - 2026-05-30
 
 #### Fixed
