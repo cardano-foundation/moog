@@ -31,7 +31,4 @@ tokenCommandParser =
                 <$> tokenIdOption
                 <*> walletOption
                 <*> many outputReferenceParser
-        , command "boot" "Boot a new token" $ Box . BootToken <$> walletOption
-        , command "end" "End the token"
-            $ fmap Box . EndToken <$> tokenIdOption <*> walletOption
         ]
