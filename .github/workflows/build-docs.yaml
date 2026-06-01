@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - moog-v2
 
 jobs:
   docs:
