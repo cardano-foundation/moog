@@ -1,6 +1,17 @@
 !!! warning
     Moog is still at an early stage and experimental. Contributions and ideas are [most welcome](https://github.com/cardano-foundation/moog/).
 
+!!! info "MPFS v2 migration in progress"
+    moog is migrating from the legacy MPFS HTTP API to the new facts-only MPFS
+    service ([cardano-mpfs-offchain](https://github.com/lambdasistemi/cardano-mpfs-offchain)),
+    where the server returns indexed *facts* and the client builds, signs, and
+    submits transactions. The current release (**v0.5.1.3**) runs against the
+    **legacy** MPFS server in production; the oracle `token boot` / `token end`
+    commands were removed because they already targeted the new API, which
+    production does not yet serve. The full client-side facts cutover happens on
+    a long-lived **`moog-v2`** branch and will land as a single coordinated
+    release. **`main` is frozen during the migration.**
+
 # Moog
 
 **Testing Cardano on Cardano with Antithesis**
