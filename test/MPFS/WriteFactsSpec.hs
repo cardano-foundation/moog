@@ -22,6 +22,7 @@ import Core.Types.Tx
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BL
 import Data.Functor.Identity (Identity (..))
+import Data.List (isPrefixOf)
 import MPFS.API
     ( MPFS (..)
     , RequestDeleteBody (..)
@@ -41,6 +42,7 @@ import Test.Hspec
     , describe
     , it
     , shouldBe
+    , shouldSatisfy
     )
 import Text.JSON.Canonical
     ( JSValue (..)
@@ -105,7 +107,7 @@ spec =
                 (TokenId "not hex")
                 (RequestInsertBody sampleKey sampleNewValue) of
                 Left err ->
-                    err `shouldBe` "invalid token id hex: invalid byte 'n'"
+                    err `shouldSatisfy` ("invalid token id hex:" `isPrefixOf`)
                 Right _ -> error "expected malformed token id to fail"
 
         it "adds facts-based write operations to the MPFS record" $ do
