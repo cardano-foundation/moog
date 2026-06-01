@@ -11,11 +11,13 @@ packages:
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/cardano-mpfs-offchain.git
-  tag: c33c1bdd658b725965c9f404ec0477dabea70de3
-  --sha256: 1almz2il76d4q3r5wby8lp5716xy3kz994n2idarqxm4z5qizih9
+  tag: c9eb9ea9acc6b928ec30d4fd6d88180811876147
+  --sha256: 156p4gl8lc8chgwr8arns12f109fafpan31l5dcyhbcyiy8nw499
   subdir:
     cardano-mpfs-api
+    cardano-mpfs-cage-tx
     cardano-mpfs-client
+    cardano-mpfs-verify
 
 repository cardano-haskell-packages
   url: https://chap.intersectmbo.org/

@@ -1,7 +1,7 @@
 # Tasks — #147 facts-only foundation
 
 ## Slice S1 — pin cardano-mpfs-offchain to latest main
-- [ ] T147-S1 Bump `cabal.project` offchain tag to `c9eb9ea` + nix32 `--sha256:`; add new `cage-tx` subdir if present; `./gate.sh` green.
+- [X] T147-S1 Bump `cabal.project` offchain tag to `c9eb9ea` + nix32 `--sha256:`; add new `cage-tx` subdir if present; `./gate.sh` green.
 
 ## Slice S2 — token reads on /tokens/*
 - [ ] T147-S2 RED unit test for `/tokens/:id` (`TokenResponse`) + `/tokens/:id/facts/:key` decode; GREEN switch `getToken`/`getTokenFacts` to the new endpoints; `./gate.sh` green.
