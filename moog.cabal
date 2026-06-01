@@ -134,6 +134,9 @@ library
     MPFS.Cage
     MPFS.Canary
     MPFS.End
+    MPFS.Request
+    MPFS.Retract
+    MPFS.Update
     Options
     Oracle.Cli
     Oracle.Config.Cli
@@ -498,6 +501,7 @@ test-suite unit-tests
     MockMPFS
     MPFS.BootSpec
     MPFS.CanarySpec
+    MPFS.WriteFactsSpec
     Oracle.Config.TypesSpec
     Oracle.TypesSpec
     Oracle.Validate.Requests.ConfigSpec
