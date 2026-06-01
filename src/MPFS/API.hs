@@ -3,10 +3,15 @@ module MPFS.API
     , TokenAPI
     , SubmitV2Body (..)
     , requestInsert
+    , requestInsertFromFacts
     , requestDelete
+    , requestDeleteFromFacts
     , requestUpdate
+    , requestUpdateFromFacts
     , retractChange
+    , retractChangeFromFacts
     , updateToken
+    , updateTokenFromFacts
     , getToken
     , getTokenV2
     , getTokenFacts
@@ -27,31 +32,42 @@ module MPFS.API
 import Cardano.MPFS.API.Types
     ( BootFacts
     , BootRequest
+    , DeleteRequest
     , EndFacts
     , EndRequest
+    , InsertRequest
+    , RequestDeleteFacts
+    , RequestInsertFacts
+    , RequestUpdateFacts
+    , RetractFacts
+    , RetractRequest
     , StatusResponse
+    , UpdateRequest
+    , UpdateValueRequest
     )
+import Cardano.MPFS.API.Types.Facts (UpdateFacts)
 import Control.Monad (void)
 import Core.Types.Basic (Address, RequestRefId, TokenId)
 import Core.Types.Tx (SignedTx (..), TxHash (..), WithUnsignedTx)
 import Data.Aeson
-    ( FromJSON (..)
-    , ToJSON (..)
+    ( ToJSON (..)
     , Value (..)
     , object
-    , withObject
-    , (.:)
     , (.=)
     )
 import Data.Data (Proxy (..))
 import Data.Text (Text)
-import Lib.JSON.Canonical.Extra
-    ( fromAesonString
-    , fromAesonThrow
-    , toAesonString
-    )
+import Lib.JSON.Canonical.Extra (fromAesonThrow)
 import MPFS.Boot (bootTokenFromFacts)
 import MPFS.End (endTokenFromFacts)
+import MPFS.Request
+    ( RequestDeleteBody (..)
+    , RequestInsertBody (..)
+    , RequestUpdateBody (..)
+    )
+import MPFS.Request qualified as Request
+import MPFS.Retract qualified as Retract
+import MPFS.Update qualified as Update
 import Servant.API
     ( Capture
     , Get
@@ -70,63 +86,6 @@ import Servant.Client (ClientM, client)
 import Text.JSON.Canonical
     ( JSValue (..)
     )
-
-data RequestInsertBody = RequestInsertBody
-    { key :: JSValue
-    , value :: JSValue
-    }
-
-instance ToJSON RequestInsertBody where
-    toJSON (RequestInsertBody k v) =
-        object
-            [ "key" .= toAesonString k
-            , "newValue" .= toAesonString v
-            ]
-
-instance FromJSON RequestInsertBody where
-    parseJSON = withObject "RequestInsertBody" $ \o ->
-        RequestInsertBody
-            <$> (o .: "key" >>= fromAesonString)
-            <*> (o .: "newValue" >>= fromAesonString)
-
-data RequestDeleteBody = RequestDeleteBody
-    { key :: JSValue
-    , value :: JSValue
-    }
-
-instance ToJSON RequestDeleteBody where
-    toJSON (RequestDeleteBody k v) =
-        object
-            [ "key" .= toAesonString k
-            , "oldValue" .= toAesonString v
-            ]
-
-instance FromJSON RequestDeleteBody where
-    parseJSON = withObject "RequestDeleteBody" $ \o ->
-        RequestDeleteBody
-            <$> (o .: "key" >>= fromAesonString)
-            <*> (o .: "oldValue" >>= fromAesonString)
-
-data RequestUpdateBody = RequestUpdateBody
-    { key :: JSValue
-    , oldValue :: JSValue
-    , newValue :: JSValue
-    }
-
-instance ToJSON RequestUpdateBody where
-    toJSON (RequestUpdateBody k old new) =
-        object
-            [ "key" .= toAesonString k
-            , "oldValue" .= toAesonString old
-            , "newValue" .= toAesonString new
-            ]
-
-instance FromJSON RequestUpdateBody where
-    parseJSON = withObject "RequestUpdateBody" $ \o ->
-        RequestUpdateBody
-            <$> (o .: "key" >>= fromAesonString)
-            <*> (o .: "oldValue" >>= fromAesonString)
-            <*> (o .: "newValue" >>= fromAesonString)
 
 newtype SubmitV2Body = SubmitV2Body SignedTx
 
@@ -149,6 +108,39 @@ type EndFactsEndpoint =
         :> "end"
         :> ReqBody '[JSON] EndRequest
         :> Post '[JSON] EndFacts
+
+type RequestInsertFactsEndpoint =
+    "facts"
+        :> "request"
+        :> "insert"
+        :> ReqBody '[JSON] InsertRequest
+        :> Post '[JSON] RequestInsertFacts
+
+type RequestDeleteFactsEndpoint =
+    "facts"
+        :> "request"
+        :> "delete"
+        :> ReqBody '[JSON] DeleteRequest
+        :> Post '[JSON] RequestDeleteFacts
+
+type RequestUpdateFactsEndpoint =
+    "facts"
+        :> "request"
+        :> "update"
+        :> ReqBody '[JSON] UpdateValueRequest
+        :> Post '[JSON] RequestUpdateFacts
+
+type UpdateFactsEndpoint =
+    "facts"
+        :> "update"
+        :> ReqBody '[JSON] UpdateRequest
+        :> Post '[JSON] UpdateFacts
+
+type RetractFactsEndpoint =
+    "facts"
+        :> "retract"
+        :> ReqBody '[JSON] RetractRequest
+        :> Post '[JSON] RetractFacts
 
 type EndToken =
     "transaction"
@@ -296,6 +288,42 @@ updateToken
 updateToken address tokenId requests =
     fmap fromAesonThrow <$> updateToken' address tokenId requests
 
+requestInsertFromFacts
+    :: Address
+    -> TokenId
+    -> RequestInsertBody
+    -> ClientM (WithUnsignedTx JSValue)
+requestInsertFromFacts =
+    Request.requestInsertFromFacts status' requestInsertFacts'
+
+requestDeleteFromFacts
+    :: Address
+    -> TokenId
+    -> RequestDeleteBody
+    -> ClientM (WithUnsignedTx JSValue)
+requestDeleteFromFacts =
+    Request.requestDeleteFromFacts status' requestDeleteFacts'
+
+requestUpdateFromFacts
+    :: Address
+    -> TokenId
+    -> RequestUpdateBody
+    -> ClientM (WithUnsignedTx JSValue)
+requestUpdateFromFacts =
+    Request.requestUpdateFromFacts status' requestUpdateFacts'
+
+updateTokenFromFacts
+    :: Address
+    -> TokenId
+    -> ClientM (WithUnsignedTx JSValue)
+updateTokenFromFacts =
+    Update.updateTokenFromFacts status' updateFacts'
+
+retractChangeFromFacts
+    :: Address -> RequestRefId -> ClientM (WithUnsignedTx JSValue)
+retractChangeFromFacts =
+    Retract.retractChangeFromFacts status' retractFacts'
+
 getToken :: TokenId -> ClientM JSValue
 getToken tokenId = fromAesonThrow <$> getToken' tokenId
 
@@ -375,6 +403,26 @@ endFacts' :: EndRequest -> ClientM EndFacts
 endFacts' =
     client (Proxy :: Proxy EndFactsEndpoint)
 
+requestInsertFacts' :: InsertRequest -> ClientM RequestInsertFacts
+requestInsertFacts' =
+    client (Proxy :: Proxy RequestInsertFactsEndpoint)
+
+requestDeleteFacts' :: DeleteRequest -> ClientM RequestDeleteFacts
+requestDeleteFacts' =
+    client (Proxy :: Proxy RequestDeleteFactsEndpoint)
+
+requestUpdateFacts' :: UpdateValueRequest -> ClientM RequestUpdateFacts
+requestUpdateFacts' =
+    client (Proxy :: Proxy RequestUpdateFactsEndpoint)
+
+updateFacts' :: UpdateRequest -> ClientM UpdateFacts
+updateFacts' =
+    client (Proxy :: Proxy UpdateFactsEndpoint)
+
+retractFacts' :: RetractRequest -> ClientM RetractFacts
+retractFacts' =
+    client (Proxy :: Proxy RetractFactsEndpoint)
+
 getTokenV2' =
     client (Proxy :: Proxy GetTokenV2)
 
@@ -394,6 +442,11 @@ mpfsClient =
         , mpfsRequestUpdate = requestUpdate
         , mpfsRetractChange = retractChange
         , mpfsUpdateToken = updateToken
+        , mpfsRequestInsertFromFacts = requestInsertFromFacts
+        , mpfsRequestDeleteFromFacts = requestDeleteFromFacts
+        , mpfsRequestUpdateFromFacts = requestUpdateFromFacts
+        , mpfsRetractChangeFromFacts = retractChangeFromFacts
+        , mpfsUpdateTokenFromFacts = updateTokenFromFacts
         , mpfsGetToken = getToken
         , mpfsGetTokenFacts = getTokenFacts
         , mpfsSubmitTransaction = submitTransaction
@@ -427,6 +480,29 @@ data MPFS m = MPFS
         :: Address
         -> TokenId
         -> [RequestRefId]
+        -> m (WithUnsignedTx JSValue)
+    , mpfsRequestInsertFromFacts
+        :: Address
+        -> TokenId
+        -> RequestInsertBody
+        -> m (WithUnsignedTx JSValue)
+    , mpfsRequestDeleteFromFacts
+        :: Address
+        -> TokenId
+        -> RequestDeleteBody
+        -> m (WithUnsignedTx JSValue)
+    , mpfsRequestUpdateFromFacts
+        :: Address
+        -> TokenId
+        -> RequestUpdateBody
+        -> m (WithUnsignedTx JSValue)
+    , mpfsRetractChangeFromFacts
+        :: Address
+        -> RequestRefId
+        -> m (WithUnsignedTx JSValue)
+    , mpfsUpdateTokenFromFacts
+        :: Address
+        -> TokenId
         -> m (WithUnsignedTx JSValue)
     , mpfsGetToken :: TokenId -> m JSValue
     , mpfsGetTokenFacts :: TokenId -> m JSValue
