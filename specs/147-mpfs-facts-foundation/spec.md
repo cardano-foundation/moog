@@ -21,7 +21,7 @@ pattern already present in `MPFS.{API,Boot,End}`.
   new `cage-tx` package) to the latest `main`
   (`c9eb9ea9acc6b928ec30d4fd6d88180811876147`) with an updated nix32
   `--sha256:`. The project builds against it.
-- FR2 — moog reads token state via `GET /tokens/:id` (replacing legacy
+- FR2 — (SPLIT to #155) moog reads token state via `GET /tokens/:id` (replacing legacy
   `token/:id`) and per-key facts via `GET /tokens/:id/facts/:key`.
 - FR3 — client-side cage tx builders exist for request insert/delete/
   update, update, and retract, each producing an unsigned tx from
