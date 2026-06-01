@@ -33,6 +33,16 @@ mockMPFS =
         , mpfsRequestUpdate = \_ _ _ -> error "request update not implemented"
         , mpfsRetractChange = \_ _ -> error "retract change not implemented"
         , mpfsUpdateToken = \_ _ _ -> error "update token not implemented"
+        , mpfsRequestInsertFromFacts =
+            \_ _ _ -> error "request insert facts not implemented"
+        , mpfsRequestDeleteFromFacts =
+            \_ _ _ -> error "request delete facts not implemented"
+        , mpfsRequestUpdateFromFacts =
+            \_ _ _ -> error "request update facts not implemented"
+        , mpfsRetractChangeFromFacts =
+            \_ _ -> error "retract change facts not implemented"
+        , mpfsUpdateTokenFromFacts =
+            \_ _ -> error "update token facts not implemented"
         , mpfsGetToken = \_ -> toJSON $ mockToken []
         , mpfsGetTokenFacts = \_ -> toJSON ([] :: [JSFact])
         , mpfsSubmitTransaction = \_ -> error "submit transaction not implemented"
