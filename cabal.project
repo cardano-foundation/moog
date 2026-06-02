@@ -11,8 +11,8 @@ packages:
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/cardano-mpfs-offchain.git
-  tag: c9eb9ea9acc6b928ec30d4fd6d88180811876147
-  --sha256: 156p4gl8lc8chgwr8arns12f109fafpan31l5dcyhbcyiy8nw499
+  tag: 6a015057274fe8eabc93a66aba8634850495d98c
+  --sha256: 05y4i4wrxziwbs0pddlq2gp6s7k9dqgbjaw9ynkiwdqwnrmrygwa
   subdir:
     cardano-mpfs-api
     cardano-mpfs-cage-tx
