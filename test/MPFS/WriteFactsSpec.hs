@@ -93,6 +93,7 @@ spec =
                 Right UpdateRequest{..} -> do
                     urToken `shouldBe` sampleTokenJSON
                     urAddr `shouldBe` Hex sampleAddressBytes
+                    urRequests `shouldBe` []
 
         it "builds POST /facts/retract request bodies" $
             case retractFactsRequest sampleAddress sampleRequestRef of
