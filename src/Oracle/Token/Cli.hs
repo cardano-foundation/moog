@@ -176,7 +176,7 @@ tokenCmdCore command = do
                             $ validateRequest oracle mconfig validation tokenRequest
                 WithTxHash txHash _ <- lift
                     $ submit
-                    $ \address -> mpfsUpdateToken mpfs address tk wanted
+                    $ \address -> mpfsUpdateTokenFromFacts mpfs address tk wanted
                 pure txHash
         BootToken wallet -> do
             Submission submit <- askSubmit wallet
