@@ -12,7 +12,7 @@ import Core.Types.Tx (WithTxHash (..), setWithTxHashValue)
 import Core.Types.Wallet (Wallet)
 import Facts (FactsSelection (..), factsCmd)
 import MPFS.API
-    ( MPFS (mpfsRequestInsert, mpfsRequestUpdate)
+    ( MPFS (mpfsRequestInsertFromFacts, mpfsRequestUpdateFromFacts)
     , RequestInsertBody (RequestInsertBody, key, value)
     , RequestUpdateBody (RequestUpdateBody, key, newValue, oldValue)
     )
@@ -44,7 +44,7 @@ configCmd (SetConfig tokenId wallet config) = do
         [oldConfig] -> do
             oldValue <- toJSON $ factValue oldConfig
             run $ \address ->
-                mpfsRequestUpdate mpfs address tokenId
+                mpfsRequestUpdateFromFacts mpfs address tokenId
                     $ RequestUpdateBody
                         { key = jkey
                         , newValue = jvalue
@@ -52,5 +52,5 @@ configCmd (SetConfig tokenId wallet config) = do
                         }
         _ -> do
             run $ \address ->
-                mpfsRequestInsert mpfs address tokenId
+                mpfsRequestInsertFromFacts mpfs address tokenId
                     $ RequestInsertBody{key = jkey, value = jvalue}
