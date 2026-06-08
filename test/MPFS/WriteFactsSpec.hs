@@ -88,12 +88,15 @@ spec =
                     uvrAddr `shouldBe` Hex sampleAddressBytes
 
         it "builds POST /facts/update request bodies" $
-            case updateTokenFactsRequest sampleAddress sampleToken of
+            case updateTokenFactsRequest
+                sampleAddress
+                sampleToken
+                [sampleRequestRef] of
                 Left err -> error err
                 Right UpdateRequest{..} -> do
                     urToken `shouldBe` sampleTokenJSON
                     urAddr `shouldBe` Hex sampleAddressBytes
-                    urRequests `shouldBe` []
+                    urRequests `shouldBe` [requestId sampleRequestRef]
 
         it "builds POST /facts/retract request bodies" $
             case retractFactsRequest sampleAddress sampleRequestRef of
@@ -122,7 +125,7 @@ spec =
                         , mpfsRequestUpdateFromFacts =
                             \_ _ _ -> Identity tx
                         , mpfsUpdateTokenFromFacts =
-                            \_ _ -> Identity tx
+                            \_ _ _ -> Identity tx
                         , mpfsRetractChangeFromFacts =
                             \_ _ -> Identity tx
                         }
@@ -132,6 +135,7 @@ spec =
                     mpfs
                     sampleAddress
                     sampleToken
+                    [sampleRequestRef]
                 )
                 `shouldBe` tx
 
