@@ -40,9 +40,11 @@ import Cardano.MPFS.API.Types
     , RequestDeleteFacts
     , RequestInsertFacts
     , RequestUpdateFacts
+    , RequestsResponse
     , RetractFacts
     , RetractRequest
     , StatusResponse
+    , TokenResponse
     , UpdateRequest
     , UpdateValueRequest
     )
@@ -61,7 +63,10 @@ import Data.Text (Text)
 import Lib.JSON.Canonical.Extra (fromAesonThrow)
 import MPFS.Boot (bootTokenFromFacts)
 import MPFS.End (endTokenFromFacts)
-import MPFS.Read (getTokenFactsFromVerifiedRead)
+import MPFS.Read
+    ( getTokenFactsFromVerifiedRead
+    , getTokenFromVerifiedRead
+    )
 import MPFS.Request
     ( RequestDeleteBody (..)
     , RequestInsertBody (..)
@@ -206,6 +211,17 @@ type GetTokenFacts =
         :> "facts"
         :> Get '[JSON] FactsResponse
 
+type GetTokenRead =
+    "tokens"
+        :> Capture "tokenId" TokenId
+        :> Get '[JSON] TokenResponse
+
+type GetTokenRequests =
+    "tokens"
+        :> Capture "tokenId" TokenId
+        :> "requests"
+        :> Get '[JSON] RequestsResponse
+
 type SubmitTransaction =
     "transaction"
         :> ReqBody '[JSON] SignedTx
@@ -327,7 +343,8 @@ retractChangeFromFacts =
     Retract.retractChangeFromFacts status' retractFacts'
 
 getToken :: TokenId -> ClientM JSValue
-getToken tokenId = fromAesonThrow <$> getToken' tokenId
+getToken =
+    getTokenFromVerifiedRead status' getTokenRead' getTokenRequests'
 
 getTokenV2 :: TokenId -> ClientM JSValue
 getTokenV2 tokenId = fromAesonThrow <$> getTokenV2' tokenId
@@ -371,9 +388,11 @@ retractChange'
     :: Address -> RequestRefId -> ClientM (WithUnsignedTx Value)
 updateToken'
     :: Address -> TokenId -> [RequestRefId] -> ClientM (WithUnsignedTx Value)
-getToken' :: TokenId -> ClientM Value
+_getToken' :: TokenId -> ClientM Value
 getTokenV2' :: TokenId -> ClientM Value
+getTokenRead' :: TokenId -> ClientM TokenResponse
 getTokenFacts' :: TokenId -> ClientM FactsResponse
+getTokenRequests' :: TokenId -> ClientM RequestsResponse
 submitTransaction' :: SignedTx -> ClientM TxHash
 submitTransactionV2' :: SubmitV2Body -> ClientM Text
 waitNBlocks' :: Int -> ClientM Value
@@ -387,7 +406,7 @@ _endToken'
     :<|> requestUpdate'
     :<|> retractChange'
     :<|> updateToken'
-    :<|> getToken'
+    :<|> _getToken'
     :<|> getTokenFacts'
     :<|> submitTransaction'
     :<|> waitNBlocks'
@@ -428,6 +447,12 @@ retractFacts' =
 
 getTokenV2' =
     client (Proxy :: Proxy GetTokenV2)
+
+getTokenRead' =
+    client (Proxy :: Proxy GetTokenRead)
+
+getTokenRequests' =
+    client (Proxy :: Proxy GetTokenRequests)
 
 submitTransactionV2' =
     client (Proxy :: Proxy SubmitTransactionV2)
