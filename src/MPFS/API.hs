@@ -333,6 +333,7 @@ requestUpdateFromFacts =
 updateTokenFromFacts
     :: Address
     -> TokenId
+    -> [RequestRefId]
     -> ClientM (WithUnsignedTx JSValue)
 updateTokenFromFacts =
     Update.updateTokenFromFacts status' updateFacts'
@@ -531,6 +532,7 @@ data MPFS m = MPFS
     , mpfsUpdateTokenFromFacts
         :: Address
         -> TokenId
+        -> [RequestRefId]
         -> m (WithUnsignedTx JSValue)
     , mpfsGetToken :: TokenId -> m JSValue
     , mpfsGetTokenFacts :: TokenId -> m JSValue
