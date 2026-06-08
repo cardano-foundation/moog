@@ -8,7 +8,7 @@ import Cardano.MPFS.API.Types
     ( RetractRequest (..)
     , StatusResponse (..)
     )
-import Cardano.MPFS.Client.Cage.Retract (retractCageTx)
+import Cardano.MPFS.Client.Cage.Retract (retractCageTxWithEval)
 import Cardano.MPFS.Client.Facts
     ( RetractFacts
     , verifyRetractFacts
@@ -27,6 +27,7 @@ import MPFS.Cage
     ( addressBytesForCage
     , liftEitherClientM
     , loadCageConfig
+    , resolveEvalContext
     , txHex
     , walletPolicy
     )
@@ -51,8 +52,11 @@ retractChangeFromFacts getStatus postFacts address requestRef = do
             $ verifyRetractFacts (TrustedRoot trustedRoot) facts
     rawAddress <- liftEitherClientM $ addressBytesForCage address
     cfg <- liftIO $ loadCageConfig rawAddress
+    evalCtx <- resolveEvalContext
     tx <-
-        liftEitherClientM $ firstShow $ retractCageTx cfg walletPolicy verified
+        liftEitherClientM
+            $ firstShow
+            $ retractCageTxWithEval evalCtx cfg walletPolicy verified
     pure $ WithUnsignedTx (UnsignedTx $ txHex tx) Nothing
 
 retractFactsRequest

@@ -4,6 +4,7 @@ module MPFS.Cage
     ( addressBytesForCage
     , liftEitherClientM
     , loadCageConfig
+    , resolveEvalContext
     , txHex
     , walletPolicy
     ) where
@@ -12,6 +13,8 @@ import Cardano.Ledger.BaseTypes (Network (..))
 import Cardano.Ledger.Binary (natVersion, serialize')
 import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Plutus.ExUnits (Prices (..))
+import Cardano.MPFS.API (EvalContextAPI)
+import Cardano.MPFS.API.Types (EvalContext)
 import Cardano.MPFS.Cage.Blueprint
     ( Blueprint
     , extractCompiledCode
@@ -20,6 +23,10 @@ import Cardano.MPFS.Cage.Blueprint
 import Cardano.MPFS.Client.Cage.Config
     ( CageConfig (..)
     , computeScriptHash
+    )
+import Cardano.MPFS.Client
+    ( DecodedEvalContext
+    , decodeEvalContext
     )
 import Cardano.MPFS.Client.Cage.Policy (WalletPolicy (..))
 import Cardano.Slotting.Slot (SlotNo (..))
@@ -33,9 +40,10 @@ import Data.ByteString (ByteString)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Short qualified as SBS
+import Data.Proxy (Proxy (..))
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
-import Servant.Client (ClientM)
+import Servant.Client (ClientM, client)
 import System.Environment (lookupEnv)
 
 import Cardano.Tx.Ledger (ConwayTx)
@@ -70,6 +78,15 @@ loadCageConfig rawAddress = do
             , defaultTip = Coin 1_000_000
             , network = networkFromAddressBytes rawAddress
             }
+
+resolveEvalContext :: ClientM DecodedEvalContext
+resolveEvalContext = do
+    wire <- evalContextClient
+    liftEitherClientM $ firstShow $ decodeEvalContext wire
+  where
+    evalContextClient :: ClientM EvalContext
+    evalContextClient =
+        client (Proxy @EvalContextAPI)
 
 walletPolicy :: WalletPolicy
 walletPolicy =
