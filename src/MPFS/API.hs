@@ -35,6 +35,7 @@ import Cardano.MPFS.API.Types
     , DeleteRequest
     , EndFacts
     , EndRequest
+    , FactsResponse
     , InsertRequest
     , RequestDeleteFacts
     , RequestInsertFacts
@@ -60,6 +61,7 @@ import Data.Text (Text)
 import Lib.JSON.Canonical.Extra (fromAesonThrow)
 import MPFS.Boot (bootTokenFromFacts)
 import MPFS.End (endTokenFromFacts)
+import MPFS.Read (getTokenFactsFromVerifiedRead)
 import MPFS.Request
     ( RequestDeleteBody (..)
     , RequestInsertBody (..)
@@ -199,10 +201,10 @@ type GetTokenV2 =
         :> Get '[JSON] Value
 
 type GetTokenFacts =
-    "token"
+    "tokens"
         :> Capture "tokenId" TokenId
         :> "facts"
-        :> Get '[JSON] Value
+        :> Get '[JSON] FactsResponse
 
 type SubmitTransaction =
     "transaction"
@@ -331,7 +333,8 @@ getTokenV2 :: TokenId -> ClientM JSValue
 getTokenV2 tokenId = fromAesonThrow <$> getTokenV2' tokenId
 
 getTokenFacts :: TokenId -> ClientM JSValue
-getTokenFacts tokenId = fromAesonThrow <$> getTokenFacts' tokenId
+getTokenFacts =
+    getTokenFactsFromVerifiedRead status' getTokenFacts'
 
 submitTransaction :: SignedTx -> ClientM TxHash
 submitTransaction = submitTransaction'
@@ -370,7 +373,7 @@ updateToken'
     :: Address -> TokenId -> [RequestRefId] -> ClientM (WithUnsignedTx Value)
 getToken' :: TokenId -> ClientM Value
 getTokenV2' :: TokenId -> ClientM Value
-getTokenFacts' :: TokenId -> ClientM Value
+getTokenFacts' :: TokenId -> ClientM FactsResponse
 submitTransaction' :: SignedTx -> ClientM TxHash
 submitTransactionV2' :: SubmitV2Body -> ClientM Text
 waitNBlocks' :: Int -> ClientM Value
