@@ -1,14 +1,44 @@
 module MPFS.ReadSpec (spec) where
 
 import Cardano.MPFS.API.Encoding (Hex (..))
-import Cardano.MPFS.API.Types (FactEntry (..), FactsResponse (..))
+import Cardano.MPFS.API.Types
+    ( FactEntry (..)
+    , FactsResponse (..)
+    , RequestJSON (..)
+    , RequestsResponse (..)
+    , TokenResponse (..)
+    , TokenStateJSON (..)
+    , TxInJSON (..)
+    , WitnessedRequest (..)
+    , WitnessedTokenState (..)
+    , WitnessedUtxo (..)
+    )
+import Cardano.MPFS.API.Types.Common
+    ( ChainPointJSON (..)
+    , TokenIdJSON (..)
+    , UtxoSetWitness (..)
+    , VerificationSnapshot (..)
+    )
+import Core.Types.Change qualified as Change
+import Core.Types.Operation qualified as Operation
 import Cardano.MPFS.Client.TrustedRoot (TrustedRoot (..))
+import Core.Types.Basic (Owner (..), RequestRefId (..))
 import Core.Types.Fact (Fact (..), Slot (..), parseFacts)
+import Core.Types.Tx (Root (..))
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BL
+import Data.Functor.Identity (Identity (..))
+import Data.Text qualified as T
 import MPFS.Read
     ( factEntriesToJSValue
     , verifyFactsResponseWith
+    , verifyTokenResponsesWith
+    )
+import Oracle.Types
+    ( Request (..)
+    , RequestZoo (..)
+    , Token (..)
+    , TokenState (..)
     )
 import Test.Hspec
     ( Spec
@@ -18,7 +48,8 @@ import Test.Hspec
     , shouldSatisfy
     )
 import Text.JSON.Canonical
-    ( JSValue (..)
+    ( FromJSON (..)
+    , JSValue (..)
     , renderCanonicalJSON
     , toJSString
     )
@@ -40,6 +71,39 @@ spec =
                         unusedFactsResponse
 
             result `shouldSatisfy` isLeft
+
+        it "maps verified token state and requests to moog Token JSON" $ do
+            let result =
+                    verifyTokenResponsesWith
+                        acceptTokenResponse
+                        acceptRequestsResponse
+                        sampleTokenId
+                        sampleTrustedRoot
+                        sampleTokenResponse
+                        sampleRequestsResponse
+
+            (result >>= parseToken) `shouldBe` Right sampleToken
+
+        it "fails closed when state or request verification rejects" $ do
+            let stateFailure =
+                    verifyTokenResponsesWith
+                        rejectTokenResponse
+                        acceptRequestsResponse
+                        sampleTokenId
+                        sampleTrustedRoot
+                        sampleTokenResponse
+                        sampleRequestsResponse
+                requestFailure =
+                    verifyTokenResponsesWith
+                        acceptTokenResponse
+                        rejectRequestsResponse
+                        sampleTokenId
+                        sampleTrustedRoot
+                        sampleTokenResponse
+                        sampleRequestsResponse
+
+            stateFailure `shouldSatisfy` isLeft
+            requestFailure `shouldSatisfy` isLeft
 
 sampleEntries :: [FactEntry]
 sampleEntries =
@@ -73,8 +137,173 @@ unusedFactsResponse =
         , frsFacts = []
         }
 
+sampleTokenId :: TokenIdJSON
+sampleTokenId =
+    TokenIdJSON "token-id"
+
+sampleTokenResponse :: TokenResponse
+sampleTokenResponse =
+    TokenResponse
+        { trSnapshot = unusedSnapshot
+        , trState =
+            WitnessedTokenState
+                { wtsUtxo =
+                    WitnessedUtxo
+                        { wuTxIn = sampleStateTxIn
+                        , wuTxOut = Hex ""
+                        , wuProof = Hex ""
+                        }
+                , wtsState =
+                    TokenStateJSON
+                        { owner = "owner"
+                        , root = Hex sampleRoot
+                        , tip = 1000000
+                        , processTime = 60000
+                        , retractTime = 30000
+                        }
+                }
+        }
+
+sampleRequestsResponse :: RequestsResponse
+sampleRequestsResponse =
+    RequestsResponse
+        { rrSnapshot = unusedSnapshot
+        , rrRequestSet = unusedRequestSet
+        , rrRequests = [sampleWitnessedRequest]
+        }
+
+sampleWitnessedRequest :: WitnessedRequest
+sampleWitnessedRequest =
+    WitnessedRequest
+        { wrUtxo =
+            WitnessedUtxo
+                { wuTxIn = sampleRequestTxIn
+                , wuTxOut = Hex ""
+                , wuProof = Hex ""
+                }
+        , wrRequest =
+            RequestJSON
+                { rjToken = sampleTokenId
+                , rjOwner = "request-owner"
+                , rjKey = Hex $ canonicalBytes sampleKey
+                , rjOperation = "insert"
+                , rjValue = Just $ Hex $ canonicalBytes sampleValue
+                , rjFee = 1000000
+                , rjSubmittedAt = 42
+                }
+        }
+
+sampleToken :: Token Identity
+sampleToken =
+    Token
+        { tokenRefId = txInRef sampleStateTxIn
+        , tokenState =
+            TokenState
+                { tokenRoot = Root $ hexString sampleRoot
+                , tokenOwner = Owner "owner"
+                }
+        , tokenRequests =
+            [ Identity
+                $ UnknownInsertRequest
+                $ Request
+                    { outputRefId = txInRef sampleRequestTxIn
+                    , owner = Owner "request-owner"
+                    , change =
+                        Change.Change
+                            (Change.Key sampleKey)
+                            (Operation.Insert sampleValue)
+                    }
+            ]
+        }
+
+sampleStateTxIn :: TxInJSON
+sampleStateTxIn =
+    TxInJSON
+        { tjTxId = Hex $ BS.replicate 32 0x01
+        , tjTxIx = 0
+        }
+
+sampleRequestTxIn :: TxInJSON
+sampleRequestTxIn =
+    TxInJSON
+        { tjTxId = Hex $ BS.replicate 32 0x02
+        , tjTxIx = 1
+        }
+
+sampleRoot :: BS.ByteString
+sampleRoot =
+    BS.pack [0x00 .. 0x1f]
+
+parseToken :: JSValue -> Either String (Token Identity)
+parseToken value =
+    case fromJSON value of
+        Just token -> Right token
+        Nothing -> Left "Token JSON did not parse"
+
+txInRef :: TxInJSON -> RequestRefId
+txInRef TxInJSON{tjTxId = Hex txId, tjTxIx} =
+    RequestRefId
+        $ T.pack (hexString txId)
+            <> "#"
+            <> T.pack (show tjTxIx)
+
+hexString :: BS.ByteString -> String
+hexString =
+    concatMap (flip showHexByte "")
+        . BS.unpack
+  where
+    showHexByte byte =
+        showString [hexDigit $ byte `div` 16, hexDigit $ byte `mod` 16]
+    hexDigit n
+        | n < 10 = toEnum $ fromEnum '0' + fromIntegral n
+        | otherwise = toEnum $ fromEnum 'a' + fromIntegral n - 10
+
+unusedSnapshot :: VerificationSnapshot
+unusedSnapshot =
+    VerificationSnapshot
+        { vsUtxoRoot = Hex sampleRoot
+        , vsChainPoint =
+            ChainPointJSON
+                { cpSlot = 42
+                , cpBlockId = Hex $ BS.replicate 32 0x03
+                }
+        }
+
+unusedRequestSet :: UtxoSetWitness
+unusedRequestSet =
+    UtxoSetWitness
+        { uswEntries = []
+        , uswCompletenessProof = Hex ""
+        }
+
 data SampleVerifyError = SampleVerifyError
     deriving stock (Show)
+
+acceptTokenResponse
+    :: TrustedRoot -> TokenResponse -> Either SampleVerifyError TokenResponse
+acceptTokenResponse _ =
+    Right
+
+rejectTokenResponse
+    :: TrustedRoot -> TokenResponse -> Either SampleVerifyError TokenResponse
+rejectTokenResponse _ _ =
+    Left SampleVerifyError
+
+acceptRequestsResponse
+    :: TokenIdJSON
+    -> TrustedRoot
+    -> RequestsResponse
+    -> Either SampleVerifyError RequestsResponse
+acceptRequestsResponse _ _ =
+    Right
+
+rejectRequestsResponse
+    :: TokenIdJSON
+    -> TrustedRoot
+    -> RequestsResponse
+    -> Either SampleVerifyError RequestsResponse
+rejectRequestsResponse _ _ _ =
+    Left SampleVerifyError
 
 isLeft :: Either a b -> Bool
 isLeft (Left _) = True
