@@ -1,27 +1,17 @@
 module MPFS.API
-    ( tokenApi
-    , TokenAPI
-    , SubmitV2Body (..)
-    , requestInsert
+    ( SubmitV2Body (..)
     , requestInsertFromFacts
-    , requestDelete
     , requestDeleteFromFacts
-    , requestUpdate
     , requestUpdateFromFacts
-    , retractChange
     , retractChangeFromFacts
-    , updateToken
     , updateTokenFromFacts
     , getToken
     , getTokenV2
     , getTokenFacts
-    , submitTransaction
     , submitTransactionV2
-    , waitNBlocks
     , RequestInsertBody (..)
     , RequestDeleteBody (..)
     , RequestUpdateBody (..)
-    , getTransaction
     , awaitTransactionV2
     , bootToken
     , endToken
@@ -82,11 +72,7 @@ import Servant.API
     , NoContent
     , Post
     , QueryParam
-    , QueryParam'
-    , QueryParams
     , ReqBody
-    , Required
-    , (:<|>) (..)
     , type (:>)
     )
 import Servant.Client (ClientM, client)
@@ -149,63 +135,12 @@ type RetractFactsEndpoint =
         :> ReqBody '[JSON] RetractRequest
         :> Post '[JSON] RetractFacts
 
-type EndToken =
-    "transaction"
-        :> Capture "address" Address
-        :> "end-token"
-        :> Capture "tokenId" TokenId
-        :> Get '[JSON] (WithUnsignedTx Value)
-
-type RequestInsert =
-    "transaction"
-        :> Capture "address" Address
-        :> "request-insert"
-        :> Capture "tokenId" TokenId
-        :> ReqBody '[JSON] RequestInsertBody
-        :> Post '[JSON] (WithUnsignedTx Value)
-
-type RequestDelete =
-    "transaction"
-        :> Capture "address" Address
-        :> "request-delete"
-        :> Capture "tokenId" TokenId
-        :> ReqBody '[JSON] RequestDeleteBody
-        :> Post '[JSON] (WithUnsignedTx Value)
-
-type RequestUpdate =
-    "transaction"
-        :> Capture "address" Address
-        :> "request-update"
-        :> Capture "tokenId" TokenId
-        :> ReqBody '[JSON] RequestUpdateBody
-        :> Post '[JSON] (WithUnsignedTx Value)
-
-type RetractChange =
-    "transaction"
-        :> Capture "address" Address
-        :> "retract-change"
-        :> Capture "requestId" RequestRefId
-        :> Get '[JSON] (WithUnsignedTx Value)
-
-type UpdateToken =
-    "transaction"
-        :> Capture "address" Address
-        :> "update-token"
-        :> Capture "tokenId" TokenId
-        :> QueryParams "request" RequestRefId
-        :> Get '[JSON] (WithUnsignedTx Value)
-
-type GetToken =
-    "token"
-        :> Capture "tokenId" TokenId
-        :> Get '[JSON] Value
-
 type GetTokenV2 =
     "tokens"
         :> Capture "tokenId" TokenId
         :> Get '[JSON] Value
 
-type GetTokenFacts =
+type GetTokenFactsRead =
     "tokens"
         :> Capture "tokenId" TokenId
         :> "facts"
@@ -222,48 +157,17 @@ type GetTokenRequests =
         :> "requests"
         :> Get '[JSON] RequestsResponse
 
-type SubmitTransaction =
-    "transaction"
-        :> ReqBody '[JSON] SignedTx
-        :> Post '[JSON] TxHash
-
 type SubmitTransactionV2 =
     "tx"
         :> "submit"
         :> ReqBody '[JSON] SubmitV2Body
         :> Post '[JSON] Text
 
-type WaitNBlocks =
-    "wait"
-        :> Capture "n" Int
-        :> Get '[JSON] Value
-
-type GetTransaction =
-    "transaction"
-        :> QueryParam' '[Required] "txHash" TxHash
-        :> Get '[JSON] Value
-
 type AwaitTransactionV2 =
     "tx"
         :> Capture "txId" TxHash
         :> QueryParam "timeout" Int
         :> Get '[JSON] NoContent
-
-type TokenAPI =
-    EndToken
-        :<|> RequestInsert
-        :<|> RequestDelete
-        :<|> RequestUpdate
-        :<|> RetractChange
-        :<|> UpdateToken
-        :<|> GetToken
-        :<|> GetTokenFacts
-        :<|> SubmitTransaction
-        :<|> WaitNBlocks
-        :<|> GetTransaction
-
-tokenApi :: Proxy TokenAPI
-tokenApi = Proxy
 
 bootToken
     :: Address -> ClientM (WithUnsignedTx JSValue)
@@ -273,38 +177,6 @@ endToken
     :: Address -> TokenId -> ClientM (WithUnsignedTx JSValue)
 endToken =
     endTokenFromFacts status' endFacts'
-requestInsert
-    :: Address
-    -> TokenId
-    -> RequestInsertBody
-    -> ClientM (WithUnsignedTx JSValue)
-requestInsert address tokenId body =
-    fmap fromAesonThrow <$> requestInsert' address tokenId body
-requestDelete
-    :: Address
-    -> TokenId
-    -> RequestDeleteBody
-    -> ClientM (WithUnsignedTx JSValue)
-requestDelete address tokenId body =
-    fmap fromAesonThrow <$> requestDelete' address tokenId body
-requestUpdate
-    :: Address
-    -> TokenId
-    -> RequestUpdateBody
-    -> ClientM (WithUnsignedTx JSValue)
-requestUpdate address tokenId body =
-    fmap fromAesonThrow <$> requestUpdate' address tokenId body
-retractChange
-    :: Address -> RequestRefId -> ClientM (WithUnsignedTx JSValue)
-retractChange address requestId =
-    fmap fromAesonThrow <$> retractChange' address requestId
-updateToken
-    :: Address
-    -> TokenId
-    -> [RequestRefId]
-    -> ClientM (WithUnsignedTx JSValue)
-updateToken address tokenId requests =
-    fmap fromAesonThrow <$> updateToken' address tokenId requests
 
 requestInsertFromFacts
     :: Address
@@ -354,65 +226,20 @@ getTokenFacts :: TokenId -> ClientM JSValue
 getTokenFacts =
     getTokenFactsFromVerifiedRead status' getTokenFacts'
 
-submitTransaction :: SignedTx -> ClientM TxHash
-submitTransaction = submitTransaction'
-
 submitTransactionV2 :: SignedTx -> ClientM TxHash
 submitTransactionV2 signed =
     TxHash <$> submitTransactionV2' (SubmitV2Body signed)
-
-waitNBlocks :: Int -> ClientM JSValue
-waitNBlocks n = fromAesonThrow <$> waitNBlocks' n
-getTransaction :: TxHash -> ClientM JSValue
-getTransaction txHash = fromAesonThrow <$> getTransaction' txHash
 
 awaitTransactionV2 :: TxHash -> ClientM ()
 awaitTransactionV2 txHash =
     void $ awaitTransactionV2' txHash (Just 1)
 
-requestInsert'
-    :: Address
-    -> TokenId
-    -> RequestInsertBody
-    -> ClientM (WithUnsignedTx Value)
-requestDelete'
-    :: Address
-    -> TokenId
-    -> RequestDeleteBody
-    -> ClientM (WithUnsignedTx Value)
-requestUpdate'
-    :: Address
-    -> TokenId
-    -> RequestUpdateBody
-    -> ClientM (WithUnsignedTx Value)
-retractChange'
-    :: Address -> RequestRefId -> ClientM (WithUnsignedTx Value)
-updateToken'
-    :: Address -> TokenId -> [RequestRefId] -> ClientM (WithUnsignedTx Value)
-_getToken' :: TokenId -> ClientM Value
 getTokenV2' :: TokenId -> ClientM Value
 getTokenRead' :: TokenId -> ClientM TokenResponse
 getTokenFacts' :: TokenId -> ClientM FactsResponse
 getTokenRequests' :: TokenId -> ClientM RequestsResponse
-submitTransaction' :: SignedTx -> ClientM TxHash
 submitTransactionV2' :: SubmitV2Body -> ClientM Text
-waitNBlocks' :: Int -> ClientM Value
-getTransaction' :: TxHash -> ClientM Value
 awaitTransactionV2' :: TxHash -> Maybe Int -> ClientM NoContent
-_endToken'
-    :: Address -> TokenId -> ClientM (WithUnsignedTx Value)
-_endToken'
-    :<|> requestInsert'
-    :<|> requestDelete'
-    :<|> requestUpdate'
-    :<|> retractChange'
-    :<|> updateToken'
-    :<|> _getToken'
-    :<|> getTokenFacts'
-    :<|> submitTransaction'
-    :<|> waitNBlocks'
-    :<|> getTransaction' =
-        client tokenApi
 
 status' :: ClientM StatusResponse
 status' =
@@ -452,6 +279,9 @@ getTokenV2' =
 getTokenRead' =
     client (Proxy :: Proxy GetTokenRead)
 
+getTokenFacts' =
+    client (Proxy :: Proxy GetTokenFactsRead)
+
 getTokenRequests' =
     client (Proxy :: Proxy GetTokenRequests)
 
@@ -466,11 +296,6 @@ mpfsClient =
     MPFS
         { mpfsBootToken = bootToken
         , mpfsEndToken = endToken
-        , mpfsRequestInsert = requestInsert
-        , mpfsRequestDelete = requestDelete
-        , mpfsRequestUpdate = requestUpdate
-        , mpfsRetractChange = retractChange
-        , mpfsUpdateToken = updateToken
         , mpfsRequestInsertFromFacts = requestInsertFromFacts
         , mpfsRequestDeleteFromFacts = requestDeleteFromFacts
         , mpfsRequestUpdateFromFacts = requestUpdateFromFacts
@@ -478,38 +303,11 @@ mpfsClient =
         , mpfsUpdateTokenFromFacts = updateTokenFromFacts
         , mpfsGetToken = getToken
         , mpfsGetTokenFacts = getTokenFacts
-        , mpfsSubmitTransaction = submitTransaction
-        , mpfsWaitNBlocks = waitNBlocks
-        , mpfsGetTransaction = getTransaction
         }
 
 data MPFS m = MPFS
     { mpfsBootToken :: Address -> m (WithUnsignedTx JSValue)
     , mpfsEndToken :: Address -> TokenId -> m (WithUnsignedTx JSValue)
-    , mpfsRequestInsert
-        :: Address
-        -> TokenId
-        -> RequestInsertBody
-        -> m (WithUnsignedTx JSValue)
-    , mpfsRequestDelete
-        :: Address
-        -> TokenId
-        -> RequestDeleteBody
-        -> m (WithUnsignedTx JSValue)
-    , mpfsRequestUpdate
-        :: Address
-        -> TokenId
-        -> RequestUpdateBody
-        -> m (WithUnsignedTx JSValue)
-    , mpfsRetractChange
-        :: Address
-        -> RequestRefId
-        -> m (WithUnsignedTx JSValue)
-    , mpfsUpdateToken
-        :: Address
-        -> TokenId
-        -> [RequestRefId]
-        -> m (WithUnsignedTx JSValue)
     , mpfsRequestInsertFromFacts
         :: Address
         -> TokenId
@@ -536,7 +334,4 @@ data MPFS m = MPFS
         -> m (WithUnsignedTx JSValue)
     , mpfsGetToken :: TokenId -> m JSValue
     , mpfsGetTokenFacts :: TokenId -> m JSValue
-    , mpfsSubmitTransaction :: SignedTx -> m TxHash
-    , mpfsWaitNBlocks :: Int -> m JSValue
-    , mpfsGetTransaction :: TxHash -> m JSValue
     }

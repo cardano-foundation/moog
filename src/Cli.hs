@@ -26,7 +26,7 @@ import Lib.SSH.Private
 import MPFS.API
     ( MPFS (..)
     , mpfsClient
-    , retractChange
+    , retractChangeFromFacts
     )
 import Oracle.Cli (OracleCommand (..), oracleCmd)
 import Oracle.Config.Types (ProtocolFailure)
@@ -130,7 +130,7 @@ cmd = \case
                 $ fmap txHash
                 $ submit
                 $ \address ->
-                    retractChange address refId
+                    retractChangeFromFacts address refId
     GetFacts MPFSClient{runMPFS} tokenId factsCommand -> do
         let validation =
                 mkEffects

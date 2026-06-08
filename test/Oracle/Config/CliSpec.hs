@@ -74,9 +74,7 @@ runConfig mpfs =
 markedMPFS :: MPFS Identity
 markedMPFS =
     mockMPFS
-        { mpfsRequestInsert = \_ _ _ -> pure (marker "legacy-insert")
-        , mpfsRequestUpdate = \_ _ _ -> pure (marker "legacy-update")
-        , mpfsRequestInsertFromFacts =
+        { mpfsRequestInsertFromFacts =
             \_ _ _ -> pure (marker "facts-insert")
         , mpfsRequestUpdateFromFacts =
             \_ _ _ -> pure (marker "facts-update")
