@@ -9,7 +9,7 @@ import Cardano.MPFS.API.Types
     , UpdateRequest (..)
     )
 import Cardano.MPFS.API.Types.Facts (UpdateFacts)
-import Cardano.MPFS.Client.Cage.Update (updateCageTx)
+import Cardano.MPFS.Client.Cage.Update (updateCageTxWithEval)
 import Cardano.MPFS.Client.Facts (verifyUpdateFacts)
 import Cardano.MPFS.Client.TrustedRoot (TrustedRoot (..))
 import Control.Monad.IO.Class (liftIO)
@@ -25,6 +25,7 @@ import MPFS.Cage
     ( addressBytesForCage
     , liftEitherClientM
     , loadCageConfig
+    , resolveEvalContext
     , txHex
     , walletPolicy
     )
@@ -50,8 +51,11 @@ updateTokenFromFacts getStatus postFacts address tokenId = do
             $ verifyUpdateFacts (TrustedRoot trustedRoot) facts
     rawAddress <- liftEitherClientM $ addressBytesForCage address
     cfg <- liftIO $ loadCageConfig rawAddress
+    evalCtx <- resolveEvalContext
     tx <-
-        liftEitherClientM $ firstShow $ updateCageTx cfg walletPolicy verified
+        liftEitherClientM
+            $ firstShow
+            $ updateCageTxWithEval evalCtx cfg walletPolicy verified
     pure $ WithUnsignedTx (UnsignedTx $ txHex tx) Nothing
 
 updateTokenFactsRequest
@@ -60,6 +64,7 @@ updateTokenFactsRequest address tokenId =
     UpdateRequest
         <$> tokenIdJSONFromTokenId tokenId
         <*> (Hex <$> addressBytesForCage address)
+        <*> pure []
 
 firstShow :: Show e => Either e a -> Either String a
 firstShow =
