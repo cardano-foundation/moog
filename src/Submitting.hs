@@ -72,7 +72,6 @@ import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent (threadDelay)
 import Control.Exception (Exception, SomeException, throwIO)
 import Control.Lens ((%~))
-import Control.Monad (void)
 import Control.Monad.Catch (MonadCatch (..))
 import Control.Monad.IO.Class (MonadIO (..))
 import Core.Encryption (encryptText)
@@ -113,10 +112,9 @@ import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
-import MPFS.API (getTransaction, submitTransaction)
+import MPFS.API (awaitTransactionV2, submitTransactionV2)
 import Servant.Client (ClientM)
 import System.Directory (doesFileExist)
-import Text.JSON.Canonical (JSValue (..))
 
 data IfToWait = Wait Int | NoWait
     deriving (Show, Eq)
@@ -134,12 +132,12 @@ newtype Submission m = Submission
     }
 
 waitTx :: Submitting -> TxHash -> IO ()
-waitTx (Submitting (Wait maxCycles) runClient) txHash = void $ go maxCycles
+waitTx (Submitting (Wait maxCycles) runClient) txHash = go maxCycles
   where
-    go :: Int -> IO JSValue
-    go 0 = pure JSNull
+    go :: Int -> IO ()
+    go 0 = pure ()
     go n =
-        runClient (getTransaction txHash)
+        runClient (awaitTransactionV2 txHash)
             `catch` \(_ :: SomeException) -> do
                 liftIO $ threadDelay 1000000
                 go (n - 1)
@@ -153,7 +151,7 @@ signAndSubmitMPFS sbmt Wallet{address, sign} = Submission $ \action -> do
     WithUnsignedTx unsignedTx value <- action address
     case sign unsignedTx of
         Right (SignedTx signedTx) -> do
-            txHash <- submitTransaction $ SignedTx signedTx
+            txHash <- submitTransactionV2 $ SignedTx signedTx
             liftIO $ waitTx sbmt txHash
             return $ WithTxHash txHash value
         Left e -> liftIO $ throwIO e

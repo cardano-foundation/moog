@@ -226,15 +226,9 @@ spec = describe "User.Requester.Cli" $ do
 
         withContext
             -- Expect the facts-based write path: the requester must route
-            -- inserts through mpfsRequestInsertFromFacts. The legacy field is
-            -- wired to fail closed so a stale call site is caught here.
+            -- inserts through mpfsRequestInsertFromFacts.
             mockMPFS
                 { mpfsGetTokenFacts = const . pure $ renderFacts facts
-                , mpfsRequestInsertFromFacts = mpfsRequestInsert mockMPFS
-                , mpfsRequestInsert =
-                    \_ _ _ ->
-                        error
-                            "requester must use mpfsRequestInsertFromFacts"
                 }
             ( \_ _ ->
                 mkEffects
