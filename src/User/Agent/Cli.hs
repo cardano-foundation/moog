@@ -421,7 +421,7 @@ whiteList tokenId wallet platform repo = do
         void $ validateAddWhiteListed validation requester configAgent change
         wtx <- lift $ submit $ \address -> do
             jkey <- toJSON key
-            mpfsRequestInsert mpfs address tokenId
+            mpfsRequestInsertFromFacts mpfs address tokenId
                 $ RequestInsertBody{key = jkey, value = JSNull}
         pure $ setWithTxHashValue wtx Success
 
@@ -451,7 +451,7 @@ blackList tokenId wallet platform repo = do
             $ validateRemoveWhiteListed validation requester configAgent change
         wtx <- lift $ submit $ \address -> do
             jkey <- toJSON key
-            mpfsRequestDelete mpfs address tokenId
+            mpfsRequestDeleteFromFacts mpfs address tokenId
                 $ RequestDeleteBody{key = jkey, value = JSNull}
         pure $ setWithTxHashValue wtx Success
 
@@ -510,7 +510,7 @@ signAndSubmitAnUpdate validate tokenId wallet (Fact testRun oldState _) newState
         key <- toJSON testRun
         oldValue <- toJSON oldState
         newValue <- toJSON newState
-        mpfsRequestUpdate mpfs address tokenId
+        mpfsRequestUpdateFromFacts mpfs address tokenId
             $ RequestUpdateBody{key, oldValue, newValue}
     pure $ setWithTxHashValue wtx newState
 
