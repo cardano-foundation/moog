@@ -13,7 +13,7 @@ import Cardano.MPFS.API.Types
     , BootRequest (..)
     , StatusResponse (..)
     )
-import Cardano.MPFS.Client.Cage.Boot (bootCageTx)
+import Cardano.MPFS.Client.Cage.Boot (bootCageTxWithEval)
 import Cardano.MPFS.Client.Cage.Config
     ( CageConfig (..)
     , cagePolicyIdFromCfg
@@ -43,6 +43,7 @@ import MPFS.Cage
     ( addressBytesForCage
     , liftEitherClientM
     , loadCageConfig
+    , resolveEvalContext
     , txHex
     , walletPolicy
     )
@@ -67,8 +68,11 @@ bootTokenFromFacts getStatus postBootFacts address = do
             $ firstShow
             $ verifyBootFacts (TrustedRoot trustedRoot) facts
     cfg <- liftIO $ loadCageConfig rawAddress
+    evalCtx <- resolveEvalContext
     tx <-
-        liftEitherClientM $ firstShow $ bootCageTx cfg walletPolicy verified
+        liftEitherClientM
+            $ firstShow
+            $ bootCageTxWithEval evalCtx cfg walletPolicy verified
     tokenId <- liftEitherClientM $ extractTokenId cfg tx
     pure
         $ WithUnsignedTx

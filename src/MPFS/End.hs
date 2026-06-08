@@ -10,7 +10,7 @@ import Cardano.MPFS.API.Types
     , StatusResponse (..)
     )
 import Cardano.MPFS.API.Types.Common (TokenIdJSON (..))
-import Cardano.MPFS.Client.Cage.End (endCageTx)
+import Cardano.MPFS.Client.Cage.End (endCageTxWithEval)
 import Cardano.MPFS.Client.Facts (verifyEndFacts)
 import Cardano.MPFS.Client.TrustedRoot (TrustedRoot (..))
 import Control.Monad.IO.Class (liftIO)
@@ -28,6 +28,7 @@ import MPFS.Cage
     ( addressBytesForCage
     , liftEitherClientM
     , loadCageConfig
+    , resolveEvalContext
     , txHex
     , walletPolicy
     )
@@ -52,8 +53,11 @@ endTokenFromFacts getStatus postEndFacts address tokenId = do
         liftEitherClientM
             $ firstShow
             $ verifyEndFacts cfg (TrustedRoot trustedRoot) facts
+    evalCtx <- resolveEvalContext
     tx <-
-        liftEitherClientM $ firstShow $ endCageTx cfg walletPolicy verified
+        liftEitherClientM
+            $ firstShow
+            $ endCageTxWithEval evalCtx cfg walletPolicy verified
     pure
         $ WithUnsignedTx
             (UnsignedTx $ txHex tx)
