@@ -1,6 +1,6 @@
 ---
 name: antithesis-moog
-description: MOOG CLI for Antithesis test management on Cardano. Setup using the release binary (never moog-head — they encode types differently), identity switching (requester/agent/oracle wallets via being_*), token state inspection, retracting stuck requests during an oracle crash-loop, cleaning stale "running" tests, email-dump debugging on the agent host, and the multi-tenant Antithesis configuration introduced by https://github.com/cardano-foundation/moog/pull/93. Triggers — "moog", "moog-head", "MOOG CLI", "being_requester", "being_agent", "being_oracle", "moog token", "moog facts test-runs", "moog retract", "moog agent report-test", "moog wallet info", "UnknownUpdateValidationFailure", "oracle crash-loop", "stale running test", "Antithesis report URL", "email-dump", "amaru-cardano", "pragma tenant", "MOOG_ANTITHESIS_LAUNCH_URL", "MOOG_REGISTRY".
+description: MOOG CLI for Antithesis test management on Cardano. Setup using the release binary (never moog-head — they encode types differently), identity switching (requester/agent/oracle wallets via being_*), token state inspection, retracting stuck requests during an oracle crash-loop, cleaning stale "running" tests, how the agent reconciles on-chain test-runs against the Antithesis REST API (email is gone — incomplete maps to failure), and the multi-tenant Antithesis configuration introduced by https://github.com/cardano-foundation/moog/pull/93. Triggers — "moog", "moog-head", "MOOG CLI", "being_requester", "being_agent", "being_oracle", "moog token", "moog facts test-runs", "moog retract", "moog agent report-test", "moog wallet info", "UnknownUpdateValidationFailure", "oracle crash-loop", "stale running test", "Antithesis report URL", "incomplete maps to failure", "Antithesis API reconciliation", "amaru-cardano", "pragma tenant", "MOOG_ANTITHESIS_LAUNCH_URL", "MOOG_REGISTRY".
 ---
 
 # MOOG Operations
@@ -69,8 +69,8 @@ Check current identity: `being`
 | `moog token --no-pretty` | Full token state with pending requests |
 | `moog facts test-runs --whose cfhal` | List test runs (run as `being_requester` to auto-decrypt the Antithesis report URL in the `url` field) |
 | `moog retract -w <wallet> -o <outref>` | Retract a request you own |
-| `moog agent report-test -i <id> -w <wallet> --outcome unknown --duration 0 --url "reason"` | Force-finish a stale test |
-| `moog agent collect-all-results --email-user <email> --minutes <N>` | Dump parsed emails |
+| `moog agent report-test -i <id> -w <wallet> --outcome unknown --duration 0 --url "reason"` | Force-finish a stale test (manual override) |
+| `moog antithesis runs --no-pretty` | List the Antithesis runs the agent reconciles against (see "How the agent reconciles results") |
 | `moog wallet info` | Show wallet owner hash |
 
 ## Reading Antithesis runs directly (`moog antithesis`, v0.5.1.0+)
@@ -119,20 +119,53 @@ moog retract -w $MOOG_WALLET_FILE -o "<outref>"
 #    but restart if it's stuck in a crash-loop reading stale state)
 ```
 
+## How the agent reconciles results (Antithesis API, v0.5.1.2+)
+
+**The agent derives outcomes from the Antithesis REST API, not email.** The
+service loop (commit `ca82717e`, shipped in v0.5.1.2+) lists Antithesis runs and
+matches each to an on-chain test-run by its rendered `description`, then advances
+the on-chain phase. Reconciliation rules live in
+`src/User/Agent/Antithesis/State.hs`:
+
+- **`pending` on-chain** → no matching Antithesis run yet ⇒ launch it; exactly one
+  match ⇒ accept; many ⇒ flagged duplicate.
+- **`accepted` (running) on-chain** → when the matched run reaches a *terminal* API
+  status, write a `finished` fact with this mapping (`terminalOutcome`):
+
+  | Antithesis status | on-chain outcome |
+  |---|---|
+  | `completed` | `success` — **only if** the run has a `triage_report` link; without it the agent keeps waiting (success is never attested without the report) |
+  | `incomplete` | **`failure`** |
+  | `cancelled` | `failure` |
+  | `starting` / `in_progress` / `unknown` | keep waiting |
+
+- **Terminal but no triage-report link** (`incomplete` / `cancelled`): finished as
+  `failure` anyway, with a deterministic synthetic URL
+  `antithesis://runs/<run_id>/no-triage-report` (`terminalNoReportOutcome`, fix
+  `04a74a40` / issue #138) so these no longer stay `accepted` forever.
+
+So **`incomplete` has no on-chain representation of its own — it is recorded as
+`outcome: failure`** (the report URL if one exists, else the `no-triage-report`
+synthetic URL). The on-chain `duration` field is the *requested* hours, not actual
+runtime, so a truncated run is invisible once finished.
+
 ## Clean up stale "running" tests
 
-Tests get stuck as "running" (accepted) when Antithesis never sends a completion email. Common after a tenant migration: tests accepted under the old tenant never produce emails the agent can match.
+With the v0.5.1.2+ loop, terminal Antithesis runs auto-finish, so a genuinely
+stuck `accepted` fact now means either a **correlation miss** (the agent's
+`description` match failed — e.g. the run was launched by a different binary) or
+an agent running a **pre-v0.5.1.2** binary. The manual escape hatch is unchanged:
 
 ```bash
 # 1. Find accepted (running) tests on-chain
 moog facts test-runs --whose cfhal --no-pretty | jq -c '.[] | select(.value.phase == "accepted") | {id: .id[:16], commit: .key.commitId[:8], try: .key.try}'
 
-# 2. Verify no email exists for those commits
-moog agent collect-all-results --email-user <email> --minutes 10080  # 7 days
+# 2. Confirm against the Antithesis API what status the run actually reached
+moog antithesis runs --limit 100 --no-pretty | grep '^{"data"' | jq -r '.data[] | [.status, .run_id] | @tsv'
 
-# 3. Report as unknown to finish them
+# 3. Report as unknown to finish them (manual override)
 being_agent
-moog agent report-test -i <full-test-run-id> -w $MOOG_WALLET_FILE --outcome unknown --duration 0 --url "stale-no-antithesis-email"
+moog agent report-test -i <full-test-run-id> -w $MOOG_WALLET_FILE --outcome unknown --duration 0 --url "stale-uncorrelated-run"
 ```
 
 ## Infrastructure SSH
@@ -140,7 +173,7 @@ moog agent report-test -i <full-test-run-id> -w $MOOG_WALLET_FILE --outcome unkn
 | Host | Service | Container |
 |------|---------|-----------|
 | `oracle` | moog-oracle v0.4.1.2 | `oracle-moog-oracle-1` |
-| `agent` | moog-agent (PR #93 binary, tag `e6157f6`, sideloaded via `scp` + `docker load`) + email-dump | `agent-moog-agent-1`, `agent-email-dump-1` |
+| `agent` | moog-agent (release binary; the v0.5.1.2+ loop reconciles via the Antithesis API) | `agent-moog-agent-1` |
 
 Compose lives at `/opt/hal/infrastructure/moog/agent/docker-compose.yaml` on the `agent` host. Edits go in there, not in `/home/paolino/hal/...` (which is a checkout, not the deployed copy).
 
@@ -154,7 +187,7 @@ Compose lives at `/opt/hal/infrastructure/moog/agent/docker-compose.yaml` on the
 │   ├── secrets.yaml
 │   └── docker/config.json
 └── new/                 # currently mounted by compose
-    ├── secrets.yaml     # githubPAT, antithesisPassword, email creds, trustedRequesters,
+    ├── secrets.yaml     # githubPAT, antithesisPassword, trustedRequesters,
     │                    # mnemonics or encryptedMnemonics, walletPassphrase, slackWebhook,
     │                    # tokenId, mpfsHost, registry, antithesisUser, antithesisLaunchUrl,
     │                    # pollIntervalSeconds, minutes, wait
@@ -302,9 +335,13 @@ ssh agent 'cd /opt/hal/infrastructure/moog/agent && sudo docker compose up -d --
 ssh agent 'sudo docker logs --since 120s agent-moog-agent-1 2>&1 | grep -iE "DockerPushFailure|denied|Unauthenticated" | head'
 ```
 
-### Agent email password
+### Agent email password (legacy — no longer used)
 
-Lives in `agent:/secrets/moog-agent/new/secrets.yaml` as `agentEmailPassword: "..."` (IMAP app-password, not the email account password). Used for polling Antithesis result emails. Rotation is the same shape as Antithesis password — `sed` the line, force-recreate, watch for IMAP login failures.
+The agent **no longer collects results by email** — the service loop reconciles
+against the Antithesis REST API (see "How the agent reconciles results"). Any
+`agentEmailPassword` / `agentEmail` still in `secrets.yaml` is vestigial; the
+`collect-results-for` / `collect-all-results` CLI subcommands also remain but are
+off the result path. Nothing to rotate here.
 
 ### Wallet rotation (agent)
 
@@ -325,20 +362,32 @@ Then run the on-chain re-registration (the precise call depends on whether the t
 
 See "Secrets layout / Oracle host" above. The on-chain `state.owner` is bound at mint time. If the oracle key is compromised, mitigations are: encrypt the on-disk mnemonics (`moog wallet encrypt`), accept the preprod blast radius, and document the incident.
 
-## Email debugging
+## Debugging result reconciliation
 
-An email-dump service runs on the agent machine (`agent-email-dump-1`), polling IMAP every 5 minutes with a 2-hour window and logging Antithesis email subjects. Check with:
+The agent derives outcomes from the Antithesis REST API, not email. To debug why
+an `accepted` on-chain test-run isn't finishing, compare the two sides:
+
 ```bash
-ssh agent 'docker logs agent-email-dump-1 --tail 20'
+# What the agent sees from Antithesis (the status drives the outcome):
+moog antithesis runs --limit 100 --no-pretty | grep '^{"data"' \
+  | jq -r '.data[] | [.created_at, .status, .run_id] | @tsv' | head
+
+# Watch one agent poll cycle reconcile on-chain state against the API:
+ssh agent 'sudo docker logs --since 120s agent-moog-agent-1 2>&1 | grep -iE "Polling|reconcil|finish|launch|accept" | head'
 ```
 
-The agent polls emails with `--minutes 10` (10-minute window). If the oracle is down and can't process results in time, the email ages past this window. The email-dump service has a wider window for debugging.
+The usual reason an `accepted` run never finishes is a **correlation miss**: the
+agent matches an Antithesis run to an on-chain test-run by the rendered
+`description` (`matchingRuns` in `Antithesis/State.hs`), so if the description
+doesn't byte-match (e.g. a launch from a different binary), `runningDecision`
+returns `RunningWait` forever. Confirm the run exists in `moog antithesis runs`
+and that its `description` matches before force-finishing.
 
 ## Common issues
 
 - **Oracle crash-loop**: Stuck/malformed requests cause batch submission failure at MPFS.hs:87. Retract the bad requests. Oracle auto-recovers once token is clean.
 - **UnknownUpdateValidationFailure**: Request JSON format doesn't match oracle's parser. Usually caused by using `moog-head` instead of the release binary. Retract and resubmit with the release binary.
-- **Stale running tests**: Antithesis completion emails never received. Verify via email dump, then `report-test` as unknown using the release binary.
+- **Stale running tests**: an `accepted` on-chain run never reaches `finished`. With the v0.5.1.2+ API loop terminal runs auto-finish (`incomplete`/`cancelled` → `failure`, even with no triage report, via a synthetic `antithesis://runs/<id>/no-triage-report` URL), so a stuck `accepted` means the agent can't correlate the run (description mismatch) or is running a pre-v0.5.1.2 binary. Verify with `moog antithesis runs`, then `report-test --outcome unknown` as the manual override.
 - **`runMPFS` error at MPFS.hs:87**: Oracle uses `error` instead of `Either` — any MPFS submission failure crashes the process instead of skipping the bad request.
 - **Agent stale state**: Agent re-reads from chain each poll cycle but may lag. Restart if needed after on-chain changes.
 - **`DownloadAssetsValidationError (AssetValidationSourceFailure SourceDirFailureDirAbsent)`**: Looks like "GitHub directory missing" but actually any HTTP status from GitHub (401/403/5xx) gets mapped to "directory absent" by `Lib/GitHub.hs:204`. Real cause is usually an expired GitHub PAT. Curl-test the PAT against `https://api.github.com/user`; rotate `secrets.yaml.githubPAT` if 401.
@@ -351,8 +400,8 @@ The agent polls emails with `--minutes 10` (10-minute window). If the oracle is 
 
 1. **`moog-head` ≠ release binary** even when `--version` matches. Dev builds may encode types differently. Always use the downloaded release.
 2. **Don't restart oracle preemptively** — verify it's actually stuck before acting.
-3. **Verify before diagnosing** — check actual data (emails, on-chain state) before theorizing about root causes.
-4. **Email search**: Use `collect-all-results --minutes <large>` or the email-dump service to search historical emails. Match by commit ID in the email body, not by test-run ID.
+3. **Verify before diagnosing** — check actual data (the Antithesis API via `moog antithesis runs`, on-chain state) before theorizing about root causes.
+4. **Result source is the Antithesis API, not email** (v0.5.1.2+, commit `ca82717e`). The old email-collection path (`collect-all-results`, the `agent-email-dump-1` sidecar) is off the result path; the agent reconciles on-chain test-runs against `moog antithesis runs` and maps run status to outcome (`incomplete` → `failure`).
 5. **Decrypting the report URL**: the `url` field in a `finished` test-run fact is encrypted for the requester. `being_requester && moog facts test-runs --whose cfhal` returns it already decrypted as a plain `https://<tenant>.antithesis.com/report/...` URL. No separate `decrypt` step needed — `moog wallet decrypt` only handles wallet mnemonics.
 
 ### 2026-05-26 (tenant migration from `cardano` to `amaru-cardano`)
