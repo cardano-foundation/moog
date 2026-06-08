@@ -258,7 +258,7 @@ createCommand
                 $ Change (Key testRun) (Insert newState)
             value <- toJSON newState
             wtx <- lift $ submit $ \address -> do
-                mpfsRequestInsert mpfs address tokenId
+                mpfsRequestInsertFromFacts mpfs address tokenId
                     $ RequestInsertBody{key, value}
             hash <- keyHash testRun
             pure
@@ -291,7 +291,7 @@ registerUser
                 $ \address -> do
                     key <- toJSON request
                     value <- toJSON ()
-                    mpfsRequestInsert mpfs address tokenId
+                    mpfsRequestInsertFromFacts mpfs address tokenId
                         $ RequestInsertBody{key = key, value = value}
 
 unregisterUser
@@ -317,7 +317,7 @@ unregisterUser
                 $ \address -> do
                     key <- toJSON request
                     value <- toJSON ()
-                    mpfsRequestDelete mpfs address tokenId
+                    mpfsRequestDeleteFromFacts mpfs address tokenId
                         $ RequestDeleteBody{key = key, value = value}
 
 registerRole
@@ -343,7 +343,7 @@ registerRole
                 $ \address -> do
                     key <- toJSON request
                     value <- toJSON ()
-                    mpfsRequestInsert mpfs address tokenId
+                    mpfsRequestInsertFromFacts mpfs address tokenId
                         $ RequestInsertBody{key = key, value = value}
 
 unregisterRole
@@ -369,5 +369,5 @@ unregisterRole
                 $ \address -> do
                     key <- toJSON request
                     value <- toJSON ()
-                    mpfsRequestDelete mpfs address tokenId
+                    mpfsRequestDeleteFromFacts mpfs address tokenId
                         $ RequestDeleteBody{key = key, value = value}
