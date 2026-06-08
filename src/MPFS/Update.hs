@@ -15,6 +15,7 @@ import Cardano.MPFS.Client.TrustedRoot (TrustedRoot (..))
 import Control.Monad.IO.Class (liftIO)
 import Core.Types.Basic
     ( Address
+    , RequestRefId (requestId)
     , TokenId
     )
 import Core.Types.Tx
@@ -38,9 +39,10 @@ updateTokenFromFacts
     -> (UpdateRequest -> ClientM UpdateFacts)
     -> Address
     -> TokenId
+    -> [RequestRefId]
     -> ClientM (WithUnsignedTx JSValue)
-updateTokenFromFacts getStatus postFacts address tokenId = do
-    request <- liftEitherClientM $ updateTokenFactsRequest address tokenId
+updateTokenFromFacts getStatus postFacts address tokenId requests = do
+    request <- liftEitherClientM $ updateTokenFactsRequest address tokenId requests
     StatusResponse{currentUtxoRoot} <- getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
@@ -59,12 +61,12 @@ updateTokenFromFacts getStatus postFacts address tokenId = do
     pure $ WithUnsignedTx (UnsignedTx $ txHex tx) Nothing
 
 updateTokenFactsRequest
-    :: Address -> TokenId -> Either String UpdateRequest
-updateTokenFactsRequest address tokenId =
+    :: Address -> TokenId -> [RequestRefId] -> Either String UpdateRequest
+updateTokenFactsRequest address tokenId requests =
     UpdateRequest
         <$> tokenIdJSONFromTokenId tokenId
         <*> (Hex <$> addressBytesForCage address)
-        <*> pure []
+        <*> pure (requestId <$> requests)
 
 firstShow :: Show e => Either e a -> Either String a
 firstShow =
