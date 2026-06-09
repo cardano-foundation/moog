@@ -51,8 +51,8 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/haskell-mts
-  tag: f2e9f584f2ed9dff3990300f1b646090f122585b
-  --sha256: 015gzc7f419qhm4d893v9h3a6pzk66vjcbmjs37dlg6ypxwc3sry
+  tag: ab15f7b2dea73165b785c90333bbd09a36528a07
+  --sha256: 081wz3vq8d15wh1mziqnqhk2ai4i304gv7vxrhw9hqjr2sa9xy1a
 
 source-repository-package
   type: git
