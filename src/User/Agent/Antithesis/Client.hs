@@ -99,9 +99,16 @@ listAllRuns config =
         case result of
             Left err -> pure $ Left err
             Right RunsPage{runsPageRuns, runsPageNextCursor} ->
-                case runsPageNextCursor of
-                    Nothing -> pure $ Right $ acc <> runsPageRuns
-                    Just nextCursor -> go env (Just nextCursor) (acc <> runsPageRuns)
+                let acc' = acc <> runsPageRuns
+                 in case runsPageNextCursor of
+                        Nothing -> pure $ Right acc'
+                        -- Stop if the cursor fails to advance. A
+                        -- non-terminating upstream cursor (e.g. an ignored
+                        -- pagination param) must never accumulate pages until
+                        -- the agent OOMs; bail instead of looping forever.
+                        Just nextCursor
+                            | Just nextCursor == cursor -> pure $ Right acc'
+                            | otherwise -> go env (Just nextCursor) acc'
 
 withApiEnv
     :: AntithesisApiConfig

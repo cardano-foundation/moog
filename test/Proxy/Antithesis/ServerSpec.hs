@@ -34,9 +34,9 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 spec :: Spec
 spec =
     describe "Proxy.Antithesis.Server (Servant)" $ do
-        it "forwards GET /api/v0/runs?limit=&cursor= with Bearer API key" $
-            check "/api/v0/runs?limit=5&cursor=foo"
-                ("/api/v0/runs", "?limit=5&cursor=foo")
+        it "forwards GET /api/v0/runs?limit=&after= with Bearer API key" $
+            check "/api/v0/runs?limit=5&after=foo"
+                ("/api/v0/runs", "?limit=5&after=foo")
 
         it "forwards GET /api/v0/runs/{run_id}" $
             check "/api/v0/runs/abc-54-7"

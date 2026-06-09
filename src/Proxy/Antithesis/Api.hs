@@ -105,7 +105,11 @@ type AntithesisProxyJsonAPI =
             :> "v0"
             :> "runs"
             :> QueryParam "limit" Int
-            :> QueryParam "cursor" Text
+            -- Antithesis paginates with @after=@ (a created-before token),
+            -- NOT @cursor=@. Sending the wrong name makes the upstream
+            -- silently ignore it and re-serve page 1 with an unchanged
+            -- @next_cursor@, which loops 'listAllRuns' forever (OOM).
+            :> QueryParam "after" Text
             :> Get '[PlainJSON] Value
         :<|> "api"
             :> "v0"
