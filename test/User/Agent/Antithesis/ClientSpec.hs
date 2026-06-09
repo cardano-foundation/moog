@@ -80,10 +80,26 @@ spec = describe "User.Agent.Antithesis.Client" $ do
                   , Just "Bearer api-key"
                   )
                 , ( "/api/v0/runs"
-                  , [("limit", Just "100"), ("cursor", Just "cursor-2")]
+                  , [("limit", Just "100"), ("after", Just "cursor-2")]
                   , Just "Bearer api-key"
                   )
                 ]
+
+    it "stops when the upstream cursor does not advance" $ do
+        seenRef <- newIORef (0 :: Int)
+        result <-
+            withStuckCursorApi seenRef $ \baseUrl ->
+                listAllRuns
+                    AntithesisApiConfig
+                        { antithesisApiUrl = AntithesisApiUrl baseUrl
+                        , antithesisApiKey = AntithesisApiKey "api-key"
+                        }
+        -- A non-advancing cursor must terminate (not loop until OOM):
+        -- page 1 (no cursor) then one repeat whose next_cursor equals the
+        -- cursor we just sent, after which 'listAllRuns' bails.
+        fmap length result `shouldBe` Right 2
+        hits <- readIORef seenRef
+        hits `shouldBe` 2
 
 type SeenRequest = (ByteString, [(Text, Maybe Text)], Maybe ByteString)
 
@@ -95,7 +111,7 @@ withRunsApi seenRef action =
 runsApi :: IORef [SeenRequest] -> Application
 runsApi seenRef request respond = do
     let queryText = queryToQueryText $ queryString request
-        cursor = lookup "cursor" queryText
+        after = lookup "after" queryText
         auth = lookup hAuthorization $ requestHeaders request
     appendSeen seenRef (rawPathInfo request, queryText, auth)
     respond $
@@ -103,7 +119,7 @@ runsApi seenRef request respond = do
             status200
             [("Content-Type", "application/json")]
             $ Aeson.encode
-            $ case cursor of
+            $ case after of
                 Nothing ->
                     runsPageJson
                         [runJson "run-1" "in_progress" "description-1" Nothing]
@@ -119,6 +135,25 @@ runsApi seenRef request respond = do
                         Nothing
                 _ ->
                     runsPageJson [] Nothing
+
+-- | An upstream that always answers with the same @next_cursor@ regardless
+-- of the @after@ it is given — the shape that looped 'listAllRuns' until OOM.
+withStuckCursorApi :: IORef Int -> (String -> IO a) -> IO a
+withStuckCursorApi hitsRef action =
+    testWithApplication (pure $ stuckCursorApi hitsRef) $ \port ->
+        action $ "http://127.0.0.1:" <> show port
+
+stuckCursorApi :: IORef Int -> Application
+stuckCursorApi hitsRef _request respond = do
+    atomicModifyIORef' hitsRef $ \n -> (n + 1, ())
+    respond $
+        responseLBS
+            status200
+            [("Content-Type", "application/json")]
+            $ Aeson.encode
+            $ runsPageJson
+                [runJson "run-stuck" "in_progress" "description" Nothing]
+                (Just "stuck")
 
 appendSeen :: IORef [SeenRequest] -> SeenRequest -> IO ()
 appendSeen ref req =
