@@ -12,10 +12,10 @@ description: MOOG CLI for Antithesis test management on Cardano. Setup using the
 ```bash
 cd /code/moog
 # Download the release binary (same as the GitHub Actions workflow uses).
-# Latest release is v0.5.1.3; asset naming changed at v0.5.x — the portable,
+# Latest release is v0.5.1.4; asset naming changed at v0.5.x — the portable,
 # statically-linked CLI is now `moog-<ver>-x86_64-linux-musl.tar.gz` (it
 # extracts a single `moog` binary; moog-agent / moog-oracle are separate assets).
-curl -sL "https://github.com/cardano-foundation/moog/releases/download/v0.5.1.3/moog-0.5.1.3-x86_64-linux-musl.tar.gz" | tar xz -C ./tmp/
+curl -sL "https://github.com/cardano-foundation/moog/releases/download/v0.5.1.4/moog-0.5.1.4-x86_64-linux-musl.tar.gz" | tar xz -C ./tmp/
 export PATH=/code/moog/tmp:$PATH
 source tmp/prod-setup.sh
 ```

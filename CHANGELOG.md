@@ -1,5 +1,19 @@
 # Changelog for moog-cli
 
+### v0.5.1.4 - 2026-06-09
+
+#### Fixed
+
+- **Agent no longer OOM-loops on the Antithesis runs pagination.** Antithesis
+  renamed the `GET /api/v0/runs` pagination query parameter from `cursor` to
+  `after` under the same `v0`. The Servant-derived client still sent `cursor=`,
+  which the upstream silently ignores — re-serving page 1 with an unchanged
+  `next_cursor`. Once a tenant exceeded one page (100 runs), `listAllRuns`
+  paginated forever, accumulating duplicates until the `moog-agent` process was
+  OOM-killed and stopped launching test runs. The client now sends `after=`, and
+  `listAllRuns` additionally bails when the cursor fails to advance so a future
+  silent upstream change degrades gracefully instead of exhausting host memory.
+
 ### v0.5.1.3 - 2026-06-01
 
 #### Fixed
