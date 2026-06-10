@@ -3,8 +3,24 @@
 module MPFS.APISpec (mpfsAPISpec)
 where
 
+import Cardano.Ledger.Api
+    ( ConwayEra
+    , Datum (..)
+    , EraTx (..)
+    , EraTxBody (outputsTxBodyL)
+    , binaryDataToData
+    , eraProtVerLow
+    , getPlutusData
+    )
+import Cardano.Ledger.Babbage.TxBody (BabbageTxOut (BabbageTxOut))
+import Cardano.Ledger.Binary
+    ( DecCBOR (decCBOR)
+    , decodeFullAnnotator
+    )
+import Cardano.Tx.Ledger (ConwayTx)
 import Control.Concurrent (threadDelay)
 import Control.Exception (throwIO)
+import Control.Lens ((^.))
 import Control.Monad.Catch (SomeException, catch)
 import Control.Monad.IO.Class (MonadIO (..))
 import Core.Context (withContext)
@@ -12,23 +28,37 @@ import Core.Types.Basic
     ( Owner (..)
     , TokenId (..)
     )
+import Core.Types.CageDatum (CageDatum (..))
+import Core.Types.Change (Change (..), Key (..))
 import Core.Types.Mnemonics (Mnemonics (..))
+import Core.Types.Operation (Op (..), Operation (..))
 import Core.Types.Tx
     ( TxHash
+    , UnsignedTx (..)
     , WithTxHash (..)
+    , WithUnsignedTx (..)
     )
 import Core.Types.Wallet (Wallet (..))
 import Data.Aeson qualified as Aeson
 import Data.Bifunctor (first)
+import Data.ByteString.Base16 (decode)
 import Data.ByteString.Char8 qualified as B
+import Data.ByteString.Lazy.Char8 qualified as BL
 import Data.Text (Text)
+import Data.Text.Encoding qualified as T
 import Effects (mkEffects)
 import GitHub (Auth)
 import MPFS.API
-    ( awaitTransactionV2
+    ( RequestDeleteBody (..)
+    , RequestInsertBody (..)
+    , RequestUpdateBody (..)
+    , awaitTransactionV2
     , getToken
     , getTokenFacts
     , mpfsClient
+    , requestDeleteFromFacts
+    , requestInsertFromFacts
+    , requestUpdateFromFacts
     )
 import Network.HTTP.Client
     ( ManagerSettings (managerResponseTimeout)
@@ -41,6 +71,7 @@ import Oracle.Token.Cli
     , tokenCmdCore
     )
 import Oracle.Validate.Types (AValidationResult (ValidationSuccess))
+import PlutusTx (Data (..), FromData, fromData)
 import Servant.Client (ClientM, mkClientEnv, parseBaseUrl, runClientM)
 import Submitting
     ( IfToWait (..)
@@ -59,7 +90,8 @@ import Test.Hspec
     , shouldBe
     )
 import Text.JSON.Canonical
-    ( JSString
+    ( FromJSON
+    , JSString
     , JSValue (..)
     , fromJSString
     )
@@ -116,6 +148,50 @@ getHostFromEnv :: IO String
 getHostFromEnv = getEnv "MOOG_MPFS_HOST"
 
 newtype Call = Call {calling :: forall a. ClientM a -> IO a}
+
+-- | Decode a hex-encoded Conway transaction body for inspection.
+deserializeTx :: Text -> ConwayTx
+deserializeTx tx = case decode (T.encodeUtf8 tx) of
+    Left err -> error $ "Failed to decode CBOR: " ++ show err
+    Right bs ->
+        case decodeFullAnnotator
+            (eraProtVerLow @ConwayEra)
+            "ConwayTx"
+            decCBOR
+            (BL.fromStrict bs) of
+            Left err -> error $ "Failed to decode full CBOR: " ++ show err
+            Right tx' -> tx'
+
+-- | The first transaction output carrying an inline datum: the cage
+-- request output the @*FromFacts@ builders lock the 'RequestDatum' at.
+-- Change\/refund outputs carry no datum and are skipped.
+firstInlineDatum :: ConwayTx -> Maybe Data
+firstInlineDatum dtx =
+    case
+        [ getPlutusData (binaryDataToData bd)
+        | BabbageTxOut _ _ (Datum bd) _ <-
+            foldr (:) [] (dtx ^. bodyTxL . outputsTxBodyL)
+        ] of
+        datum : _ -> Just datum
+        [] -> Nothing
+
+-- | Decode a v2 cage request datum into the moog 'CageDatum'. The
+-- offchain builder serialises it as
+-- @Constr 0 [Constr 0 [tokenId, owner, key, value, fee, submittedAt]]@
+-- (the @OnChainRequest@ shape), so strip the outer 'RequestDatum'
+-- wrapper plus the @fee@\/@submittedAt@ fields the legacy four-field
+-- datum lacked, then reuse the existing field decoders.
+decodeRequestDatum
+    :: (FromJSON Maybe k, FromData (Operation op))
+    => Data
+    -> Maybe (CageDatum k op)
+decodeRequestDatum = \case
+    Constr 0 [Constr 0 [tokenIdD, ownerD, keyD, valueD, _, _]] ->
+        RequestDatum
+            <$> fromData tokenIdD
+            <*> fromData ownerD
+            <*> (Change <$> fromData keyD <*> fromData valueD)
+    _ -> Nothing
 
 data Context = Context
     { mpfs :: Call
@@ -226,11 +302,76 @@ mpfsAPISpec = aroundAllWith setupAction $ do
                 case res of
                     JSObject _ -> return ()
                     _ -> error "Response is not an object"
-
--- TODO(#178): restore + migrate request-tx specs to the *FromFacts v2 API.
--- The following three specs were dropped during the #177 v2 compile-fix
--- (they build + inspect unsigned request-tx datums, which is oracle
--- request-flow behavior owned by #178, not the self-hosted-devnet proof):
---   "can retrieve a request-insert tx"
---   "can retrieve a request-delete tx"
---   "can retrieve a request-update tx"
+        it "can retrieve a request-insert tx"
+            $ \Context{mpfs = Call call, tokenId, requesterWallet} -> do
+                WithUnsignedTx (UnsignedTx tx) _ <-
+                    call
+                        $ requestInsertFromFacts
+                            requesterWallet.address
+                            tokenId
+                        $ RequestInsertBody
+                            (JSString "key")
+                            (JSString "value")
+                let dtx = deserializeTx tx
+                Just datum <- pure $ firstInlineDatum dtx
+                Just (cageDatum :: CageDatum String (OpI String)) <-
+                    pure $ decodeRequestDatum datum
+                cageDatum
+                    `shouldBe` RequestDatum
+                        { tokenId = tokenId
+                        , owner = requesterWallet.owner
+                        , change =
+                            Change
+                                { key = Key "key"
+                                , operation = Insert "value"
+                                }
+                        }
+        it "can retrieve a request-delete tx"
+            $ \Context{mpfs = Call call, tokenId, requesterWallet} -> do
+                WithUnsignedTx (UnsignedTx tx) _ <-
+                    call
+                        $ requestDeleteFromFacts
+                            requesterWallet.address
+                            tokenId
+                        $ RequestDeleteBody
+                            (JSString "key")
+                            (JSString "value")
+                let dtx = deserializeTx tx
+                Just datum <- pure $ firstInlineDatum dtx
+                Just (cageDatum :: CageDatum String (OpD String)) <-
+                    pure $ decodeRequestDatum datum
+                cageDatum
+                    `shouldBe` RequestDatum
+                        { tokenId = tokenId
+                        , owner = requesterWallet.owner
+                        , change =
+                            Change
+                                { key = Key "key"
+                                , operation = Delete "value"
+                                }
+                        }
+        it "can retrieve a request-update tx"
+            $ \Context{mpfs = Call call, tokenId, requesterWallet} -> do
+                WithUnsignedTx (UnsignedTx tx) _ <-
+                    call
+                        $ requestUpdateFromFacts
+                            requesterWallet.address
+                            tokenId
+                        $ RequestUpdateBody
+                            (JSString "key")
+                            (JSString "oldValue")
+                            (JSString "newValue")
+                let dtx = deserializeTx tx
+                Just datum <- pure $ firstInlineDatum dtx
+                Just (cageDatum :: CageDatum String (OpU String String)) <-
+                    pure $ decodeRequestDatum datum
+                cageDatum
+                    `shouldBe` RequestDatum
+                        { tokenId = tokenId
+                        , owner = requesterWallet.owner
+                        , change =
+                            Change
+                                { key = Key "key"
+                                , operation = Update "oldValue" "newValue"
+                                }
+                        }
