@@ -96,5 +96,6 @@ nav:
     - Troubleshooting: ops/troubleshooting.md
   - Developers:
     - Code Design: dev/code-design.md
+    - Dependencies: dependencies.md
   - Blog:
     - blog/index.md
