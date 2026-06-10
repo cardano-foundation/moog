@@ -96,7 +96,7 @@ spec =
             pendingDecision testRun [observed]
                 `shouldBe` PendingAccept observed
 
-        it "picks the lexicographically minimal run id as canonical" $ do
+        it "tie-breaks equal-status duplicates by ascending run id" $ do
             let runA =
                     run
                         "run-a"
@@ -111,6 +111,22 @@ spec =
                         Nothing
 
             canonicalRun [runB, runA] `shouldBe` runA
+
+        it "prefers the completed run over an incomplete duplicate" $ do
+            let runA =
+                    run
+                        "run-a"
+                        RunIncomplete
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-a")
+                runB =
+                    run
+                        "run-b"
+                        RunCompleted
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-b")
+
+            canonicalRun [runA, runB] `shouldBe` runB
 
         it "drains duplicate pending matches by accepting the canonical run" $ do
             let runA =
@@ -228,7 +244,7 @@ spec =
                     (URL "https://report.example/run-a")
                     [runA, runB]
 
-        it "waits on duplicate running matches when the canonical is not terminal" $ do
+        it "finishes from the completed run even when a duplicate is still running" $ do
             let runA =
                     run
                         "run-a"
@@ -243,7 +259,32 @@ spec =
                         (Just "https://report.example/run-b")
 
             runningDecision testRun [runA, runB]
-                `shouldBe` RunningWaitDuplicate runA [runA, runB]
+                `shouldBe` RunningFinishDuplicate
+                    runB
+                    OutcomeSuccess
+                    (URL "https://report.example/run-b")
+                    [runA, runB]
+
+        it "finishes from the completed run when a duplicate is incomplete (prod #175)" $ do
+            let runA =
+                    run
+                        "run-a"
+                        RunIncomplete
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-a")
+                runB =
+                    run
+                        "run-b"
+                        RunCompleted
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-b")
+
+            runningDecision testRun [runA, runB]
+                `shouldBe` RunningFinishDuplicate
+                    runB
+                    OutcomeSuccess
+                    (URL "https://report.example/run-b")
+                    [runA, runB]
 
         -- Live-derived regression: the real /api/v0/runs payload captured on
         -- 2026-05-30 for the stuck Leios run (#138). The fixture has status

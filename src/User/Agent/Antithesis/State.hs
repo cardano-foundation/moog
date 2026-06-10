@@ -119,12 +119,37 @@ matchingRuns testRun =
             antithesisRunDescription run
                 == Just (descriptionKey testRun)
 
--- | Pick the canonical run from a set of matching runs by lexicographically
--- minimal @run_id@. Deterministic and stable across polls so the pending-side
--- and running-side drains always agree on the same run (spec FR6). Total only
--- on non-empty input; only ever called from a non-empty match branch.
+-- | Authority ranking of a run's status for the canonical pick. A @completed@
+-- run ran to completion and carries the real result, so it outranks an
+-- @incomplete@/@cancelled@ duplicate that aborted early, which in turn outrank
+-- the non-terminal and @unknown@ states. Higher is more authoritative.
+statusPriority :: AntithesisRunStatus -> Int
+statusPriority = \case
+    RunCompleted -> 4
+    RunIncomplete -> 3
+    RunCancelled -> 2
+    RunInProgress -> 1
+    RunStarting -> 1
+    RunUnknown -> 0
+
+-- | Pick the canonical run from a set of matching runs by status authority:
+-- the highest 'statusPriority' wins, tie-broken by ascending @run_id@ for
+-- determinism. This prefers a @completed@ run — which ran to completion and
+-- carries the authoritative result — over an @incomplete@/@cancelled@
+-- duplicate that aborted early, so a mixed-outcome double-launch finishes from
+-- the right run (a prod finding: @min run_id@ alone picked the incomplete run
+-- and reported failure). Deterministic and stable across polls so the
+-- pending-side and running-side drains always agree on the same run (spec FR6).
+-- Total only on non-empty input; only ever called from a non-empty match
+-- branch.
 canonicalRun :: [AntithesisRun] -> AntithesisRun
-canonicalRun = minimumBy (comparing antithesisRunId)
+canonicalRun =
+    minimumBy
+        ( comparing $ \r ->
+            ( negate (statusPriority (antithesisRunStatus r))
+            , antithesisRunId r
+            )
+        )
 
 -- | The terminal on-chain result of a single matching run, if it has
 -- reached one. Covers the report-link case and the #138 no-report case;

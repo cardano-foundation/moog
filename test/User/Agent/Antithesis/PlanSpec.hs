@@ -155,7 +155,7 @@ spec =
                         ]
                     }
 
-        it "waits on duplicate running matches when the canonical run is not yet terminal" $ do
+        it "finishes from the completed run even when a duplicate is still running" $ do
             let runA =
                     run
                         "run-a"
@@ -173,7 +173,40 @@ spec =
                 `shouldBe` PollPlan
                     { pendingActions = []
                     , runningActions =
-                        [RunningDrainWait runningFact runA [runA, runB]]
+                        [ RunningDrainFinish
+                            runningFact
+                            runB
+                            OutcomeSuccess
+                            (URL "https://report.example/run-b")
+                            [runA, runB]
+                        ]
+                    }
+
+        it "finishes from the completed run when a duplicate is incomplete (prod #175)" $ do
+            let runA =
+                    run
+                        "run-a"
+                        RunIncomplete
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-a")
+                runB =
+                    run
+                        "run-b"
+                        RunCompleted
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-b")
+
+            planAgentPoll trusted mempty [runA, runB] [] [runningFact]
+                `shouldBe` PollPlan
+                    { pendingActions = []
+                    , runningActions =
+                        [ RunningDrainFinish
+                            runningFact
+                            runB
+                            OutcomeSuccess
+                            (URL "https://report.example/run-b")
+                            [runA, runB]
+                        ]
                     }
 
         it "pending and running drains pick the same canonical from an unordered match list" $ do

@@ -182,3 +182,45 @@ commit; never use CI to find lint/build errors.
 
 Each body carries the `Tasks: T175-S<n>` trailer. One commit per slice,
 bisect-safe, no push (orchestrator pushes after review).
+
+---
+
+## Slice 3 — prefer the authoritative terminal run as canonical (prod finding)
+
+**Goal:** fix the mixed-outcome drain bug found in the live prod test — a
+double-launched test with one `completed` and one `incomplete` run was finished
+as `failure` because `canonicalRun = min run_id` picked the aborted run.
+
+### State.hs
+- Add `statusPriority :: AntithesisRunStatus -> Int` (or equivalent ranking),
+  haddocked: `completed` highest (ran to completion → authoritative result),
+  then `incomplete`, `cancelled`, then non-terminal (`in_progress`/`starting`),
+  then `unknown` lowest.
+- Change `canonicalRun` to pick the **highest-priority** run, tie-broken by
+  ascending `run_id` for determinism:
+  ```haskell
+  canonicalRun =
+      minimumBy (comparing (\r -> (negate (statusPriority (antithesisRunStatus r)), antithesisRunId r)))
+  ```
+  Still total only on non-empty input; still shared by both drains (FR6 holds).
+
+### Tests (RED first)
+- **Update** the existing "waits when canonical not terminal" cases (PlanSpec +
+  StateSpec): they used `runA in_progress` + `runB completed`; with the ranking
+  the canonical is now the **completed** `runB`, so the expectation flips from
+  `RunningDrainWait runA` → finish from `runB` (success). Re-name them to state
+  the new policy ("finishes from the completed run even when a duplicate is
+  still running").
+- **Add** the prod regression: `runA "run-a" incomplete+report`,
+  `runB "run-b" completed+report` ⇒ canonical = `runB` (completed) ⇒
+  `RunningFinishDuplicate runB OutcomeSuccess <report-url> [...]` — NOT failure
+  from `run-a`. Mirror at the `runningDecision`/`planAgentPoll` level.
+- **Keep** same-status cases (both completed / both incomplete) green: ranking
+  ties → `run_id`, so canonical is unchanged for those.
+
+### Gate
+`nix run .#unit-tests` + `nix build .#moog-agent` (gate.sh was dropped at
+finalize; commit `--no-verify`, log the deviation).
+
+### Commit
+`fix(agent): prefer the completed run as drain canonical (#175)` + `Tasks: T175-S3`.
