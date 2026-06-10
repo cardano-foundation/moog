@@ -16,3 +16,27 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
       - run: nix develop github:paolino/dev-assets?dir=mkdocs -c mkdocs build --strict
+
+  dep-graph-drift:
+    name: Dependency graph drift gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: paolino/dev-assets/setup-nix@v0.1.0
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      # Regenerate deterministically (pure function of flake.lock + cabal.project)
+      # and fail if the committed docs/dependencies.md is out of date.
+      - uses: paolino/dev-assets/dep-graph@60fcec8ed6ec760e60cf92a41e6713d77ce49900
+        with:
+          language: haskell
+          owner-regex: "paolino|lambdasistemi|cardano-foundation"
+          output: /tmp/dependencies.fresh.md
+          title: "Moog dependency graph"
+          staleness: "false"
+      - name: Diff committed dependency graph
+        run: |
+          if ! diff -u docs/dependencies.md /tmp/dependencies.fresh.md; then
+            echo "::error::docs/dependencies.md is stale — regenerate it with the dep-graph action (staleness:false) and commit."
+            exit 1
+          fi
