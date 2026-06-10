@@ -1,9 +1,9 @@
 # Tasks — #177 (revised)
 
 ## Slice A — extract canary devnet lifecycle into the library
-- [ ] T177-SA move lifecycle helpers from app/moog-mpfs-v2-canary.hs to a library module (src/MPFS/Devnet.hs)
-- [ ] T177-SA expose the module from moog.cabal library; canary exe imports it (no behavior change)
-- [ ] T177-SA proof: `nix build .#moog-mpfs-v2-canary` builds green
+- [X] T177-SA move lifecycle helpers from app/moog-mpfs-v2-canary.hs to a library module (src/MPFS/Devnet.hs)
+- [X] T177-SA expose the module from moog.cabal library; canary exe imports it (no behavior change)
+- [X] T177-SA proof: `nix build .#moog-mpfs-v2-canary` builds green
 
 ## Slice B — integration harness boots devnet-server with funded genesis
 - [ ] T177-SB harness bracket: create/load wallet(s), patch genesis to fund, launch mpfs-devnet-server, wait ready
