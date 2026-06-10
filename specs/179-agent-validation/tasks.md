@@ -1,9 +1,9 @@
 # Tasks — #179 (agent validation, mock Antithesis)
 
 ## Slice A — mock-Antithesis Warp helper + agent integration spec module
-- [ ] T179-SA factor a reusable `withMockAntithesisServer` (from test/User/Agent/Antithesis/ClientSpec.hs) serving a configurable run list
-- [ ] T179-SA add an agent integration spec module + wire it into test-integration/Main.hs (one-line)
-- [ ] T179-SA proof: mock server boots + the (stub) spec runs under the integration harness
+- [X] T179-SA factor a reusable `withMockAntithesisServer` (from test/User/Agent/Antithesis/ClientSpec.hs) serving a configurable run list
+- [X] T179-SA add an agent integration spec module + wire it into test-integration/Main.hs (one-line)
+- [X] T179-SA proof: mock server boots + the (stub) spec runs under the integration harness
 
 ## Slice B — Pending→Running (Accept) integration test
 - [ ] T179-SB boot token; register a Pending test-run on-chain (facts); mock Antithesis returns the run in-progress; drive the agent accept (submitRunning / planAgentPoll+execute)
