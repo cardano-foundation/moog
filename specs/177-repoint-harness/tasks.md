@@ -6,10 +6,10 @@
 - [X] T177-SA proof: `nix build .#moog-mpfs-v2-canary` builds green
 
 ## Slice B — integration harness boots devnet-server with funded genesis
-- [ ] T177-SB harness bracket: create/load wallet(s), patch genesis to fund, launch mpfs-devnet-server, wait ready
-- [ ] T177-SB run existing integration specs against MOOG_MPFS_HOST=the devnet-server
-- [ ] T177-SB remove docker-compose mpfs/yaci services + yaci topup; update local-preprod.sh
-- [ ] T177-SB proof: locally boots a funded token against new MPFS; suite connects
+- [X] T177-SB harness bracket: create/load wallet(s), patch genesis to fund, launch mpfs-devnet-server, wait ready
+- [X] T177-SB run existing integration specs against MOOG_MPFS_HOST=the devnet-server
+- [X] T177-SB remove docker-compose mpfs/yaci services + yaci topup; update local-preprod.sh
+- [X] T177-SB proof: locally boots a funded token against new MPFS; suite connects
 
 ## Slice C — CI: offchain checkout build, self-hosted, moog-v2 trigger
 - [ ] T177-SC integration-tests.yaml + e2e mirror the canary Prepare step (offchain checkout + devnet-server build + env capture)
