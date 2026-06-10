@@ -34,3 +34,15 @@ accepts the slice (amended into the slice commit alongside its `Tasks:` trailer)
   one bisect-safe commit
   `fix(agent): make Antithesis launch idempotent via in-process marker (#175)`
   with `Tasks: T175-S2`.
+
+## Slice 3 — prefer authoritative terminal run as canonical (prod finding)
+
+- [X] T175-S3 — RED: update PlanSpec + StateSpec "wait when canonical not
+  terminal" cases to the new finish-from-completed expectation; add the
+  mixed-outcome regression (incomplete `run-a` + completed `run-b` ⇒ finish from
+  `run-b` as success). Watch them fail against `min run_id`.
+- [X] T175-S3 — GREEN: add `statusPriority`; rerank `canonicalRun` (highest
+  status priority, tiebreak `run_id`). Same-status cases unchanged.
+- [X] T175-S3 — Gate (`nix run .#unit-tests` + `nix build .#moog-agent`) green;
+  one bisect-safe commit `fix(agent): prefer the completed run as drain canonical (#175)`
+  with `Tasks: T175-S3`.

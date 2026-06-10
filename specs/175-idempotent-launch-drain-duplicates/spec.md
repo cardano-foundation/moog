@@ -119,14 +119,19 @@ re-launched within the process; the drain + an operator restart cover that
 rare case. (Rejected: poll-count grace — extra constant + reintroduced
 duplicate risk.)
 
-**D3 — Canonical-run pick: deterministic by `run_id` (lexicographic min).** A
-single shared `canonicalRun = minimumBy (compare on antithesisRunId)` is used
-by **both** the pending and running drains, so FR6 (agreement across sides)
-holds by construction. Not literally "earliest created" — no creation
-timestamp is exposed and run_ids are not time-correlated — but determinism is
-the property that prevents re-stalling. (Rejected: list-order heuristic
-[couples to an untyped accumulator invariant]; adding a `created` timestamp
-field [scope creep, field unconfirmed].)
+**D3 — Canonical-run pick: prefer the authoritative terminal run, then
+`run_id`.** *(Revised after the live prod test — see Slice 3.)* The original
+`minimumBy run_id` is **semantically blind**: for a double-launched test whose
+two runs disagree (`completed` vs `incomplete`), it could pick the aborted
+`incomplete` run and record a wrong `failure`. Live prod (2026-06-10) hit this
+on 4 mixed-outcome test-runs. The canonical pick now ranks by status authority
+— `completed` (ran to completion, carries the result) > `incomplete` >
+`cancelled` > non-terminal > unknown — tie-broken by `run_id` for determinism.
+Still a single shared `canonicalRun` used by both drains (FR6 holds). The unit
+tests originally used same-status duplicates, so they never exercised the mixed
+case — Slice 3 adds that coverage. (Note: `created_at`/`started_at` **are**
+exposed by `/api/v0/runs`; moog's `AntithesisRun` just doesn't parse them — a
+possible finer tiebreak, out of scope here.)
 
 ## Success Criteria
 
