@@ -20,6 +20,7 @@ import Core.Types.Fact (Fact (..), Slot (..))
 import Crypto.Error (CryptoFailable (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.ByteString qualified as BS
+import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Test.Hspec (Spec, describe, it, shouldBe)
@@ -47,9 +48,28 @@ spec :: Spec
 spec =
     describe "User.Agent.Antithesis.Plan" $ do
         it "launches a trusted pending test without accepting it in the same poll" $
-            planAgentPoll trusted [] [pendingFact] []
+            planAgentPoll trusted mempty [] [pendingFact] []
                 `shouldBe` PollPlan
                     { pendingActions = [PendingLaunchOnly pendingFact]
+                    , runningActions = []
+                    }
+
+        it "launches a pending test whose description is not yet marked" $
+            planAgentPoll trusted mempty [] [pendingFact] []
+                `shouldBe` PollPlan
+                    { pendingActions = [PendingLaunchOnly pendingFact]
+                    , runningActions = []
+                    }
+
+        it "awaits observation for an already-marked pending test not yet visible" $
+            planAgentPoll
+                trusted
+                (Set.singleton matchingDescription)
+                []
+                [pendingFact]
+                []
+                `shouldBe` PollPlan
+                    { pendingActions = [PendingAwaitObservation pendingFact]
                     , runningActions = []
                     }
 
@@ -61,7 +81,7 @@ spec =
                         (Just matchingDescription)
                         Nothing
 
-            planAgentPoll trusted [observed] [pendingFact] []
+            planAgentPoll trusted mempty [observed] [pendingFact] []
                 `shouldBe` PollPlan
                     { pendingActions = [PendingAcceptObserved pendingFact observed]
                     , runningActions = []
@@ -81,7 +101,7 @@ spec =
                         (Just matchingDescription)
                         Nothing
 
-            planAgentPoll trusted [runA, runB] [pendingFact] []
+            planAgentPoll trusted mempty [runA, runB] [pendingFact] []
                 `shouldBe` PollPlan
                     { pendingActions =
                         [PendingDrainDuplicate pendingFact runA [runA, runB]]
@@ -96,7 +116,7 @@ spec =
                         (Just matchingDescription)
                         (Just "https://report.example/run-1")
 
-            planAgentPoll trusted [observed] [] [runningFact]
+            planAgentPoll trusted mempty [observed] [] [runningFact]
                 `shouldBe` PollPlan
                     { pendingActions = []
                     , runningActions =
@@ -122,7 +142,7 @@ spec =
                         (Just matchingDescription)
                         (Just "https://report.example/run-b")
 
-            planAgentPoll trusted [runA, runB] [] [runningFact]
+            planAgentPoll trusted mempty [runA, runB] [] [runningFact]
                 `shouldBe` PollPlan
                     { pendingActions = []
                     , runningActions =
@@ -149,7 +169,7 @@ spec =
                         (Just matchingDescription)
                         (Just "https://report.example/run-b")
 
-            planAgentPoll trusted [runA, runB] [] [runningFact]
+            planAgentPoll trusted mempty [runA, runB] [] [runningFact]
                 `shouldBe` PollPlan
                     { pendingActions = []
                     , runningActions =
@@ -171,13 +191,13 @@ spec =
                         (Just "https://report.example/run-b")
                 unordered = [runB, runA]
 
-            planAgentPoll trusted unordered [pendingFact] []
+            planAgentPoll trusted mempty unordered [pendingFact] []
                 `shouldBe` PollPlan
                     { pendingActions =
                         [PendingDrainDuplicate pendingFact runA unordered]
                     , runningActions = []
                     }
-            planAgentPoll trusted unordered [] [runningFact]
+            planAgentPoll trusted mempty unordered [] [runningFact]
                 `shouldBe` PollPlan
                     { pendingActions = []
                     , runningActions =

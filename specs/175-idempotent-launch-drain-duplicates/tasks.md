@@ -22,15 +22,15 @@ accepts the slice (amended into the slice commit alongside its `Tasks:` trailer)
 
 ## Slice 2 — idempotent launch marker (part 1)
 
-- [ ] T175-S2 — RED: `PlanSpec` — thread `mempty` marker arg through existing
+- [X] T175-S2 — RED: `PlanSpec` — thread `mempty` marker arg through existing
   calls; add "already-marked ⇒ `PendingAwaitObservation`" and "unmarked ⇒
   `PendingLaunchOnly`" cases. Watch the await case fail (double-launch) first.
-- [ ] T175-S2 — GREEN(Plan): `Set Text` param on `planAgentPoll`,
+- [X] T175-S2 — GREEN(Plan): `Set Text` param on `planAgentPoll`,
   `PendingAwaitObservation` action, marker check in `planPending`.
-- [ ] T175-S2 — GREEN(Process): `launchPendingTest :: IO Bool`;
+- [X] T175-S2 — GREEN(Process): `launchPendingTest :: IO Bool`;
   `executePendingAction :: … -> IO (Maybe Text)`; manual-recursion loop
   threading the rebuilt-each-poll marker set; failed launch ⇒ not marked.
-- [ ] T175-S2 — Gate green (`./gate.sh` + `cabal check` + `nix build .#moog-agent`);
+- [X] T175-S2 — Gate green (`./gate.sh` + `cabal check` + `nix build .#moog-agent`);
   one bisect-safe commit
   `fix(agent): make Antithesis launch idempotent via in-process marker (#175)`
   with `Tasks: T175-S2`.
