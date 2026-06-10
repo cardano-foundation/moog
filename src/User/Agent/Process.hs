@@ -21,9 +21,8 @@ module User.Agent.Process
 import Cli (Command (..), TokenInfoFailure, WithValidation (..), cmd)
 import Control.Applicative (Alternative (..), optional)
 import Control.Concurrent (threadDelay)
-import Control.Monad (forever)
 import Control.Monad.IO.Class (MonadIO (..))
-import Control.Monad.Trans.Except (runExceptT, throwE)
+import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Core.Options (tokenIdOption, walletOption)
 import Core.Types.Basic
     ( Directory (..)
@@ -39,9 +38,12 @@ import Core.Types.Wallet (Wallet)
 import Data.CaseInsensitive (mk)
 import Data.Either (partitionEithers)
 import Data.Foldable (for_)
-import Data.Maybe (fromMaybe, mapMaybe)
+import Data.Maybe (catMaybes, fromMaybe, mapMaybe)
+import Data.Set (Set)
+import Data.Set qualified as Set
 import Data.String.QQ (s)
 import Data.List (intercalate)
+import Data.Text (Text)
 import Data.Text qualified as T
 import Facts (All (..), FactsSelection (..), TestRunSelection (..))
 import GitHub (Auth)
@@ -89,6 +91,7 @@ import User.Agent.Antithesis.Plan
     )
 import User.Agent.Antithesis.State
     ( AntithesisRun (..)
+    , descriptionKey
     )
 import User.Agent.Lib (testRunDuration)
 import User.Agent.Options
@@ -298,73 +301,95 @@ requestersOption = allRequestersOption <|> someRequestersOption
 agentProcess
     :: ProcessOptions
     -> IO ()
-agentProcess
+agentProcess opts = do
+    putStrLn "Starting agent process service..."
+    loop Set.empty
+  where
+    loop launched = do
+        e <- runExceptT $ pollOnce opts launched
+        loop $ either (const launched) id e
+
+-- | Run one poll, threading the in-process set of launched-but-unobserved
+-- description keys. Returns the rebuilt set for the next poll. On a poll that
+-- short-circuits (facts unavailable) the caller keeps the previous set.
+pollOnce
+    :: ProcessOptions
+    -> Set Text
+    -> ExceptT () IO (Set Text)
+pollOnce
     opts@ProcessOptions
         { poPollIntervalSeconds
         , poTrustedRequesters
         , poAntithesisApiConfig
-        } = do
-        putStrLn "Starting agent process service..."
-        forever $ runExceptT $ do
-            apiRuns <-
-                liftIO (listAllRuns poAntithesisApiConfig) >>= \case
-                    Left err -> do
-                        loggin $
-                            "Failed to get Antithesis API runs: "
-                                ++ show err
-                        pure Nothing
-                    Right runs -> do
-                        loggin $
-                            "Found "
-                                ++ show (length runs)
-                                ++ " Antithesis API runs."
-                        pure $ Just runs
-            efacts <- liftIO $ pollTestRuns opts
-            (pendingTests, runningTests, doneTests, stateChanging) <- case efacts of
-                ValidationFailure err -> do
-                    loggin $ "Failed to get test-run facts: " ++ show err
-                    throwE ()
-                ValidationSuccess facts -> pure facts
+        }
+    launched = do
+        apiRuns <-
+            liftIO (listAllRuns poAntithesisApiConfig) >>= \case
+                Left err -> do
+                    loggin $
+                        "Failed to get Antithesis API runs: "
+                            ++ show err
+                    pure Nothing
+                Right runs -> do
+                    loggin $
+                        "Found "
+                            ++ show (length runs)
+                            ++ " Antithesis API runs."
+                    pure $ Just runs
+        efacts <- liftIO $ pollTestRuns opts
+        (pendingTests, runningTests, doneTests, stateChanging) <- case efacts of
+            ValidationFailure err -> do
+                loggin $ "Failed to get test-run facts: " ++ show err
+                throwE ()
+            ValidationSuccess facts -> pure facts
 
-            loggin
-                $ "Found "
-                    ++ show (length pendingTests)
-                    ++ " pending tests (excluding changing state), "
-                    ++ show (length runningTests)
-                    ++ " running tests (excluding changing state), and "
-                    ++ show (length doneTests)
-                    ++ " done tests (excluding changing state). and "
-                    ++ show (length stateChanging)
-                    ++ " changing state tests."
-            case apiRuns of
-                Nothing ->
-                    loggin
-                        "Skipping pending/running transitions because Antithesis API state is unavailable."
-                Just runs -> do
-                    let PollPlan{pendingActions, runningActions} =
-                            planAgentPoll
-                                (allowRequester poTrustedRequesters)
-                                runs
-                                pendingTests
-                                runningTests
-                    for_ pendingActions $ liftIO . executePendingAction opts
-                    for_ runningActions $ liftIO . executeRunningAction opts
-            for_ stateChanging $ \testRun -> do
-                let TestRunId trId = mkTestRunId testRun
+        loggin
+            $ "Found "
+                ++ show (length pendingTests)
+                ++ " pending tests (excluding changing state), "
+                ++ show (length runningTests)
+                ++ " running tests (excluding changing state), and "
+                ++ show (length doneTests)
+                ++ " done tests (excluding changing state). and "
+                ++ show (length stateChanging)
+                ++ " changing state tests."
+        launched' <- case apiRuns of
+            Nothing -> do
                 loggin
-                    $ "Test-run "
-                        ++ trId
-                        ++ " is changing state (pending->running or running->done), waiting for it to settle."
+                    "Skipping pending/running transitions because Antithesis API state is unavailable."
+                -- Keep the previous markers: the API blinked, not the launches.
+                pure launched
+            Just runs -> do
+                let PollPlan{pendingActions, runningActions} =
+                        planAgentPoll
+                            (allowRequester poTrustedRequesters)
+                            launched
+                            runs
+                            pendingTests
+                            runningTests
+                marks <-
+                    traverse
+                        (liftIO . executePendingAction opts)
+                        pendingActions
+                for_ runningActions $ liftIO . executeRunningAction opts
+                pure $ Set.fromList $ catMaybes marks
+        for_ stateChanging $ \testRun -> do
+            let TestRunId trId = mkTestRunId testRun
             loggin
-                $ "Sleeping for "
-                    ++ show poPollIntervalSeconds
-                    ++ " seconds..."
-            liftIO $ threadDelay (poPollIntervalSeconds * 1000000)
+                $ "Test-run "
+                    ++ trId
+                    ++ " is changing state (pending->running or running->done), waiting for it to settle."
+        loggin
+            $ "Sleeping for "
+                ++ show poPollIntervalSeconds
+                ++ " seconds..."
+        liftIO $ threadDelay (poPollIntervalSeconds * 1000000)
+        pure launched'
 
 loggin :: MonadIO m => String -> m ()
 loggin = liftIO . putStrLn
 
-executePendingAction :: ProcessOptions -> PendingAction -> IO ()
+executePendingAction :: ProcessOptions -> PendingAction -> IO (Maybe Text)
 executePendingAction opts = \case
     PendingLaunchOnly fact@(Fact testRun _ _) -> do
         let TestRunId trId = mkTestRunId testRun
@@ -375,7 +400,17 @@ executePendingAction opts = \case
                 ++ " is pending from trusted requester "
                 ++ show user
                 ++ ", launching it without accepting on-chain in this poll."
-        launchPendingTest opts fact
+        launched <- launchPendingTest opts fact
+        pure $ if launched then Just (descriptionKey testRun) else Nothing
+    PendingAwaitObservation (Fact testRun _ _) -> do
+        let TestRunId trId = mkTestRunId testRun
+        loggin
+            $ "Test-run "
+                ++ trId
+                ++ " was launched in an earlier poll and is not yet visible"
+                ++ " in the Antithesis API; awaiting observation without"
+                ++ " re-launching."
+        pure $ Just $ descriptionKey testRun
     PendingAcceptObserved (Fact testRun _ _) run -> do
         let testId@(TestRunId trId) = mkTestRunId testRun
         loggin
@@ -398,6 +433,7 @@ executePendingAction opts = \case
                         ++ trId
                         ++ " in transaction "
                         ++ show txHash
+        pure Nothing
     PendingDrainDuplicate (Fact testRun _ _) canonical dups -> do
         let testId@(TestRunId trId) = mkTestRunId testRun
         loggin
@@ -422,13 +458,15 @@ executePendingAction opts = \case
                         ++ trId
                         ++ " in transaction "
                         ++ show txHash
-    PendingSkipUntrusted (Fact testRun _ _) ->
+        pure Nothing
+    PendingSkipUntrusted (Fact testRun _ _) -> do
         loggin
             $ "Test-run "
                 ++ trId
                 ++ " is pending from untrusted requester "
                 ++ show user
                 ++ ", waiting for it to start running."
+        pure Nothing
       where
         TestRunId trId = mkTestRunId testRun
         user = requester testRun
@@ -512,33 +550,36 @@ executeRunningAction opts = \case
 launchPendingTest
     :: ProcessOptions
     -> Fact TestRun (TestRunState 'PendingT)
-    -> IO ()
+    -> IO Bool
 launchPendingTest opts (Fact testRun _ _) = do
     let testId@(TestRunId trId) = mkTestRunId testRun
     withSystemTempDirectory "moog-agent-" $ \directoryPath -> do
         let directory = Directory directoryPath
         dres <- downloadAssets opts directory testId
         case dres of
-            ValidationFailure err ->
+            ValidationFailure err -> do
                 loggin
                     $ "Failed to download assets for test-run "
                         ++ trId
                         ++ ": "
                         ++ show err
+                pure False
             ValidationSuccess _ -> do
                 pushes <- pushTest opts directory testId
                 case pushes of
-                    ValidationFailure err ->
+                    ValidationFailure err -> do
                         loggin
                             $ "Failed to push test-run "
                                 ++ trId
                                 ++ ": "
                                 ++ show err
-                    ValidationSuccess _ ->
+                        pure False
+                    ValidationSuccess _ -> do
                         loggin
                             $ "Pushed test-run "
                                 ++ trId
                                 ++ " to Antithesis; waiting for a later API observation before accepting on-chain."
+                        pure True
 
 runIds :: [AntithesisRun] -> String
 runIds =

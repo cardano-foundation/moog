@@ -11,6 +11,9 @@ where
 
 import Core.Types.Basic (GithubUsername)
 import Core.Types.Fact (Fact (..))
+import Data.Set (Set)
+import qualified Data.Set as Set
+import Data.Text (Text)
 import qualified User.Agent.Antithesis.State as State
 import User.Agent.Antithesis.State
     ( AntithesisRun
@@ -20,6 +23,7 @@ import User.Agent.Antithesis.State
         , RunningFinishDuplicate
         , RunningWaitDuplicate
         )
+    , descriptionKey
     , pendingDecision
     , runningDecision
     )
@@ -34,6 +38,9 @@ import User.Types
 
 data PendingAction
     = PendingLaunchOnly (Fact TestRun (TestRunState 'PendingT))
+    | -- | Launched in an earlier poll and not yet visible in the Antithesis
+      -- API: await the observation without re-POSTing (in-process idempotency).
+      PendingAwaitObservation (Fact TestRun (TestRunState 'PendingT))
     | PendingAcceptObserved (Fact TestRun (TestRunState 'PendingT)) AntithesisRun
     | -- | Drain duplicate pending matches: accept the canonical run on-chain.
       -- Carries the canonical run and the full duplicate set (logged).
@@ -75,11 +82,12 @@ data PollPlan = PollPlan
 
 planAgentPoll
     :: (GithubUsername -> Bool)
+    -> Set Text
     -> [AntithesisRun]
     -> [Fact TestRun (TestRunState 'PendingT)]
     -> [Fact TestRun (TestRunState 'RunningT)]
     -> PollPlan
-planAgentPoll allowRequester runs pendingTests runningTests =
+planAgentPoll allowRequester launched runs pendingTests runningTests =
     PollPlan
         { pendingActions = planPending <$> pendingTests
         , runningActions = planRunning <$> runningTests
@@ -90,7 +98,10 @@ planAgentPoll allowRequester runs pendingTests runningTests =
             PendingSkipUntrusted fact
         | otherwise =
             case pendingDecision testRun runs of
-                PendingLaunch -> PendingLaunchOnly fact
+                PendingLaunch
+                    | descriptionKey testRun `Set.member` launched ->
+                        PendingAwaitObservation fact
+                    | otherwise -> PendingLaunchOnly fact
                 PendingAccept run -> PendingAcceptObserved fact run
                 PendingAcceptDuplicate canonical matches ->
                     PendingDrainDuplicate fact canonical matches
