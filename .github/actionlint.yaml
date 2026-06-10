@@ -1,0 +1,6 @@
+# Register custom self-hosted runner labels so actionlint does not flag them as
+# unknown. The moog fleet (builder-new-moog-*) advertises the `moog` label, used
+# by the integration-tests + mpfs-v2-canary workflows.
+self-hosted-runner:
+  labels:
+    - moog
