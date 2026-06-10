@@ -9,11 +9,18 @@ module MPFS.Read
     , verifyTokenResponsesWith
     ) where
 
+import Cardano.Ledger.Api (ConwayEra, eraProtVerLow)
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , binaryDataToData
+    )
+import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL)
+import Cardano.Ledger.Binary (decodeFull)
 import Cardano.MPFS.API.Encoding (Hex (..))
 import Cardano.MPFS.API.Types
     ( FactEntry (..)
     , FactsResponse (..)
-    , RequestJSON (..)
     , RequestsResponse (..)
     , StatusResponse (..)
     , TokenResponse (..)
@@ -24,6 +31,11 @@ import Cardano.MPFS.API.Types
     , WitnessedUtxo (..)
     )
 import Cardano.MPFS.API.Types.Common (TokenIdJSON)
+import Cardano.MPFS.Cage.Types
+    ( CageDatum (..)
+    , OnChainOperation (..)
+    , OnChainRequest (..)
+    )
 import Cardano.MPFS.Client.TrustedRoot (TrustedRoot (..))
 import Cardano.MPFS.Client.Verify.Replay (VerifyError)
 import Cardano.MPFS.Client.Verify.Read
@@ -34,13 +46,16 @@ import Cardano.MPFS.Client.Verify.Read
     , verifyTokenState
     , verifiedTokenFacts
     )
+import Control.Lens ((^.))
 import Control.Monad.IO.Class (liftIO)
 import Core.Types.Basic (Owner (..), RequestRefId (..), TokenId)
 import Core.Types.Fact (Slot (..))
 import Core.Types.Tx (Root (..))
+import Data.Bifunctor (first)
 import Data.ByteString qualified as BS
 import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Char8 qualified as B8
+import Data.ByteString.Lazy qualified as BL
 import Data.Functor.Identity (Identity (Identity, runIdentity))
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as T
@@ -57,6 +72,9 @@ import Oracle.Types
     , Token (..)
     , TokenState (..)
     )
+import PlutusTx.Builtins (fromBuiltin)
+import PlutusTx.Builtins.Internal (BuiltinData (..))
+import PlutusTx.IsData.Class (fromBuiltinData)
 import Servant.Client (ClientM)
 import Text.JSON.Canonical (FromJSON (..), JSValue (..), ToJSON (..))
 
@@ -172,64 +190,84 @@ verifyFactsResponse trustedRoot facts =
     verifiedTokenFacts <$> verifyTokenFacts trustedRoot facts
 
 requestJSONToRequestZoo :: WitnessedRequest -> Either String RequestZoo
-requestJSONToRequestZoo WitnessedRequest{wrUtxo, wrRequest} =
+requestJSONToRequestZoo WitnessedRequest{wrUtxo} = do
     let refId = txInRefId $ wuTxIn wrUtxo
-    in  requestJSONToJSValue refId wrRequest >>= parseRequestZoo
+    -- Decode the typed request from the VERIFIED inline-datum TxOut
+    -- (proof-bound to the trusted root by 'verifyTokenRequests'), NOT from
+    -- the unverified, lossy 'RequestJSON' projection — which drops an
+    -- update's old value and so cannot type accept\/reject\/finished\/config
+    -- updates (they collapse to UnknownUpdate).
+    request <- decodeRequestDatum $ wuTxOut wrUtxo
+    requestDatumToJSValue refId request >>= parseRequestZoo
 
-requestJSONToJSValue
-    :: RequestRefId -> RequestJSON -> Either String JSValue
-requestJSONToJSValue
-    refId
-    RequestJSON{rjOwner, rjKey = Hex key, rjOperation, rjValue} = do
-        keyValue <- canonicalBytesToJSValue "request.key" (Hex key)
-        operationFields <- requestOperationFields rjOperation rjValue
-        pure
-            $ runIdentity
-            $ object
-                [ "outputRefId" .= refId
-                , "owner" .= Owner (T.unpack rjOwner)
-                ,
-                    ( "change"
-                    , object
-                        $ ("key" .= jsonToString keyValue)
-                            : operationFields
-                    )
-                ]
+-- | Decode the on-chain 'OnChainRequest' from a request UTxO's inline datum.
+-- @wuTxOut@ is the CBOR of the Conway 'TxOut'; its inline datum is the cage
+-- 'RequestDatum', which carries BOTH the old and new values for updates.
+decodeRequestDatum :: Hex -> Either String OnChainRequest
+decodeRequestDatum (Hex txOutBytes) = do
+    txOut <-
+        first (("request TxOut decode failed: " <>) . show)
+            $ decodeFull (eraProtVerLow @ConwayEra) (BL.fromStrict txOutBytes)
+    case cageDatumOf txOut of
+        Just (RequestDatum request) -> Right request
+        Just (StateDatum _) ->
+            Left "request UTxO carries a state datum, not a request datum"
+        Nothing -> Left "request UTxO has no inline cage datum"
+
+-- | Extract the cage datum from a Conway 'TxOut' inline datum.
+cageDatumOf :: TxOut ConwayEra -> Maybe CageDatum
+cageDatumOf txOut = case txOut ^. datumTxOutL of
+    Datum binaryData ->
+        let Data plutusData = binaryDataToData binaryData
+         in fromBuiltinData (BuiltinData plutusData)
+    _ -> Nothing
+
+-- | Render an 'OnChainRequest' as the @change@-bearing JSValue that
+-- 'parseRequestZoo' consumes — now with the REAL old and new values.
+requestDatumToJSValue
+    :: RequestRefId -> OnChainRequest -> Either String JSValue
+requestDatumToJSValue refId request = do
+    keyValue <- canonicalBytesToJSValue "request.key" (Hex $ requestKey request)
+    operationFields <- requestOperationFields $ requestValue request
+    pure
+        $ runIdentity
+        $ object
+            [ "outputRefId" .= refId
+            , "owner"
+                .= Owner (hexString $ fromBuiltin $ requestOwner request)
+            ,
+                ( "change"
+                , object
+                    $ ("key" .= jsonToString keyValue) : operationFields
+                )
+            ]
 
 requestOperationFields
-    :: T.Text -> Maybe Hex -> Either String [(String, Identity JSValue)]
-requestOperationFields "insert" maybeValue = do
-    value <- requiredValue "insert" maybeValue
-    pure
-        [ "type" .= ("insert" :: String)
-        , "newValue" .= jsonToString value
-        ]
-requestOperationFields "delete" maybeValue = do
-    value <- optionalValue maybeValue
-    pure
-        [ "type" .= ("delete" :: String)
-        , "oldValue" .= jsonToString value
-        ]
-requestOperationFields "update" maybeValue = do
-    value <- optionalValue maybeValue
-    pure
-        [ "type" .= ("update" :: String)
-        , "oldValue" .= jsonToString JSNull
-        , "newValue" .= jsonToString value
-        ]
-requestOperationFields operation _ =
-    Left $ "unknown request operation: " <> T.unpack operation
+    :: OnChainOperation -> Either String [(String, Identity JSValue)]
+requestOperationFields = \case
+    OpInsert v -> do
+        newValue <- requestValueJSON v
+        pure
+            [ "type" .= ("insert" :: String)
+            , "newValue" .= jsonToString newValue
+            ]
+    OpDelete v -> do
+        oldValue <- requestValueJSON v
+        pure
+            [ "type" .= ("delete" :: String)
+            , "oldValue" .= jsonToString oldValue
+            ]
+    OpUpdate old new -> do
+        oldValue <- requestValueJSON old
+        newValue <- requestValueJSON new
+        pure
+            [ "type" .= ("update" :: String)
+            , "oldValue" .= jsonToString oldValue
+            , "newValue" .= jsonToString newValue
+            ]
 
-requiredValue :: String -> Maybe Hex -> Either String JSValue
-requiredValue operation =
-    maybe
-        (Left $ operation <> " request is missing value")
-        (canonicalBytesToJSValue $ "request." <> operation <> ".value")
-
-optionalValue :: Maybe Hex -> Either String JSValue
-optionalValue Nothing = Right JSNull
-optionalValue (Just hexValue) =
-    canonicalBytesToJSValue "request.value" hexValue
+requestValueJSON :: BS.ByteString -> Either String JSValue
+requestValueJSON = canonicalBytesToJSValue "request.value" . Hex
 
 canonicalBytesToJSValue :: String -> Hex -> Either String JSValue
 canonicalBytesToJSValue field (Hex bytes) =
