@@ -17,4 +17,14 @@ jobs:
       - uses: paolino/dev-assets/setup-nix@v0.1.0
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      # Regenerate the published dependency graph with live staleness annotations
+      # ("N behind HEAD" / diverged-branch). The committed copy is deterministic
+      # (staleness:false, gated in build-docs); the deployed site shows the live view.
+      - uses: paolino/dev-assets/dep-graph@60fcec8ed6ec760e60cf92a41e6713d77ce49900
+        with:
+          language: haskell
+          owner-regex: "paolino|lambdasistemi|cardano-foundation"
+          output: docs/dependencies.md
+          title: "Moog dependency graph"
+          staleness: "true"
       - run: nix --quiet develop github:paolino/dev-assets?dir=mkdocs -c mkdocs-deploy --force
