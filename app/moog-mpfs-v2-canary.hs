@@ -36,8 +36,8 @@ import Data.Scientific (floatingOrInteger)
 import Data.Text qualified as T
 import Data.Text.Encoding qualified as TE
 import MPFS.Canary
-    ( EndBoundaryCanaryResult (..)
-    , bootThenEndCanary
+    ( FullLifecycleCanaryResult (..)
+    , fullLifecycleCanary
     )
 import Network.HTTP.Client
     ( HttpException
@@ -106,32 +106,44 @@ main = do
     output <- toJSON result
     BL.putStrLn $ renderCanonicalJSON output
 
-runCanary :: CanaryConfig -> IO EndBoundaryCanaryResult
+runCanary :: CanaryConfig -> IO FullLifecycleCanaryResult
 runCanary cfg =
     withCanaryTempDirectory $ \tmp -> do
         wallet <- canaryWallet
         genesisDir <- fundedGenesis tmp cfg wallet
         withDevnetServer tmp cfg genesisDir $ \host -> do
             client <- newClient (host, NoWait, 120)
-            bootThenEndCanary client wallet cfg.polls
+            fullLifecycleCanary client wallet cfg.polls
 
-assertCanaryResult :: EndBoundaryCanaryResult -> IO ()
+assertCanaryResult :: FullLifecycleCanaryResult -> IO ()
 assertCanaryResult result = do
     let TokenId tokenId = result.canaryTokenId
     when (null tokenId)
-        $ failTest "end boundary canary returned an empty token id"
+        $ failTest "full lifecycle canary returned an empty token id"
     when (result.bootTransactionPolls < 0)
         $ failTest
-            "end boundary canary returned a negative boot transaction poll count"
+            "full lifecycle canary returned a negative boot transaction poll count"
+    when (result.requestInsertTransactionPolls < 0)
+        $ failTest
+            "full lifecycle canary returned a negative request insert transaction poll count"
+    when (result.requestObservedPolls < 0)
+        $ failTest
+            "full lifecycle canary returned a negative request observed poll count"
+    when (result.updateTokenTransactionPolls < 0)
+        $ failTest
+            "full lifecycle canary returned a negative update token transaction poll count"
+    when (result.factObservedPolls < 0)
+        $ failTest
+            "full lifecycle canary returned a negative fact observed poll count"
     when (result.tokenBeforeEndPolls < 0)
         $ failTest
-            "end boundary canary returned a negative token-before-end poll count"
+            "full lifecycle canary returned a negative token-before-end poll count"
     when (result.endTransactionPolls < 0)
         $ failTest
-            "end boundary canary returned a negative end transaction poll count"
+            "full lifecycle canary returned a negative end transaction poll count"
     when (result.tokenGonePolls < 0)
         $ failTest
-            "end boundary canary returned a negative token-gone poll count"
+            "full lifecycle canary returned a negative token-gone poll count"
 
 loadConfig :: IO CanaryConfig
 loadConfig = do

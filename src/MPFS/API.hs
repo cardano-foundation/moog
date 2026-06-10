@@ -1,6 +1,5 @@
 module MPFS.API
-    ( SubmitV2Body (..)
-    , requestInsertFromFacts
+    ( requestInsertFromFacts
     , requestDeleteFromFacts
     , requestUpdateFromFacts
     , retractChangeFromFacts
@@ -8,6 +7,7 @@ module MPFS.API
     , getToken
     , getTokenV2
     , getTokenFacts
+    , submitRequestFromSignedTx
     , submitTransactionV2
     , RequestInsertBody (..)
     , RequestDeleteBody (..)
@@ -34,22 +34,21 @@ import Cardano.MPFS.API.Types
     , RetractFacts
     , RetractRequest
     , StatusResponse
+    , SubmitRequest (..)
+    , SubmitResponse (..)
     , TokenResponse
     , UpdateRequest
     , UpdateValueRequest
     )
+import Cardano.MPFS.API.Encoding (Hex (..))
 import Cardano.MPFS.API.Types.Facts (UpdateFacts)
 import Control.Monad (void)
 import Core.Types.Basic (Address, RequestRefId, TokenId)
 import Core.Types.Tx (SignedTx (..), TxHash (..), WithUnsignedTx)
-import Data.Aeson
-    ( ToJSON (..)
-    , Value (..)
-    , object
-    , (.=)
-    )
+import Data.Aeson (Value (..))
+import Data.ByteString.Base16 qualified as Base16
 import Data.Data (Proxy (..))
-import Data.Text (Text)
+import Data.Text.Encoding qualified as Text
 import Lib.JSON.Canonical.Extra (fromAesonThrow)
 import MPFS.Boot (bootTokenFromFacts)
 import MPFS.End (endTokenFromFacts)
@@ -79,12 +78,6 @@ import Servant.Client (ClientM, client)
 import Text.JSON.Canonical
     ( JSValue (..)
     )
-
-newtype SubmitV2Body = SubmitV2Body SignedTx
-
-instance ToJSON SubmitV2Body where
-    toJSON (SubmitV2Body (SignedTx signedTx)) =
-        object ["tx" .= signedTx]
 
 type Status =
     "status"
@@ -158,10 +151,9 @@ type GetTokenRequests =
         :> Get '[JSON] RequestsResponse
 
 type SubmitTransactionV2 =
-    "tx"
-        :> "submit"
-        :> ReqBody '[JSON] SubmitV2Body
-        :> Post '[JSON] Text
+    "submit"
+        :> ReqBody '[JSON] SubmitRequest
+        :> Post '[JSON] SubmitResponse
 
 type AwaitTransactionV2 =
     "tx"
@@ -228,7 +220,22 @@ getTokenFacts =
 
 submitTransactionV2 :: SignedTx -> ClientM TxHash
 submitTransactionV2 signed =
-    TxHash <$> submitTransactionV2' (SubmitV2Body signed)
+    submitResponseToTxHash
+        <$> submitTransactionV2' (submitRequestFromSignedTx signed)
+
+submitRequestFromSignedTx :: SignedTx -> SubmitRequest
+submitRequestFromSignedTx (SignedTx signedTx) =
+    SubmitRequest
+        $ Hex
+        $ case Base16.decode (Text.encodeUtf8 signedTx) of
+            Right signedTxCbor -> signedTxCbor
+            Left err ->
+                error
+                    $ "SignedTx is not hex-encoded CBOR: " <> err
+
+submitResponseToTxHash :: SubmitResponse -> TxHash
+submitResponseToTxHash (SubmitResponse (Hex txId)) =
+    TxHash $ Text.decodeUtf8 $ Base16.encode txId
 
 awaitTransactionV2 :: TxHash -> ClientM ()
 awaitTransactionV2 txHash =
@@ -238,7 +245,7 @@ getTokenV2' :: TokenId -> ClientM Value
 getTokenRead' :: TokenId -> ClientM TokenResponse
 getTokenFacts' :: TokenId -> ClientM FactsResponse
 getTokenRequests' :: TokenId -> ClientM RequestsResponse
-submitTransactionV2' :: SubmitV2Body -> ClientM Text
+submitTransactionV2' :: SubmitRequest -> ClientM SubmitResponse
 awaitTransactionV2' :: TxHash -> Maybe Int -> ClientM NoContent
 
 status' :: ClientM StatusResponse

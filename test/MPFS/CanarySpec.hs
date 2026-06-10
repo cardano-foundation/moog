@@ -6,10 +6,10 @@ import Core.Types.Tx (SignedTx (..), TxHash (..))
 import Data.Aeson (encode)
 import Data.ByteString.Lazy.Char8 qualified as BSL
 import Data.IORef
-import MPFS.API (SubmitV2Body (..))
+import MPFS.API (submitRequestFromSignedTx)
 import MPFS.Canary
     ( BootCanaryFailure (..)
-    , EndBoundaryCanaryResult (..)
+    , FullLifecycleCanaryResult (..)
     , pollGoneBoundaryWithDelay
     , tokenIdFromBootValue
     )
@@ -46,25 +46,34 @@ spec =
 
         describe "MPFS v2 submit body" $ do
             it "uses the POST /tx/submit wire key" $ do
-                encode (SubmitV2Body (SignedTx "deadbeef"))
-                    `shouldBe` BSL.pack "{\"tx\":\"deadbeef\"}"
+                encode (submitRequestFromSignedTx (SignedTx "deadbeef"))
+                    `shouldBe` BSL.pack
+                        "{\"signedTxCbor\":\"deadbeef\"}"
 
-        describe "end boundary result" $ do
-            it "identifies the boot-then-end observations" $ do
+        describe "full lifecycle result" $ do
+            it "identifies the write-submit lifecycle observations" $ do
                 value <-
                     toJSON
-                        EndBoundaryCanaryResult
+                        FullLifecycleCanaryResult
                             { canaryBootTxHash = TxHash "boot"
+                            , canaryRequestInsertTxHash =
+                                TxHash "request-insert"
+                            , canaryUpdateTokenTxHash =
+                                TxHash "update-token"
                             , canaryEndTxHash = TxHash "end"
                             , canaryTokenId = TokenId "abcd"
                             , bootTransactionPolls = 1
-                            , tokenBeforeEndPolls = 2
-                            , endTransactionPolls = 3
-                            , tokenGonePolls = 4
+                            , requestInsertTransactionPolls = 2
+                            , requestObservedPolls = 3
+                            , updateTokenTransactionPolls = 4
+                            , factObservedPolls = 5
+                            , tokenBeforeEndPolls = 6
+                            , endTransactionPolls = 7
+                            , tokenGonePolls = 8
                             }
                 renderCanonicalJSON value
                     `shouldBe` BSL.pack
-                        "{\"bootTransactionObserved\":true,\"bootTransactionPolls\":1,\"bootTxHash\":\"boot\",\"boundary\":\"mpfs-v2-end\",\"endTransactionObserved\":true,\"endTransactionPolls\":3,\"endTxHash\":\"end\",\"tokenBeforeEndPolls\":2,\"tokenGoneObserved\":true,\"tokenGonePolls\":4,\"tokenId\":\"abcd\",\"tokenObservedBeforeEnd\":true}"
+                        "{\"bootTransactionObserved\":true,\"bootTransactionPolls\":1,\"bootTxHash\":\"boot\",\"boundary\":\"mpfs-v2-full-lifecycle\",\"endTransactionObserved\":true,\"endTransactionPolls\":7,\"endTxHash\":\"end\",\"factObserved\":true,\"factObservedPolls\":5,\"requestInsertTransactionObserved\":true,\"requestInsertTransactionPolls\":2,\"requestInsertTxHash\":\"request-insert\",\"requestObserved\":true,\"requestObservedPolls\":3,\"tokenBeforeEndPolls\":6,\"tokenGoneObserved\":true,\"tokenGonePolls\":8,\"tokenId\":\"abcd\",\"tokenObservedBeforeEnd\":true,\"updateTokenTransactionObserved\":true,\"updateTokenTransactionPolls\":4,\"updateTokenTxHash\":\"update-token\"}"
 
         describe "token-gone polling" $ do
             it
