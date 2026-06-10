@@ -2,79 +2,104 @@ name: Integration Tests
 
 on:
   workflow_dispatch:
+    inputs:
+      offchain_ref:
+        description: "cardano-mpfs-offchain ref to pair with MOOG"
+        required: false
+        default: "main"
   pull_request:
     branches:
       - main
       - moog-v2
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   integration-tests:
     name: Run moog integration tests
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    # Run on PRs targeting moog-v2 and on manual dispatch; stays off main PRs
+    # for now. The suite self-hosts the offchain MPFS devnet-server (slices
+    # A+B), so it no longer needs docker-compose/yaci.
+    if: github.base_ref == 'moog-v2' || github.event_name == 'workflow_dispatch'
+    runs-on: [self-hosted, moog]
     env:
-      MOOG_MPFS_HOST: "http://localhost:3000"
-      MOOG_TEST_YACI_ADMIN: "http://localhost:10000"
       MOOG_GITHUB_PAT: ${{ secrets.MOOG_GITHUB_PAT }}
       MOOG_WALLET_FILE: "wallet.json"
       MOOG_TEST_REQUESTER_WALLET: "wallet.json"
       MOOG_TEST_ORACLE_WALLET: "wallet.json"
       MOOG_TEST_AGENT_WALLET: "wallet.json"
-      MOOG_WAIT: 2
     steps:
-      - name: 📥 Checkout repository
+      - name: Checkout MOOG
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          path: moog
 
-      - name: Set up Docker Compose
-        uses: docker/setup-compose-action@v1 # Or hoverkraft-tech/compose-action for more options
-
-      - name: Start mpfs on a local preprod Yaci cluster
-        run: docker compose -f test-E2E/fixtures/docker-compose.yml up -d
-
-      - name: Wait for mpfs to be ready
-        run: |
-          echo "Waiting for mpfs to be ready..."
-          while [[ "$(curl -s "$MOOG_MPFS_HOST/tokens" | jq -r '.indexerStatus.ready')" != "true" ]]; do
-              echo "Waiting for mpfs to be ready..."
-              sleep 2
-          done
+      - name: Checkout paired MPFS offchain
+        uses: actions/checkout@v6
+        with:
+          repository: lambdasistemi/cardano-mpfs-offchain
+          ref: ${{ github.event.inputs.offchain_ref || 'main' }}
+          token: ${{ secrets.MOOG_GITHUB_PAT || github.token }}
+          path: cardano-mpfs-offchain
 
       - uses: paolino/dev-assets/setup-nix@v0.1.0
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
-      - name: Fund the wallet
+      - name: Prepare paired MPFS offchain devnet
+        working-directory: cardano-mpfs-offchain
         run: |
-          nix --quiet shell -c moog wallet create -w "$MOOG_WALLET_FILE"
-          address=$(nix --quiet shell -c moog wallet info | jq -r '.address')
-          topup(){
-              curl -s -X 'POST' \
-                  "$MOOG_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
-                  -H 'accept: */*' \
-                  -H 'Content-Type: application/json' \
-                  -d '{
-                  "address": "'"$address"'",
-                  "adaAmount": 10000
-                  }'
-              }
-          while true; do
-              if topup | grep -q "Topup successful"; then
-                  break
-              fi
-              echo "Retrying topup..."
-              sleep 2
-          done
+          nix build --quiet --print-out-paths .#mpfs-devnet-server \
+            > "$RUNNER_TEMP/mpfs-devnet-server"
+          # Root the ENTIRE devshell closure via a profile GC root. The run
+          # step (a later step) relies on the devshell's PATH tools
+          # (cardano-node, etc.), the blueprint and the genesis -- all
+          # transient `nix develop` store paths. Without a root, nix auto-GC
+          # under disk pressure on the self-hosted runner reaps them between
+          # steps ("blueprint/cardano-node does not exist"). A devshell
+          # profile roots the whole closure at once.
+          nix develop --quiet --profile "$RUNNER_TEMP/itest-devshell" -c true
+          # Write the env DIRECTLY to a file from inside the devshell, using a
+          # NON-LOGIN shell (`bash -c`, not `bash -lc`). On the self-hosted
+          # builder-new runner the login shell re-sources /etc/profile +
+          # ~/.bash_profile, which RESET $PATH to the ambient gha-runner
+          # profile (dropping the devshell's cardano-node -> "cardano-node:
+          # execvp: does not exist") and emitted the ESC%G escape that
+          # corrupted the blueprint path. A non-login shell preserves the
+          # devshell PATH + env vars. The single quotes are intentional: the
+          # vars must expand in the INNER devshell bash, not the outer shell.
+          # shellcheck disable=SC2016
+          nix develop --quiet --profile "$RUNNER_TEMP/itest-devshell" -c bash -c \
+            'printf "%s\n%s\n%s\n" "$MPFS_BLUEPRINT" "$E2E_GENESIS_DIR" "$PATH" > "$RUNNER_TEMP/mpfs-devnet-env"'
+          # Ground-truth debug: does cardano-node resolve on the captured PATH?
+          _dbg_path="$(sed -n 3p "$RUNNER_TEMP/mpfs-devnet-env")"
+          if PATH="$_dbg_path" command -v cardano-node >/dev/null 2>&1; then
+            echo "DEBUG: cardano-node found on captured MPFS_DEVNET_PATH"
+          else
+            echo "DEBUG: cardano-node MISSING on captured MPFS_DEVNET_PATH"
+            echo "DEBUG: first 200 chars of captured PATH: ${_dbg_path:0:200}"
+          fi
+
+      - name: Create the test wallet
+        working-directory: moog
+        run: nix --quiet run .#moog -- wallet create -w "$MOOG_WALLET_FILE"
 
       - name: Export agent PKH
+        working-directory: moog
         run: |
-          owner=$(nix --quiet shell -c moog wallet info | jq -r '.owner')
-          echo "MOOG_AGENT_PUBLIC_KEY_HASH=$owner" >> $GITHUB_ENV
+          owner=$(nix --quiet run .#moog -- wallet info | jq -r '.owner')
+          echo "MOOG_AGENT_PUBLIC_KEY_HASH=$owner" >> "$GITHUB_ENV"
 
       - name: Run integration tests
-        run: nix --quiet run .#integration-tests
-
-      - name: Tear down
-        if: always()
-        run: docker compose -f test-E2E/fixtures/docker-compose.yml down
+        working-directory: moog
+        run: |
+          mapfile -t devnet_env < "$RUNNER_TEMP/mpfs-devnet-env"
+          export MPFS_BLUEPRINT="${devnet_env[0]}"
+          export E2E_GENESIS_DIR="${devnet_env[1]}"
+          export MPFS_DEVNET_PATH="${devnet_env[2]}"
+          server_store="$(cat "$RUNNER_TEMP/mpfs-devnet-server")"
+          export MPFS_DEVNET_SERVER="$server_store/bin/mpfs-devnet-server"
+          nix --quiet run .#integration-tests
