@@ -6,6 +6,6 @@
 - [X] T178-SA proof: integration suite passes against the self-hosted devnet (locally), new specs green
 
 ## Slice B — end-to-end oracle request→validate→apply cycle spec
-- [ ] T178-SB integration spec: boot token → requester submits request (facts) → oracle validateRequest → UpdateToken/mpfsUpdateTokenFromFacts → assert token state reflects the change
-- [ ] T178-SB fix any oracle breakage surfaced against the new MPFS
-- [ ] T178-SB proof: spec passes against the self-hosted devnet (locally); orchestrator confirms green on the PR CI
+- [X] T178-SB integration spec: boot token → requester submits request (facts) → oracle validateRequest → UpdateToken/mpfsUpdateTokenFromFacts → assert token state reflects the change
+- [X] T178-SB fix any oracle breakage surfaced against the new MPFS
+- [X] T178-SB proof: spec passes against the self-hosted devnet (locally); orchestrator confirms green on the PR CI
