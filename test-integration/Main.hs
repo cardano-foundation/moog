@@ -1,5 +1,6 @@
 {-# LANGUAGE NumericUnderscores #-}
 
+import Agent.ValidationSpec (agentValidationSpec)
 import Control.Concurrent (threadDelay)
 import Control.Exception (SomeException, catch)
 import Control.Monad (unless)
@@ -64,6 +65,7 @@ main = do
                     mpfsAPISpec
                     vkeySpec
                 userSpec
+                agentValidationSpec
 
 -- | The role wallets the suite loads. CI commonly points all three at
 -- the same @wallet.json@; the addresses are de-duplicated before
