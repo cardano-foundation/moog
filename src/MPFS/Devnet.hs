@@ -21,7 +21,9 @@ module MPFS.Devnet
 
       -- * Genesis pre-funding
     , fundedGenesis
+    , fundedGenesisMany
     , patchInitialFunds
+    , patchInitialFundsMany
     , findDonor
 
       -- * Devnet server
@@ -171,12 +173,23 @@ fundedGenesis
     -> Wallet
     -> IO FilePath
 fundedGenesis tmp cfg wallet = do
+    rawAddress <- rawWalletAddress wallet
+    fundedGenesisMany tmp cfg [rawAddress]
+
+-- | Like 'fundedGenesis', but pre-fund every raw address in the list
+-- (e.g. the distinct requester\/oracle\/agent role addresses). The
+-- caller is responsible for de-duplicating the addresses.
+fundedGenesisMany
+    :: FilePath
+    -> DevnetConfig
+    -> [T.Text]
+    -> IO FilePath
+fundedGenesisMany tmp cfg rawAddresses = do
     let target = tmp </> "devnet-genesis"
     copyDirectoryRecursive cfg.genesisSource target
-    rawAddress <- rawWalletAddress wallet
-    patchInitialFunds
+    patchInitialFundsMany
         (target </> "shelley-genesis.json")
-        rawAddress
+        rawAddresses
         10_000_000_000_000
     pure target
 
@@ -187,25 +200,40 @@ patchInitialFunds
     -> T.Text
     -> Integer
     -> IO ()
-patchInitialFunds genesisFile rawAddress walletLovelace = do
+patchInitialFunds genesisFile rawAddress =
+    patchInitialFundsMany genesisFile [rawAddress]
+
+-- | Move @walletLovelace@ to /each/ of @rawAddresses@, drawing the total
+-- from the richest @initialFunds@ donor, rewriting
+-- @shelley-genesis.json@ in place.
+patchInitialFundsMany
+    :: FilePath
+    -> [T.Text]
+    -> Integer
+    -> IO ()
+patchInitialFundsMany genesisFile rawAddresses walletLovelace = do
     value <- either error id <$> eitherDecodeFileStrict' genesisFile
     case value of
         Object root -> case KeyMap.lookup "initialFunds" root of
             Just (Object funds) -> do
                 (donorKey, donorLovelace) <- findDonor funds
-                when (donorLovelace <= walletLovelace)
+                let totalLovelace =
+                        walletLovelace
+                            * fromIntegral (length rawAddresses)
+                when (donorLovelace <= totalLovelace)
                     $ failTest
-                        "devnet genesis donor cannot fund canary wallet"
+                        "devnet genesis donor cannot fund the test wallets"
                 let donorRemainder =
-                        Number $ fromInteger $ donorLovelace - walletLovelace
+                        Number
+                            $ fromInteger
+                            $ donorLovelace - totalLovelace
                     walletFunds =
                         Number $ fromInteger walletLovelace
+                    insertFund addr =
+                        KeyMap.insert (Key.fromText addr) walletFunds
                     funds' =
                         KeyMap.insert donorKey donorRemainder
-                            $ KeyMap.insert
-                                (Key.fromText rawAddress)
-                                walletFunds
-                                funds
+                            $ foldr insertFund funds rawAddresses
                     root' =
                         KeyMap.insert "initialFunds" (Object funds') root
                 removeFile genesisFile
