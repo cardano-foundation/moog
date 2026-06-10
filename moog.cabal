@@ -667,6 +667,7 @@ test-suite integration-tests
   -- Modules included in this executable, other than Main.
   other-modules:
     Agent.ValidationSpec
+    Lib.Agent.AcceptHarness
     Lib.Agent.MockAntithesis
     Lib.Github.OracleValidationSpec
     Lib.GitHubSpec
@@ -695,6 +696,8 @@ test-suite integration-tests
     , cardano-ledger-babbage
     , cardano-ledger-binary
     , cardano-tx-tools
+    , case-insensitive
+    , crypton
     , directory
     , exceptions
     , github

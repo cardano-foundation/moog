@@ -1,5 +1,16 @@
 module MPFS.ReadSpec (spec) where
 
+import Cardano.Ledger.Address (Addr, decodeAddr)
+import Cardano.Ledger.Api (ConwayEra, eraProtVerLow)
+import Cardano.Ledger.Api.Scripts.Data
+    ( Data (..)
+    , Datum (..)
+    , dataToBinaryData
+    )
+import Cardano.Ledger.Api.Tx.Out (TxOut, datumTxOutL, mkBasicTxOut)
+import Cardano.Ledger.BaseTypes (Inject (inject))
+import Cardano.Ledger.Binary.Encoding qualified as Ledger
+import Cardano.Ledger.Coin (Coin (..))
 import Cardano.MPFS.API.Encoding (Hex (..))
 import Cardano.MPFS.API.Types
     ( FactEntry (..)
@@ -21,13 +32,21 @@ import Cardano.MPFS.API.Types.Common
     )
 import Core.Types.Change qualified as Change
 import Core.Types.Operation qualified as Operation
+import Cardano.MPFS.Cage.Types
+    ( CageDatum (RequestDatum)
+    , OnChainOperation (OpInsert)
+    , OnChainRequest (..)
+    , OnChainTokenId (..)
+    )
 import Cardano.MPFS.Client.TrustedRoot (TrustedRoot (..))
+import Control.Lens ((&), (.~))
 import Core.Types.Basic (Owner (..), RequestRefId (..))
 import Core.Types.Fact (Fact (..), Slot (..), parseFacts)
 import Core.Types.Tx (Root (..))
 import Data.ByteString qualified as BS
 import Data.ByteString.Lazy qualified as BL
 import Data.Functor.Identity (Identity (..))
+import Data.Maybe (fromMaybe)
 import Data.Text qualified as T
 import MPFS.Read
     ( factEntriesToJSValue
@@ -47,6 +66,8 @@ import Test.Hspec
     , shouldBe
     , shouldSatisfy
     )
+import PlutusTx.Builtins (toBuiltin)
+import PlutusTx.IsData.Class (toData)
 import Text.JSON.Canonical
     ( FromJSON (..)
     , JSValue (..)
@@ -178,7 +199,10 @@ sampleWitnessedRequest =
         { wrUtxo =
             WitnessedUtxo
                 { wuTxIn = sampleRequestTxIn
-                , wuTxOut = Hex ""
+                , -- The verified read now decodes the request from this
+                  -- inline-datum TxOut, not from the (unverified, lossy)
+                  -- 'RequestJSON' projection below.
+                  wuTxOut = Hex sampleRequestTxOut
                 , wuProof = Hex ""
                 }
         , wrRequest =
@@ -192,6 +216,46 @@ sampleWitnessedRequest =
                 , rjSubmittedAt = 42
                 }
         }
+
+-- | The request owner is a 28-byte payment key hash; the decoded moog
+-- owner is its lowercase hex.
+sampleRequestOwner :: BS.ByteString
+sampleRequestOwner = BS.replicate 28 0x07
+
+-- | The on-chain request datum that 'sampleRequestTxOut' carries. An
+-- insert of @sampleKey@ ↦ @sampleValue@.
+sampleOnChainRequest :: OnChainRequest
+sampleOnChainRequest =
+    OnChainRequest
+        { requestToken = OnChainTokenId (toBuiltin (BS.replicate 28 0x01))
+        , requestOwner = toBuiltin sampleRequestOwner
+        , requestKey = canonicalBytes sampleKey
+        , requestValue = OpInsert (canonicalBytes sampleValue)
+        , requestFee = 1000000
+        , requestSubmittedAt = 42
+        }
+
+-- | A real serialized Conway 'TxOut' whose inline datum is the request
+-- datum — the reverse of @MPFS.Read.decodeRequestDatum@, so the verified
+-- read recovers the typed request (with its real key\/value).
+sampleRequestTxOut :: BS.ByteString
+sampleRequestTxOut =
+    BL.toStrict
+        $ Ledger.serialize (eraProtVerLow @ConwayEra)
+        $ (mkBasicTxOut sampleAddr (inject (Coin 0)) :: TxOut ConwayEra)
+            & datumTxOutL
+                .~ Datum
+                    ( dataToBinaryData
+                        (Data (toData (RequestDatum sampleOnChainRequest)))
+                    )
+
+-- | A minimal valid testnet enterprise (payment-key) address, parsed from
+-- its raw header + 28-byte key hash, so we needn't hand-build ledger
+-- credential\/hash types.
+sampleAddr :: Addr
+sampleAddr =
+    fromMaybe (error "sampleAddr: decodeAddr failed")
+        $ decodeAddr (BS.cons 0x60 (BS.replicate 28 0x07))
 
 sampleToken :: Token Identity
 sampleToken =
@@ -207,7 +271,7 @@ sampleToken =
                 $ UnknownInsertRequest
                 $ Request
                     { outputRefId = txInRef sampleRequestTxIn
-                    , owner = Owner "request-owner"
+                    , owner = Owner (hexString sampleRequestOwner)
                     , change =
                         Change.Change
                             (Change.Key sampleKey)
