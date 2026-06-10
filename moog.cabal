@@ -657,11 +657,17 @@ test-suite integration-tests
   -- Import common warning flags.
   import:           warnings
 
+  -- Warp's 'testWithApplication' (the mock Antithesis server) and the
+  -- devnet server boot need the threaded runtime.
+  ghc-options:      -threaded
+
   -- Base language which the package is written in.
   default-language: Haskell2010
 
   -- Modules included in this executable, other than Main.
   other-modules:
+    Agent.ValidationSpec
+    Lib.Agent.MockAntithesis
     Lib.Github.OracleValidationSpec
     Lib.GitHubSpec
     MPFS.APISpec
@@ -698,6 +704,7 @@ test-suite integration-tests
     , hspec
     , http-client
     , http-client-tls
+    , http-types
     , lens
     , moog
     , path
@@ -705,3 +712,5 @@ test-suite integration-tests
     , servant-client
     , temporary
     , text
+    , wai
+    , warp
