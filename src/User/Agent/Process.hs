@@ -398,14 +398,30 @@ executePendingAction opts = \case
                         ++ trId
                         ++ " in transaction "
                         ++ show txHash
-    PendingSkipDuplicate (Fact testRun _ _) runs -> do
-        let TestRunId trId = mkTestRunId testRun
+    PendingDrainDuplicate (Fact testRun _ _) canonical dups -> do
+        let testId@(TestRunId trId) = mkTestRunId testRun
         loggin
             $ "Test-run "
                 ++ trId
                 ++ " has duplicate Antithesis API runs "
-                ++ runIds runs
-                ++ "; skipping launch and on-chain transition."
+                ++ runIds dups
+                ++ "; draining: accepting canonical run "
+                ++ T.unpack (antithesisRunId canonical)
+                ++ "."
+        eres <- submitRunning opts testId
+        case eres of
+            ValidationFailure err ->
+                loggin
+                    $ "Failed to accept test-run "
+                        ++ trId
+                        ++ ": "
+                        ++ show err
+            ValidationSuccess txHash ->
+                loggin
+                    $ "Accepted test-run "
+                        ++ trId
+                        ++ " in transaction "
+                        ++ show txHash
     PendingSkipUntrusted (Fact testRun _ _) ->
         loggin
             $ "Test-run "
@@ -450,14 +466,48 @@ executeRunningAction opts = \case
                         ++ trId
                         ++ " in transaction "
                         ++ show txHash
-    RunningSkipDuplicate (Fact testRun _ _) runs -> do
+    RunningDrainFinish
+        (Fact testRun testState _)
+        canonical
+        outcome
+        url
+        dups -> do
+        let testId@(TestRunId trId) = mkTestRunId testRun
+            URL urlStr = url
+        loggin
+            $ "Test-run "
+                ++ trId
+                ++ " has duplicate Antithesis API runs "
+                ++ runIds dups
+                ++ "; draining: finishing from canonical run "
+                ++ T.unpack (antithesisRunId canonical)
+                ++ " with result URL "
+                ++ urlStr
+                ++ "."
+        eres <- submitDone opts testId (testRunDuration testState) outcome url
+        case eres of
+            ValidationFailure err ->
+                loggin
+                    $ "Failed to publish result for test-run "
+                        ++ trId
+                        ++ ": "
+                        ++ show err
+            ValidationSuccess txHash ->
+                loggin
+                    $ "Published result for test-run "
+                        ++ trId
+                        ++ " in transaction "
+                        ++ show txHash
+    RunningDrainWait (Fact testRun _ _) canonical dups -> do
         let TestRunId trId = mkTestRunId testRun
         loggin
             $ "Test-run "
                 ++ trId
                 ++ " has duplicate Antithesis API runs "
-                ++ runIds runs
-                ++ "; skipping finished transition."
+                ++ runIds dups
+                ++ "; canonical run "
+                ++ T.unpack (antithesisRunId canonical)
+                ++ " not yet terminal, waiting."
 
 launchPendingTest
     :: ProcessOptions

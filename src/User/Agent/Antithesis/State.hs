@@ -8,7 +8,9 @@ module User.Agent.Antithesis.State
     , PendingDecision (..)
     , RunningDecision (..)
     , parseRunsPage
+    , descriptionKey
     , matchingRuns
+    , canonicalRun
     , pendingDecision
     , runningDecision
     )
@@ -19,6 +21,8 @@ import Data.Aeson qualified as Aeson
 import Data.Aeson.Key qualified as Key
 import Data.Aeson.KeyMap qualified as KeyMap
 import Data.Aeson.Types (Parser, parseEither, withObject, (.:), (.:?))
+import Data.List (minimumBy)
+import Data.Ord (comparing)
 import Data.Text (Text)
 import Data.Text qualified as T
 import User.Agent.PushTest (renderTestRun)
@@ -83,54 +87,89 @@ instance FromJSON RunsPage where
 data PendingDecision
     = PendingLaunch
     | PendingAccept AntithesisRun
-    | PendingDuplicate [AntithesisRun]
+    | -- | Multiple matching runs: the canonical run plus the full match set.
+      PendingAcceptDuplicate AntithesisRun [AntithesisRun]
     deriving (Eq, Show)
 
 data RunningDecision
     = RunningWait
     | RunningFinish AntithesisRun Outcome URL
-    | RunningDuplicate [AntithesisRun]
+    | -- | Multiple matching runs whose canonical is terminal-with-result:
+      -- the canonical, its outcome/URL, and the full match set.
+      RunningFinishDuplicate AntithesisRun Outcome URL [AntithesisRun]
+    | -- | Multiple matching runs whose canonical is not yet terminal:
+      -- the canonical plus the full match set.
+      RunningWaitDuplicate AntithesisRun [AntithesisRun]
     deriving (Eq, Show)
 
 parseRunsPage :: Value -> Either String RunsPage
 parseRunsPage = parseEither parseJSON
+
+-- | Deterministic reconciliation key for a test-run: the description
+-- Antithesis stores under @antithesis.description@. One stable key per
+-- test-run, shared by 'matchingRuns' and (in slice 2) the launch marker.
+descriptionKey :: TestRun -> Text
+descriptionKey testRun =
+    T.pack $ renderTestRun (mkTestRunId testRun) testRun
 
 matchingRuns :: TestRun -> [AntithesisRun] -> [AntithesisRun]
 matchingRuns testRun =
     filter $
         \run ->
             antithesisRunDescription run
-                == Just (T.pack $ renderTestRun (mkTestRunId testRun) testRun)
+                == Just (descriptionKey testRun)
+
+-- | Pick the canonical run from a set of matching runs by lexicographically
+-- minimal @run_id@. Deterministic and stable across polls so the pending-side
+-- and running-side drains always agree on the same run (spec FR6). Total only
+-- on non-empty input; only ever called from a non-empty match branch.
+canonicalRun :: [AntithesisRun] -> AntithesisRun
+canonicalRun = minimumBy (comparing antithesisRunId)
+
+-- | The terminal on-chain result of a single matching run, if it has
+-- reached one. Covers the report-link case and the #138 no-report case;
+-- 'Nothing' when the run is not yet terminal (or is a completed run missing
+-- its report link, which stays conservative). Reused for both single and
+-- canonical runs so they finish identically.
+terminalResult :: AntithesisRun -> Maybe (Outcome, URL)
+terminalResult run =
+    case antithesisRunTriageReport run of
+        Just reportUrl ->
+            (,URL $ T.unpack reportUrl)
+                <$> terminalOutcome (antithesisRunStatus run)
+        Nothing ->
+            -- Terminal API state with no triage-report link. Finish
+            -- failure-class runs (incomplete, cancelled) on-chain with a
+            -- deterministic synthetic URL so they do not stay accepted
+            -- forever; stay conservative for completed (success is never
+            -- attested without the report link) and for non-terminal.
+            (,noTriageReportUrl run)
+                <$> terminalNoReportOutcome (antithesisRunStatus run)
 
 pendingDecision :: TestRun -> [AntithesisRun] -> PendingDecision
 pendingDecision testRun runs =
     case matchingRuns testRun runs of
         [] -> PendingLaunch
         [run] -> PendingAccept run
-        matches -> PendingDuplicate matches
+        matches -> PendingAcceptDuplicate (canonicalRun matches) matches
 
 runningDecision :: TestRun -> [AntithesisRun] -> RunningDecision
 runningDecision testRun runs =
     case matchingRuns testRun runs of
         [] -> RunningWait
         [run] ->
-            case antithesisRunTriageReport run of
-                Just reportUrl ->
-                    case terminalOutcome $ antithesisRunStatus run of
-                        Just outcome ->
-                            RunningFinish run outcome (URL $ T.unpack reportUrl)
-                        Nothing -> RunningWait
-                Nothing ->
-                    -- Terminal API state with no triage-report link. Finish
-                    -- failure-class runs (incomplete, cancelled) on-chain with a
-                    -- deterministic synthetic URL so they do not stay accepted
-                    -- forever; stay conservative for completed (success is never
-                    -- attested without the report link) and for non-terminal.
-                    case terminalNoReportOutcome $ antithesisRunStatus run of
-                        Just outcome ->
-                            RunningFinish run outcome (noTriageReportUrl run)
-                        Nothing -> RunningWait
-        matches -> RunningDuplicate matches
+            maybe
+                RunningWait
+                (uncurry (RunningFinish run))
+                (terminalResult run)
+        matches ->
+            let canonical = canonicalRun matches
+            in  maybe
+                    (RunningWaitDuplicate canonical matches)
+                    ( \(outcome, url) ->
+                        RunningFinishDuplicate canonical outcome url matches
+                    )
+                    (terminalResult canonical)
 
 terminalOutcome :: AntithesisRunStatus -> Maybe Outcome
 terminalOutcome = \case
