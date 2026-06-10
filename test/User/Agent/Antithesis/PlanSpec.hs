@@ -67,7 +67,7 @@ spec =
                     , runningActions = []
                     }
 
-        it "does not repost or mutate duplicate pending API matches" $ do
+        it "drains duplicate pending API matches by accepting the canonical run" $ do
             let runA =
                     run
                         "run-a"
@@ -84,7 +84,7 @@ spec =
             planAgentPoll trusted [runA, runB] [pendingFact] []
                 `shouldBe` PollPlan
                     { pendingActions =
-                        [PendingSkipDuplicate pendingFact [runA, runB]]
+                        [PendingDrainDuplicate pendingFact runA [runA, runB]]
                     , runningActions = []
                     }
 
@@ -108,7 +108,7 @@ spec =
                         ]
                     }
 
-        it "does not finish duplicate running API matches" $ do
+        it "drains duplicate running API matches by finishing from the canonical run" $ do
             let runA =
                     run
                         "run-a"
@@ -126,7 +126,68 @@ spec =
                 `shouldBe` PollPlan
                     { pendingActions = []
                     , runningActions =
-                        [RunningSkipDuplicate runningFact [runA, runB]]
+                        [ RunningDrainFinish
+                            runningFact
+                            runA
+                            OutcomeSuccess
+                            (URL "https://report.example/run-a")
+                            [runA, runB]
+                        ]
+                    }
+
+        it "waits on duplicate running matches when the canonical run is not yet terminal" $ do
+            let runA =
+                    run
+                        "run-a"
+                        RunInProgress
+                        (Just matchingDescription)
+                        Nothing
+                runB =
+                    run
+                        "run-b"
+                        RunCompleted
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-b")
+
+            planAgentPoll trusted [runA, runB] [] [runningFact]
+                `shouldBe` PollPlan
+                    { pendingActions = []
+                    , runningActions =
+                        [RunningDrainWait runningFact runA [runA, runB]]
+                    }
+
+        it "pending and running drains pick the same canonical from an unordered match list" $ do
+            let runA =
+                    run
+                        "run-a"
+                        RunCompleted
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-a")
+                runB =
+                    run
+                        "run-b"
+                        RunCompleted
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-b")
+                unordered = [runB, runA]
+
+            planAgentPoll trusted unordered [pendingFact] []
+                `shouldBe` PollPlan
+                    { pendingActions =
+                        [PendingDrainDuplicate pendingFact runA unordered]
+                    , runningActions = []
+                    }
+            planAgentPoll trusted unordered [] [runningFact]
+                `shouldBe` PollPlan
+                    { pendingActions = []
+                    , runningActions =
+                        [ RunningDrainFinish
+                            runningFact
+                            runA
+                            OutcomeSuccess
+                            (URL "https://report.example/run-a")
+                            unordered
+                        ]
                     }
 
 trusted :: GithubUsername -> Bool

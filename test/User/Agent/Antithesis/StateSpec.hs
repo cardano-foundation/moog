@@ -15,6 +15,7 @@ import User.Agent.Antithesis.State
     , PendingDecision (..)
     , RunningDecision (..)
     , RunsPage (..)
+    , canonicalRun
     , matchingRuns
     , parseRunsPage
     , pendingDecision
@@ -95,7 +96,23 @@ spec =
             pendingDecision testRun [observed]
                 `shouldBe` PendingAccept observed
 
-        it "does not repost or mutate on duplicate pending matches" $ do
+        it "picks the lexicographically minimal run id as canonical" $ do
+            let runA =
+                    run
+                        "run-a"
+                        RunStarting
+                        (Just matchingDescription)
+                        Nothing
+                runB =
+                    run
+                        "run-b"
+                        RunInProgress
+                        (Just matchingDescription)
+                        Nothing
+
+            canonicalRun [runB, runA] `shouldBe` runA
+
+        it "drains duplicate pending matches by accepting the canonical run" $ do
             let runA =
                     run
                         "run-a"
@@ -110,7 +127,7 @@ spec =
                         Nothing
 
             pendingDecision testRun [runA, runB]
-                `shouldBe` PendingDuplicate [runA, runB]
+                `shouldBe` PendingAcceptDuplicate runA [runA, runB]
 
         it "finishes a running test from a completed API run with report URL" $ do
             let observed =
@@ -190,7 +207,7 @@ spec =
 
             runningDecision testRun [observed] `shouldBe` RunningWait
 
-        it "does not choose silently between duplicate running matches" $ do
+        it "drains duplicate running matches by finishing from the canonical run" $ do
             let runA =
                     run
                         "run-a"
@@ -205,7 +222,28 @@ spec =
                         (Just "https://report.example/run-b")
 
             runningDecision testRun [runA, runB]
-                `shouldBe` RunningDuplicate [runA, runB]
+                `shouldBe` RunningFinishDuplicate
+                    runA
+                    OutcomeSuccess
+                    (URL "https://report.example/run-a")
+                    [runA, runB]
+
+        it "waits on duplicate running matches when the canonical is not terminal" $ do
+            let runA =
+                    run
+                        "run-a"
+                        RunInProgress
+                        (Just matchingDescription)
+                        Nothing
+                runB =
+                    run
+                        "run-b"
+                        RunCompleted
+                        (Just matchingDescription)
+                        (Just "https://report.example/run-b")
+
+            runningDecision testRun [runA, runB]
+                `shouldBe` RunningWaitDuplicate runA [runA, runB]
 
         -- Live-derived regression: the real /api/v0/runs payload captured on
         -- 2026-05-30 for the stuck Leios run (#138). The fixture has status

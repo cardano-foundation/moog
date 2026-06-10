@@ -15,7 +15,11 @@ import qualified User.Agent.Antithesis.State as State
 import User.Agent.Antithesis.State
     ( AntithesisRun
     , PendingDecision (..)
-    , RunningDecision (RunningDuplicate, RunningFinish)
+    , RunningDecision
+        ( RunningFinish
+        , RunningFinishDuplicate
+        , RunningWaitDuplicate
+        )
     , pendingDecision
     , runningDecision
     )
@@ -31,7 +35,12 @@ import User.Types
 data PendingAction
     = PendingLaunchOnly (Fact TestRun (TestRunState 'PendingT))
     | PendingAcceptObserved (Fact TestRun (TestRunState 'PendingT)) AntithesisRun
-    | PendingSkipDuplicate (Fact TestRun (TestRunState 'PendingT)) [AntithesisRun]
+    | -- | Drain duplicate pending matches: accept the canonical run on-chain.
+      -- Carries the canonical run and the full duplicate set (logged).
+      PendingDrainDuplicate
+        (Fact TestRun (TestRunState 'PendingT))
+        AntithesisRun
+        [AntithesisRun]
     | PendingSkipUntrusted (Fact TestRun (TestRunState 'PendingT))
     deriving (Eq, Show)
 
@@ -42,7 +51,20 @@ data RunningAction
         AntithesisRun
         Outcome
         URL
-    | RunningSkipDuplicate (Fact TestRun (TestRunState 'RunningT)) [AntithesisRun]
+    | -- | Drain duplicate running matches whose canonical is terminal:
+      -- finish from the canonical's outcome/URL. Carries the full set (logged).
+      RunningDrainFinish
+        (Fact TestRun (TestRunState 'RunningT))
+        AntithesisRun
+        Outcome
+        URL
+        [AntithesisRun]
+    | -- | Drain duplicate running matches whose canonical is not yet terminal:
+      -- wait. Carries the canonical and the full set (logged).
+      RunningDrainWait
+        (Fact TestRun (TestRunState 'RunningT))
+        AntithesisRun
+        [AntithesisRun]
     deriving (Eq, Show)
 
 data PollPlan = PollPlan
@@ -70,11 +92,15 @@ planAgentPoll allowRequester runs pendingTests runningTests =
             case pendingDecision testRun runs of
                 PendingLaunch -> PendingLaunchOnly fact
                 PendingAccept run -> PendingAcceptObserved fact run
-                PendingDuplicate matches -> PendingSkipDuplicate fact matches
+                PendingAcceptDuplicate canonical matches ->
+                    PendingDrainDuplicate fact canonical matches
 
     planRunning fact@(Fact testRun _ _) =
         case runningDecision testRun runs of
             State.RunningWait -> RunningWait fact
             RunningFinish run outcome url ->
                 RunningFinishObserved fact run outcome url
-            RunningDuplicate matches -> RunningSkipDuplicate fact matches
+            RunningFinishDuplicate canonical outcome url matches ->
+                RunningDrainFinish fact canonical outcome url matches
+            RunningWaitDuplicate canonical matches ->
+                RunningDrainWait fact canonical matches

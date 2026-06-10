@@ -5,18 +5,18 @@ accepts the slice (amended into the slice commit alongside its `Tasks:` trailer)
 
 ## Slice 1 — drain duplicate runs (part 2)
 
-- [ ] T175-S1 — RED: rewrite `PlanSpec` duplicate cases (pending + running) from
+- [X] T175-S1 — RED: rewrite `PlanSpec` duplicate cases (pending + running) from
   skip → drain, add running-canonical-non-terminal + pending/running-agree
   cases; add `StateSpec` `canonicalRun` + duplicate-decision cases. Watch them
   fail against the current skip behavior.
-- [ ] T175-S1 — GREEN(State): add `descriptionKey`, `canonicalRun`,
+- [X] T175-S1 — GREEN(State): add `descriptionKey`, `canonicalRun`,
   `terminalResult`; new `PendingDecision`/`RunningDecision` drain constructors;
   drain logic in `pendingDecision`/`runningDecision`.
-- [ ] T175-S1 — GREEN(Plan): `PendingDrainDuplicate`, `RunningDrainFinish`,
+- [X] T175-S1 — GREEN(Plan): `PendingDrainDuplicate`, `RunningDrainFinish`,
   `RunningDrainWait` actions; map them in `planPending`/`planRunning`.
-- [ ] T175-S1 — GREEN(Process): drain executors (accept canonical / finish
+- [X] T175-S1 — GREEN(Process): drain executors (accept canonical / finish
   canonical / wait), with the duplicate-run ids surfaced in the log.
-- [ ] T175-S1 — Gate green (`./gate.sh` + `cabal check`); one bisect-safe commit
+- [X] T175-S1 — Gate green (`./gate.sh` + `cabal check`); one bisect-safe commit
   `fix(agent): drain duplicate Antithesis runs instead of stalling (#175)` with
   `Tasks: T175-S1`.
 
