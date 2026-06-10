@@ -133,6 +133,7 @@ library
     MPFS.Boot
     MPFS.Cage
     MPFS.Canary
+    MPFS.Devnet
     MPFS.End
     MPFS.Read
     MPFS.Request
@@ -372,21 +373,12 @@ executable moog-mpfs-v2-canary
 
   -- Other library packages from which modules are imported.
   build-depends:
-    , aeson
     , base
-    , base16-bytestring
-    , bech32
     , bytestring
     , canonical-json
     , directory
-    , filepath
-    , http-client
-    , http-types
     , moog
-    , process
-    , scientific
     , temporary
-    , text
 
   -- Directories containing source files.
 
