@@ -685,12 +685,9 @@ test-suite integration-tests
     , base16-bytestring
     , bytestring
     , canonical-json
-    , cardano-ledger-alonzo
     , cardano-ledger-api
     , cardano-ledger-babbage
     , cardano-ledger-binary
-    , cardano-ledger-core
-    , cardano-strict-containers
     , cardano-tx-tools
     , directory
     , exceptions
