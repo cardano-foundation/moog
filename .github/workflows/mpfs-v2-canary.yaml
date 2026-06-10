@@ -52,6 +52,9 @@ jobs:
           # (dropping the devshell's cardano-node -> "cardano-node: execvp: does
           # not exist") and emitted the ESC%G escape that corrupted the blueprint
           # path. A non-login shell preserves the devshell PATH + env vars.
+          # The single quotes are intentional: the vars must expand in the INNER
+          # devshell bash, not the outer shell.
+          # shellcheck disable=SC2016
           nix develop --quiet --profile "$RUNNER_TEMP/canary-devshell" -c bash -c \
             'printf "%s\n%s\n%s\n" "$MPFS_BLUEPRINT" "$E2E_GENESIS_DIR" "$PATH" > "$RUNNER_TEMP/mpfs-devnet-env"'
           # Ground-truth debug: does cardano-node resolve on the captured PATH?
