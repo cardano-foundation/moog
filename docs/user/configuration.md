@@ -15,6 +15,41 @@ In any case set the `MOOG_MPFS_HOST` environment variable to point to the MPFS s
 export MOOG_MPFS_HOST=https://mpfs.plutimus.com
 ```
 
+#### Verification: you do not have to trust the MPFS service
+
+The MPFS service is **untrusted**. Moog never takes the service's word for the
+system state: it **verifies every response client-side** against a trusted
+Merkle root before acting on it.
+
+How it works:
+
+- The system state lives on-chain. The Antithesis token's UTxO holds the root of
+  a Merkle Patricia Forestry (MPF) of all the facts, and that token is itself
+  committed in an on-chain UTxO-CSMT (a Merkle tree over Cardano's UTxO set).
+  That **UTxO-CSMT root is the trusted root**.
+- For every read &mdash; the token state, the facts, the pending requests &mdash;
+  the service returns the provable on-chain data together with the Merkle proofs
+  that bind it to that root. Moog **replays those proofs** against the trusted
+  root. If a response has been tampered with, or omits a fact, verification fails
+  and Moog rejects it.
+- The service's job is therefore only to provide **provable on-chain data plus
+  the proofs** you cannot obtain on your own (you do not have a copy of the
+  current UTxO set). It is *not* trusted to interpret or summarise that data for
+  you &mdash; Moog reconstructs what it needs from the proof-bound data itself.
+
+What this means for you:
+
+- You can point `MOOG_MPFS_HOST` at a **public or shared** MPFS service without
+  trusting its operator. A dishonest service cannot make Moog believe a false
+  state &mdash; at worst it can refuse to answer.
+- Anyone can **independently verify** the system's on-chain facts against the
+  same Merkle root; the facts are not "what the server said", they are
+  "what is provably committed on-chain".
+
+> Migration note (v1 &rarr; v2): earlier versions effectively trusted the MPFS
+> service's responses. From v2 on, every read is verified client-side against the
+> on-chain-anchored Merkle root, as described above.
+
 #### Your wallet
 
 Moog is a [DApp](https://en.wikipedia.org/wiki/Decentralized_application) that
