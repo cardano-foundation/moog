@@ -1,4 +1,5 @@
-{ CHaP, indexState, pkgs, cardano-cli ? null, mkdocs, asciinema, ... }:
+{ CHaP, cardano-mpfs-offchain, indexState, pkgs, cardano-cli ? null, mkdocs
+, asciinema, ... }:
 
 let
   libOverlay = { lib, pkgs, ... }: {
@@ -70,7 +71,11 @@ let
     compiler-nix-name = "ghc9123";
     shell = shell { inherit pkgs; };
     modules = [ libOverlay ];
-    inputMap = { "https://chap.intersectmbo.org/" = CHaP; };
+    inputMap = {
+      "https://chap.intersectmbo.org/" = CHaP;
+      "https://github.com/lambdasistemi/cardano-mpfs-offchain.git" =
+        cardano-mpfs-offchain;
+    };
   };
   project = pkgs.haskell-nix.cabalProject' mkProject;
 
