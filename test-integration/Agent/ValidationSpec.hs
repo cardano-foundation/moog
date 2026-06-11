@@ -117,6 +117,7 @@ agentValidationSpec = describe "Agent.Validation" $ do
                 let plan =
                         planAgentPoll
                             (const True)
+                            mempty
                             apiRuns
                             pendingFacts
                             runningBefore
@@ -156,7 +157,7 @@ agentValidationSpec = describe "Agent.Validation" $ do
                             "second Accept unexpectedly succeeded"
                 pendingFinal <- readPendingFacts env
                 pendingActions
-                    (planAgentPoll (const True) apiRuns pendingFinal [])
+                    (planAgentPoll (const True) mempty apiRuns pendingFinal [])
                     `shouldBe` []
                 runningFinal <- readRunningFacts env
                 length (filter (== testRun) (map factTestRun runningFinal))
@@ -193,7 +194,7 @@ agentValidationSpec = describe "Agent.Validation" $ do
                         =<< listAllRuns apiConfig
                 runningFacts <- readRunningFacts env
                 -- The real planner maps the completed run to a finish action.
-                let plan = planAgentPoll (const True) apiRuns [] runningFacts
+                let plan = planAgentPoll (const True) mempty apiRuns [] runningFacts
                 case runningActions plan of
                     [RunningFinishObserved (Fact tr running _) run outcome url] ->
                         do
@@ -256,6 +257,7 @@ agentValidationSpec = describe "Agent.Validation" $ do
                             runningActions
                                 ( planAgentPoll
                                     (const True)
+                                    mempty
                                     apiRuns
                                     []
                                     runningFinal
