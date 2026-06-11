@@ -5,9 +5,13 @@ module User.Agent.Antithesis.State
     ( AntithesisRunStatus (..)
     , AntithesisRun (..)
     , RunsPage (..)
+    , RunProperty (..)
+    , PropertiesPage (..)
     , PendingDecision (..)
     , RunningDecision (..)
     , parseRunsPage
+    , parsePropertiesPage
+    , runFailedAssertions
     , descriptionKey
     , matchingRuns
     , canonicalRun
@@ -84,6 +88,46 @@ instance FromJSON RunsPage where
             <$> obj .: "data"
             <*> obj .:? "next_cursor"
 
+-- | One Antithesis property of a run: a named assertion or event/coverage
+-- property and whether it is currently @Failing@. @propIsEvent@ distinguishes
+-- an event/coverage property (e.g. a @Sometimes:@ reachability goal) from a
+-- real assertion.
+data RunProperty = RunProperty
+    { propName :: Text
+    , propFailing :: Bool
+    , propIsEvent :: Bool
+    }
+    deriving (Eq, Show)
+
+instance FromJSON RunProperty where
+    parseJSON = withObject "RunProperty" $ \obj -> do
+        propName <- obj .: "name"
+        propFailing <- obj .: "status" >>= parsePropertyStatus
+        propIsEvent <- obj .: "is_event"
+        pure RunProperty{..}
+
+-- | A page of a run's properties. @status@ is the string @"Passing"@ /
+-- @"Failing"@ (not a bool); the listing paginates via @next_cursor@.
+data PropertiesPage = PropertiesPage
+    { propsPageData :: [RunProperty]
+    , propsPageNextCursor :: Maybe Text
+    }
+    deriving (Eq, Show)
+
+instance FromJSON PropertiesPage where
+    parseJSON = withObject "PropertiesPage" $ \obj ->
+        PropertiesPage
+            <$> obj .: "data"
+            <*> obj .:? "next_cursor"
+
+-- | Decode the @status@ string of a property to @propFailing@.
+parsePropertyStatus :: Text -> Parser Bool
+parsePropertyStatus = \case
+    "Failing" -> pure True
+    "Passing" -> pure False
+    other ->
+        fail $ "unknown Antithesis property status: " <> T.unpack other
+
 data PendingDecision
     = PendingLaunch
     | PendingAccept AntithesisRun
@@ -104,6 +148,18 @@ data RunningDecision
 
 parseRunsPage :: Value -> Either String RunsPage
 parseRunsPage = parseEither parseJSON
+
+parsePropertiesPage :: Value -> Either String PropertiesPage
+parsePropertiesPage = parseEither parseJSON
+
+-- | Did the run fail according to its properties? Initial heuristic (#190,
+-- still open): any @Failing@ property that is a real assertion
+-- (@is_event = false@) means the run failed; failing event/coverage
+-- properties (@Sometimes:@ goals and the like) do not flip it. The exact
+-- platform-vs-SUT predicate is an open #190 question.
+runFailedAssertions :: [RunProperty] -> Bool
+runFailedAssertions =
+    any $ \p -> propFailing p && not (propIsEvent p)
 
 -- | Deterministic reconciliation key for a test-run: the description
 -- Antithesis stores under @antithesis.description@. One stable key per

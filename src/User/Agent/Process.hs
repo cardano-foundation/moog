@@ -81,6 +81,7 @@ import User.Agent.Antithesis.Client
     , AntithesisApiKey
     , AntithesisApiUrl
     , deriveAntithesisApiUrl
+    , listAllProperties
     , listAllRuns
     )
 import User.Agent.Antithesis.Plan
@@ -91,7 +92,10 @@ import User.Agent.Antithesis.Plan
     )
 import User.Agent.Antithesis.State
     ( AntithesisRun (..)
+    , AntithesisRunStatus (..)
+    , RunProperty (..)
     , descriptionKey
+    , runFailedAssertions
     )
 import User.Agent.Lib (testRunDuration)
 import User.Agent.Options
@@ -120,7 +124,13 @@ import User.Agent.Types
     ( TestRunId (..)
     , mkTestRunId
     )
-import User.Types (Outcome, Phase (..), TestRun (..), TestRunState, URL (..))
+import User.Types
+    ( Outcome (..)
+    , Phase (..)
+    , TestRun (..)
+    , TestRunState
+    , URL (..)
+    )
 
 intro :: String
 intro =
@@ -490,7 +500,8 @@ executeRunningAction opts = \case
                 ++ " with result URL "
                 ++ urlStr
                 ++ "."
-        eres <- submitDone opts testId (testRunDuration testState) outcome url
+        outcome' <- resolveFinishOutcome opts run outcome
+        eres <- submitDone opts testId (testRunDuration testState) outcome' url
         case eres of
             ValidationFailure err ->
                 loggin
@@ -522,7 +533,8 @@ executeRunningAction opts = \case
                 ++ " with result URL "
                 ++ urlStr
                 ++ "."
-        eres <- submitDone opts testId (testRunDuration testState) outcome url
+        outcome' <- resolveFinishOutcome opts canonical outcome
+        eres <- submitDone opts testId (testRunDuration testState) outcome' url
         case eres of
             ValidationFailure err ->
                 loggin
@@ -546,6 +558,47 @@ executeRunningAction opts = \case
                 ++ "; canonical run "
                 ++ T.unpack (antithesisRunId canonical)
                 ++ " not yet terminal, waiting."
+
+-- | When finishing a `completed` run as success, re-derive the outcome from
+-- the run's Antithesis properties (#190): a run that ran to completion but
+-- carries a failing assertion is recorded as failure, not success. Reads every
+-- property page. On a properties-fetch error the status-based outcome is kept
+-- so the on-chain transition is never blocked.
+resolveFinishOutcome
+    :: ProcessOptions
+    -> AntithesisRun
+    -> Outcome
+    -> IO Outcome
+resolveFinishOutcome opts run outcome
+    | antithesisRunStatus run == RunCompleted && outcome == OutcomeSuccess = do
+        let runId = antithesisRunId run
+        eprops <- listAllProperties (poAntithesisApiConfig opts) runId
+        case eprops of
+            Left err -> do
+                loggin
+                    $ "Could not read Antithesis properties for run "
+                        ++ T.unpack runId
+                        ++ " ("
+                        ++ show err
+                        ++ "); keeping the status-based outcome."
+                pure outcome
+            Right props
+                | runFailedAssertions props -> do
+                    loggin
+                        $ "Antithesis run "
+                            ++ T.unpack runId
+                            ++ " completed but "
+                            ++ show (failingAssertionCount props)
+                            ++ " assertion(s) failing; recording failure."
+                    pure OutcomeFailure
+                | otherwise -> pure outcome
+    | otherwise = pure outcome
+
+-- | Count failing real assertions (event/coverage properties excluded), for
+-- the downgrade log line. Mirrors the 'runFailedAssertions' predicate.
+failingAssertionCount :: [RunProperty] -> Int
+failingAssertionCount =
+    length . filter (\p -> propFailing p && not (propIsEvent p))
 
 launchPendingTest
     :: ProcessOptions

@@ -79,7 +79,7 @@ antithesisCmd = \case
     Run rid ->
         runJson $ getRun jc rid
     Properties rid ->
-        runJson $ getProperties jc rid
+        runJson $ getProperties jc rid Nothing
     Events rid q ->
         runStream $ getEvents sc rid q
     Logs rid hh vt ->

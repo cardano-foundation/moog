@@ -11,6 +11,7 @@ module User.Agent.Antithesis.Client
     , deriveAntithesisApiUrl
     , listRunsPage
     , listAllRuns
+    , listAllProperties
     )
 where
 
@@ -41,7 +42,10 @@ import Servant.Client
     )
 import User.Agent.Antithesis.State
     ( AntithesisRun
+    , PropertiesPage (..)
+    , RunProperty
     , RunsPage (..)
+    , parsePropertiesPage
     , parseRunsPage
     )
 import User.Agent.PushTest (LaunchUrl (..))
@@ -84,7 +88,7 @@ listRunsPage
     -> IO (Either AntithesisApiError RunsPage)
 listRunsPage config limit cursor =
     withApiEnv config $ \env ->
-        runJsonRequest env $
+        runJsonRequest parseRunsPage env $
             listRuns antithesisProxyJsonClient limit cursor
 
 listAllRuns :: AntithesisApiConfig -> IO (Either AntithesisApiError [AntithesisRun])
@@ -94,7 +98,7 @@ listAllRuns config =
   where
     go env cursor acc = do
         result <-
-            runJsonRequest env $
+            runJsonRequest parseRunsPage env $
                 listRuns antithesisProxyJsonClient (Just 100) cursor
         case result of
             Left err -> pure $ Left err
@@ -106,6 +110,31 @@ listAllRuns config =
                         -- non-terminating upstream cursor (e.g. an ignored
                         -- pagination param) must never accumulate pages until
                         -- the agent OOMs; bail instead of looping forever.
+                        Just nextCursor
+                            | Just nextCursor == cursor -> pure $ Right acc'
+                            | otherwise -> go env (Just nextCursor) acc'
+
+-- | Fetch all properties of a run, following @after@/@next_cursor@ to the
+-- end (50–100 per page upstream) so later pages of assertions are not
+-- missed. Same stop-if-cursor-unchanged guard as 'listAllRuns'.
+listAllProperties
+    :: AntithesisApiConfig
+    -> Text
+    -> IO (Either AntithesisApiError [RunProperty])
+listAllProperties config runId =
+    withApiEnv config $ \env ->
+        go env Nothing []
+  where
+    go env cursor acc = do
+        result <-
+            runJsonRequest parsePropertiesPage env $
+                getProperties antithesisProxyJsonClient runId cursor
+        case result of
+            Left err -> pure $ Left err
+            Right PropertiesPage{propsPageData, propsPageNextCursor} ->
+                let acc' = acc <> propsPageData
+                 in case propsPageNextCursor of
+                        Nothing -> pure $ Right acc'
                         Just nextCursor
                             | Just nextCursor == cursor -> pure $ Right acc'
                             | otherwise -> go env (Just nextCursor) acc'
@@ -149,10 +178,11 @@ withBearer key env =
      in env{makeClientRequest = injecting}
 
 runJsonRequest
-    :: ClientEnv
+    :: (Aeson.Value -> Either String a)
+    -> ClientEnv
     -> ClientM Aeson.Value
-    -> IO (Either AntithesisApiError RunsPage)
-runJsonRequest env action = do
+    -> IO (Either AntithesisApiError a)
+runJsonRequest parse env action = do
     result <- try @SomeException $ runClientM action env
     pure $ case result of
         Left err ->
@@ -160,7 +190,7 @@ runJsonRequest env action = do
         Right (Left err) ->
             Left $ fromClientError err
         Right (Right value) ->
-            case parseRunsPage value of
+            case parse value of
                 Left err -> Left $ AntithesisApiInvalidJson $ T.pack err
                 Right page -> Right page
 
