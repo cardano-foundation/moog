@@ -24,7 +24,10 @@ let
   shell = { pkgs, ... }: {
     tools = {
       cabal = { index-state = indexState; };
-      cabal-fmt = { index-state = indexState; };
+      cabal-fmt = {
+        index-state = indexState;
+        cabalProjectLocal = "allow-newer: cabal-fmt:base";
+      };
       haskell-language-server = { index-state = indexState; };
       hoogle = { index-state = indexState; };
       fourmolu = { index-state = indexState; };
