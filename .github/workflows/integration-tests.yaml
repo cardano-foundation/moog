@@ -4,9 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       offchain_ref:
-        description: "cardano-mpfs-offchain ref to pair with MOOG"
+        description: >-
+          Optional cardano-mpfs-offchain ref override. Leave empty to
+          build the devnet-server from the rev pinned in moog's
+          cabal.project (so client and server stay the same version).
         required: false
-        default: "main"
+        default: ""
   pull_request:
     branches:
       - main
@@ -37,11 +40,32 @@ jobs:
           fetch-depth: 0
           path: moog
 
+      - name: Resolve offchain rev pinned in cabal.project
+        id: offchain
+        working-directory: moog
+        run: |
+          # Build the paired devnet-server from the EXACT offchain rev moog
+          # pins in cabal.project, so client (moog) and server stay the same
+          # version. A workflow_dispatch override wins when supplied.
+          override="${{ github.event.inputs.offchain_ref }}"
+          if [ -n "$override" ]; then
+            rev="$override"
+            echo "Using dispatch override offchain_ref=$rev"
+          else
+            rev=$(awk '/cardano-mpfs-offchain\.git/{f=1} f&&/^[[:space:]]*tag:/{print $2; exit}' cabal.project)
+            echo "Using cabal.project-pinned offchain rev=$rev"
+          fi
+          if [ -z "$rev" ]; then
+            echo "ERROR: could not resolve offchain rev from cabal.project" >&2
+            exit 1
+          fi
+          echo "ref=$rev" >> "$GITHUB_OUTPUT"
+
       - name: Checkout paired MPFS offchain
         uses: actions/checkout@v6
         with:
           repository: lambdasistemi/cardano-mpfs-offchain
-          ref: ${{ github.event.inputs.offchain_ref || 'main' }}
+          ref: ${{ steps.offchain.outputs.ref }}
           token: ${{ secrets.MOOG_GITHUB_PAT || github.token }}
           path: cardano-mpfs-offchain
 
