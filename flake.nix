@@ -22,6 +22,11 @@
       url = "github:intersectmbo/cardano-haskell-packages/repo";
       flake = false;
     };
+    cardano-mpfs-offchain = {
+      url =
+        "github:lambdasistemi/cardano-mpfs-offchain/5f200647c00308bb67641b94a16284c68494bff9";
+      flake = false;
+    };
     cardano-node-runtime = {
       url = "github:IntersectMBO/cardano-node?ref=10.7.0";
     };
@@ -80,6 +85,7 @@
           project = import ./nix/moog-project.nix {
             indexState = "2026-02-17T10:15:41Z";
             inherit CHaP;
+            cardano-mpfs-offchain = inputs.cardano-mpfs-offchain;
             inherit pkgs;
             inherit cardano-cli;
             mkdocs = mkdocs.packages.${system};

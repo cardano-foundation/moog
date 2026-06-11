@@ -24,7 +24,6 @@ import Cardano.MPFS.API.Types
     , RequestsResponse (..)
     , StatusResponse (..)
     , TokenResponse (..)
-    , TokenStateJSON (..)
     , TxInJSON (..)
     , WitnessedRequest (..)
     , WitnessedTokenState (..)
@@ -35,6 +34,8 @@ import Cardano.MPFS.Cage.Types
     ( CageDatum (..)
     , OnChainOperation (..)
     , OnChainRequest (..)
+    , OnChainRoot (..)
+    , OnChainTokenState (..)
     )
 import Cardano.MPFS.Client.TrustedRoot (TrustedRoot (..))
 import Cardano.MPFS.Client.Verify.Replay (VerifyError)
@@ -153,12 +154,13 @@ tokenResponsesToJSValue
     TokenResponse{trState = state}
     RequestsResponse{rrRequests = requests} = do
         requestZoos <- traverse requestJSONToRequestZoo requests
+        tokenState <- witnessedTokenStateToTokenState state
         pure
             $ runIdentity
             $ toJSON
             $ Token
                 { tokenRefId = txInRefId $ wuTxIn $ wtsUtxo state
-                , tokenState = witnessedTokenStateToTokenState state
+                , tokenState = tokenState
                 , tokenRequests = Identity <$> requestZoos
                 }
 
@@ -193,10 +195,11 @@ requestJSONToRequestZoo :: WitnessedRequest -> Either String RequestZoo
 requestJSONToRequestZoo WitnessedRequest{wrUtxo} = do
     let refId = txInRefId $ wuTxIn wrUtxo
     -- Decode the typed request from the VERIFIED inline-datum TxOut
-    -- (proof-bound to the trusted root by 'verifyTokenRequests'), NOT from
-    -- the unverified, lossy 'RequestJSON' projection — which drops an
-    -- update's old value and so cannot type accept\/reject\/finished\/config
-    -- updates (they collapse to UnknownUpdate).
+    -- (proof-bound to the trusted root by 'verifyTokenRequests'). 0.2.0
+    -- (#342) removed the unverified, lossy server-side request projection,
+    -- which dropped an update's old value and so could not type
+    -- accept\/reject\/finished\/config updates (they collapsed to
+    -- UnknownUpdate); the inline datum carries BOTH values.
     request <- decodeRequestDatum $ wuTxOut wrUtxo
     requestDatumToJSValue refId request >>= parseRequestZoo
 
@@ -281,13 +284,35 @@ parseRequestZoo value =
         "verified request JSON did not match moog RequestZoo"
         (fromJSON value)
 
-witnessedTokenStateToTokenState :: WitnessedTokenState -> TokenState
+{- | Recover the token's owner and trie root from the VERIFIED state
+UTxO. 0.2.0 (#342) dropped the server-side @TokenStateJSON@ projection, so
+the owner\/root now come from the inline 'StateDatum' inside the proof-bound
+@wuTxOut@ — the same source of truth the request path already decodes.
+-}
 witnessedTokenStateToTokenState
-    WitnessedTokenState{wtsState = TokenStateJSON{owner, root = Hex root}} =
+    :: WitnessedTokenState -> Either String TokenState
+witnessedTokenStateToTokenState WitnessedTokenState{wtsUtxo} = do
+    OnChainTokenState{stateOwner, stateRoot} <-
+        decodeStateDatum $ wuTxOut wtsUtxo
+    pure
         TokenState
-            { tokenRoot = Root $ hexString root
-            , tokenOwner = Owner $ T.unpack owner
+            { tokenRoot = Root $ hexString $ unOnChainRoot stateRoot
+            , tokenOwner = Owner $ hexString $ fromBuiltin stateOwner
             }
+
+-- | Decode the on-chain 'OnChainTokenState' from a state UTxO's inline
+-- datum. @wuTxOut@ is the CBOR of the Conway 'TxOut'; its inline datum is
+-- the cage 'StateDatum'.
+decodeStateDatum :: Hex -> Either String OnChainTokenState
+decodeStateDatum (Hex txOutBytes) = do
+    txOut <-
+        first (("state TxOut decode failed: " <>) . show)
+            $ decodeFull (eraProtVerLow @ConwayEra) (BL.fromStrict txOutBytes)
+    case cageDatumOf txOut of
+        Just (StateDatum state) -> Right state
+        Just (RequestDatum _) ->
+            Left "state UTxO carries a request datum, not a state datum"
+        Nothing -> Left "state UTxO has no inline cage datum"
 
 txInRefId :: TxInJSON -> RequestRefId
 txInRefId TxInJSON{tjTxId = Hex txId, tjTxIx} =
