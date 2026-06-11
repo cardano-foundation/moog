@@ -26,11 +26,14 @@ module Lib.Agent.AcceptHarness
     , withAcceptEnv
     , sampleTestRun
     , seedConfigAndPending
+    , seedConfigRunningUser
     , acceptViaAgent
+    , reportViaAgent
     , foldPendingRequests
     , tokenRequestRefIds
     , readPendingFacts
     , readRunningFacts
+    , readDoneFacts
     , factTestRun
     )
 where
@@ -60,6 +63,7 @@ import Core.Types.Tx
     ( TxHash
     , WithTxHash (..)
     )
+import Core.Types.VKey (encodeVKey)
 import Core.Types.Wallet (Wallet (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.Aeson qualified as Aeson
@@ -108,21 +112,27 @@ import Text.JSON.Canonical
     , ToJSON (..)
     , renderCanonicalJSON
     )
-import User.Agent.Cli (AgentCommand (Accept))
+import User.Agent.Cli (AgentCommand (Accept, Report), ReportFailure)
 import User.Agent.Types (TestRunId)
 import User.Types
-    ( Phase (..)
+    ( GithubIdentification (..)
+    , Outcome
+    , Phase (..)
+    , RegisterUserKey (..)
     , TestRun (..)
     , TestRunState (..)
+    , URL
+    , requester
     )
 
--- | A booted token plus the wallets and credentials the Accept cycle
--- needs.
+-- | A booted token plus the wallets and credentials the Accept\/Report
+-- cycles need.
 data AcceptEnv = AcceptEnv
     { aeClient :: MPFSClient
     , aeAuth :: Auth
     , aeOracle :: Wallet
     , aeAgent :: Wallet
+    , aeRequester :: Wallet
     , aeTokenId :: TokenId
     }
 
@@ -134,9 +144,10 @@ withAcceptEnv action = do
     client <- newClient (host, Wait 180, 120)
     oracle <- loadWallet "MOOG_TEST_ORACLE_WALLET"
     agent <- loadWallet "MOOG_TEST_AGENT_WALLET"
+    reqWallet <- loadWallet "MOOG_TEST_REQUESTER_WALLET"
     auth <- loadAuth
     tokenId <- bootToken client auth oracle
-    let env = AcceptEnv client auth oracle agent tokenId
+    let env = AcceptEnv client auth oracle agent reqWallet tokenId
     action env `finally` endTokenQuietly env
 
 -- | A fixed test-run used by the Accept spec. Its content is never
@@ -156,16 +167,26 @@ sampleTestRun =
 -- by inserting them and folding them into the token directly (oracle
 -- signed), bypassing moog request validation.
 seedConfigAndPending :: AcceptEnv -> TestRun -> IO ()
-seedConfigAndPending env testRun = do
-    let config =
-            mkCurrentConfig
-                (owner (aeAgent env))
-                (TestRunValidationConfig{maxDuration = 7200, minDuration = 0})
-        pending = mkPendingState (aeOracle env) testRun
-    insertRequest env (jsonOf ConfigKey) (jsonOf config)
-    insertRequest env (jsonOf testRun) (jsonOf pending)
-    refIds <- tokenRequestRefIds env
-    foldDirect env refIds
+seedConfigAndPending env testRun =
+    seedFacts
+        env
+        [ (jsonOf ConfigKey, agentConfig env)
+        , (jsonOf testRun, jsonOf (mkPendingState (aeOracle env) testRun))
+        ]
+
+-- | Seed the facts an agent Report (Running→Done) depends on: the token
+-- 'Config', a Running (accepted) test-run fact, and a RegisterUser fact
+-- binding the test-run's requester to the requester wallet's verification
+-- key (so the agent can encrypt the result URL to it). Same direct
+-- oracle-fold seeding as 'seedConfigAndPending'.
+seedConfigRunningUser :: AcceptEnv -> TestRun -> IO ()
+seedConfigRunningUser env testRun =
+    seedFacts
+        env
+        [ (jsonOf ConfigKey, agentConfig env)
+        , (jsonOf testRun, jsonOf (runningStateOf (aeOracle env) testRun))
+        , (jsonOf (requesterRegisterUserKey env testRun), jsonOf ())
+        ]
 
 -- | Drive the real agent Accept (Pending→Running) for the test-run,
 -- signing with the agent wallet — exactly what the agent process'
@@ -187,6 +208,36 @@ acceptViaAgent AcceptEnv{aeClient, aeAuth, aeAgent, aeTokenId} trId = do
         ValidationSuccess (WithTxHash txh _) -> waitConfirmed aeClient txh
         _ -> pure ()
     pure res
+
+-- | Drive the real agent Report (Running→Done) for the test-run, signing
+-- with the agent wallet — exactly what the agent process' @submitDone@
+-- does (encrypt the result URL for the requester, then submit the
+-- Running→Done update).
+reportViaAgent
+    :: AcceptEnv
+    -> TestRunId
+    -> Duration
+    -> Outcome
+    -> URL
+    -> IO
+        ( AValidationResult
+            ReportFailure
+            (WithTxHash (TestRunState 'DoneT))
+        )
+reportViaAgent
+    AcceptEnv{aeClient, aeAuth, aeAgent, aeTokenId}
+    trId
+    duration
+    outcome
+    url = do
+        res <-
+            cmd
+                $ AgentCommand aeAuth aeClient
+                $ Report aeTokenId aeAgent trId () duration outcome url
+        case res of
+            ValidationSuccess (WithTxHash txh _) -> waitConfirmed aeClient txh
+            _ -> pure ()
+        pure res
 
 -- | Fold the given requests into the token via the real oracle
 -- @UpdateToken@ path (which re-validates each request). Used to
@@ -230,6 +281,16 @@ readRunningFacts
 readRunningFacts AcceptEnv{aeClient, aeTokenId} =
     cmd $ GetFacts aeClient aeTokenId (TestRunFacts (TestRunRunning [] All))
 
+-- | Done test-run facts on the token, with result URLs decrypted using
+-- the requester wallet's key (matching the seeded RegisterUser identity).
+readDoneFacts
+    :: AcceptEnv -> IO [Fact TestRun (TestRunState 'DoneT)]
+readDoneFacts AcceptEnv{aeClient, aeRequester, aeTokenId} =
+    cmd
+        $ GetFacts aeClient aeTokenId
+        $ TestRunFacts
+        $ TestRunDone (Just aeRequester) Nothing [] All
+
 factTestRun :: Fact TestRun v -> TestRun
 factTestRun (Fact k _ _) = k
 
@@ -237,6 +298,43 @@ factTestRun (Fact k _ _) = k
 
 jsonOf :: ToJSON Identity a => a -> JSValue
 jsonOf = runIdentity . toJSON
+
+-- | Insert each (key, value) as a fact request, then fold them all into
+-- the token directly (oracle signed), bypassing moog request validation.
+seedFacts :: AcceptEnv -> [(JSValue, JSValue)] -> IO ()
+seedFacts env kvs = do
+    mapM_ (uncurry (insertRequest env)) kvs
+    refIds <- tokenRequestRefIds env
+    foldDirect env refIds
+
+-- | The token 'Config' value whose @configAgent@ is the agent owner.
+agentConfig :: AcceptEnv -> JSValue
+agentConfig env =
+    jsonOf
+        $ mkCurrentConfig
+            (owner (aeAgent env))
+            (TestRunValidationConfig{maxDuration = 7200, minDuration = 0})
+
+-- | A Running (accepted) state wrapping a seeded Pending state.
+runningStateOf :: Wallet -> TestRun -> TestRunState 'RunningT
+runningStateOf wallet = Accepted . mkPendingState wallet
+
+-- | A RegisterUser fact key binding the test-run's requester username to
+-- the requester wallet's Ed25519 verification key, so the agent encrypts
+-- the result URL to a key the requester wallet can decrypt.
+requesterRegisterUserKey :: AcceptEnv -> TestRun -> RegisterUserKey
+requesterRegisterUserKey env testRun =
+    RegisterUserKey
+        { platform = Platform "linux"
+        , username = requester testRun
+        , githubIdentification = IdentifyViaVKey vkey
+        }
+  where
+    vkey =
+        case encodeVKey (Ed25519.toPublic (privateKey (aeRequester env))) of
+            Right v -> v
+            Left err ->
+                error $ "requesterRegisterUserKey: encodeVKey: " <> show err
 
 bootToken :: MPFSClient -> Auth -> Wallet -> IO TokenId
 bootToken client@MPFSClient{runMPFS, submitTx} auth oracle = do
