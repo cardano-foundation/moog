@@ -60,6 +60,14 @@
         };
       };
 
+      # The Haskell `lzma` package declares `extra-libraries: lzma`, which
+      # haskell.nix resolves to the top-level `pkgs.lzma` attribute. Recent
+      # nixpkgs removed that attribute (it became `pkgs.xz`, which still
+      # provides liblzma), so the lookup threw "Nixpkgs package set does not
+      # contain the package: lzma" and broke `nix develop`. Restore the
+      # historical alias so the system-library mapping resolves again.
+      fix-lzma = final: prev: { lzma = prev.xz; };
+
       perSystem =
         system:
         let
@@ -79,6 +87,7 @@
               iohkNix.overlays.cardano-lib
               haskellNix.overlay # some functions
               fix-blst
+              fix-lzma
             ];
             inherit system;
           };
