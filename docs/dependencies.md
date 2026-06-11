@@ -9,7 +9,7 @@ Computed from the Nix flake closure + `cabal.project` `source-repository-package
 | [**moog**](https://github.com/cardano-foundation/moog/tree/main) | cardano-foundation | Antithesis CLI |
 | [**cardano-ledger-read**](https://github.com/cardano-foundation/cardano-ledger-read/tree/34d0767bd5c3) | cardano-foundation | Read Cardano block data, parametrized by era |
 | [**cardano-mpfs-onchain**](https://github.com/cardano-foundation/cardano-mpfs-onchain/tree/457c1cbcbbf6) | cardano-foundation | Aiken on-chain validators for Merkle Patricia Forestry on Cardano |
-| [**cardano-mpfs-offchain**](https://github.com/lambdasistemi/cardano-mpfs-offchain/tree/99cf2a29b4e6) | lambdasistemi | Fact CRUD, transaction building, devnet server for Merkle Patricia Forestry on Cardano |
+| [**cardano-mpfs-offchain**](https://github.com/lambdasistemi/cardano-mpfs-offchain/tree/5f200647c003) | lambdasistemi | Fact CRUD, transaction building, devnet server for Merkle Patricia Forestry on Cardano |
 | [**cardano-node-clients**](https://github.com/lambdasistemi/cardano-node-clients/tree/e4b01cb9efdf) | lambdasistemi | Haskell clients for Cardano node mini-protocols (N2C + N2N) |
 | [**cardano-tx-tools**](https://github.com/lambdasistemi/cardano-tx-tools/tree/631f1341fde6) | lambdasistemi | Cardano transaction tooling: builder, structural diff, blueprint decoding. Uses cardano-node-clients but is not a node client. |
 | [**cardano-utxo-csmt**](https://github.com/lambdasistemi/cardano-utxo-csmt/tree/f4772f73dde0) | lambdasistemi | HTTP service maintaining a Compact Sparse Merkle Tree over Cardano's UTxO set for efficient inclusion proofs |
@@ -28,6 +28,7 @@ Computed from the Nix flake closure + `cabal.project` `source-repository-package
 
 | Input | Target | Type | Source |
 |-------|--------|------|--------|
+| `cardano-mpfs-offchain` | lambdasistemi/cardano-mpfs-offchain `5f200647c003` | flake | [flake.nix](https://github.com/cardano-foundation/moog/blob/main/flake.nix) |
 | `dev-assets` | paolino/dev-assets `b901b08ce8d2` | flake | [flake.nix](https://github.com/cardano-foundation/moog/blob/main/flake.nix) |
 | `mkdocs` | paolino/dev-assets `45d545c4b8b5` | flake | [flake.nix](https://github.com/cardano-foundation/moog/blob/main/flake.nix) |
 | `asciinema` | paolino/dev-assets `45d545c4b8b5` | flake | [flake.nix](https://github.com/cardano-foundation/moog/blob/main/flake.nix) |
@@ -40,7 +41,7 @@ Computed from the Nix flake closure + `cabal.project` `source-repository-package
 |------------|-----------|--------|
 | cardano-foundation/cardano-ledger-read | `34d0767bd5c3` | [cabal.project:72](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L72) |
 | cardano-foundation/cardano-mpfs-onchain | `457c1cbcbbf6` | [cabal.project:127](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L127) |
-| lambdasistemi/cardano-mpfs-offchain | `99cf2a29b4e6` | [cabal.project:13](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L13) |
+| lambdasistemi/cardano-mpfs-offchain | `5f200647c003` | [cabal.project:13](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L13) |
 | lambdasistemi/cardano-node-clients | `e4b01cb9efdf` | [cabal.project:115](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L115) |
 | lambdasistemi/cardano-tx-tools | `631f1341fde6` | [cabal.project:85](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L85) |
 | lambdasistemi/cardano-utxo-csmt | `f4772f73dde0` | [cabal.project:91](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L91) |
@@ -52,22 +53,22 @@ Computed from the Nix flake closure + `cabal.project` `source-repository-package
 | lambdasistemi/rocksdb-kv-transactions | `e2e77579888e` | [cabal.project:41](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L41) |
 | paolino/aiken-codegen | `74f364c10e93` | [cabal.project:66](https://github.com/cardano-foundation/moog/blob/main/cabal.project#L66) |
 
-### lambdasistemi/cardano-mpfs-offchain @ `99cf2a29b4e6`
+### lambdasistemi/cardano-mpfs-offchain @ `5f200647c003`
 
 | Dependency | Locked tag | Source |
 |------------|-----------|--------|
-| cardano-foundation/cardano-ledger-read | `34d0767bd5c3` | [cabal.project:65](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L65) |
-| cardano-foundation/cardano-mpfs-onchain | `457c1cbcbbf6` | [cabal.project:95](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L95) |
-| lambdasistemi/cardano-node-clients | `e4b01cb9efdf` | [cabal.project:77](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L77) |
-| lambdasistemi/cardano-tx-tools | `631f1341fde6` | [cabal.project:83](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L83) |
-| lambdasistemi/cardano-utxo-csmt | `f4772f73dde0` | [cabal.project:41](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L41) |
-| lambdasistemi/chain-follower | `d592a5015f8d` | [cabal.project:47](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L47) |
-| lambdasistemi/contra-tracer-contrib | `f0518e871391` | [cabal.project:71](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L71) |
-| lambdasistemi/github-release-check | `d90131112a4d` | [cabal.project:89](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L89) |
-| lambdasistemi/haskell-mts | `ab15f7b2dea7` | [cabal.project:53](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L53) |
-| lambdasistemi/rocksdb-haskell | `a3e86b39f951` | [cabal.project:29](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L29) |
-| lambdasistemi/rocksdb-kv-transactions | `e2e77579888e` | [cabal.project:35](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L35) |
-| paolino/aiken-codegen | `74f364c10e93` | [cabal.project:59](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/99cf2a29b4e6/cabal.project#L59) |
+| cardano-foundation/cardano-ledger-read | `34d0767bd5c3` | [cabal.project:65](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L65) |
+| cardano-foundation/cardano-mpfs-onchain | `457c1cbcbbf6` | [cabal.project:95](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L95) |
+| lambdasistemi/cardano-node-clients | `e4b01cb9efdf` | [cabal.project:77](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L77) |
+| lambdasistemi/cardano-tx-tools | `631f1341fde6` | [cabal.project:83](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L83) |
+| lambdasistemi/cardano-utxo-csmt | `f4772f73dde0` | [cabal.project:41](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L41) |
+| lambdasistemi/chain-follower | `d592a5015f8d` | [cabal.project:47](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L47) |
+| lambdasistemi/contra-tracer-contrib | `f0518e871391` | [cabal.project:71](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L71) |
+| lambdasistemi/github-release-check | `d90131112a4d` | [cabal.project:89](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L89) |
+| lambdasistemi/haskell-mts | `ab15f7b2dea7` | [cabal.project:53](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L53) |
+| lambdasistemi/rocksdb-haskell | `a3e86b39f951` | [cabal.project:29](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L29) |
+| lambdasistemi/rocksdb-kv-transactions | `e2e77579888e` | [cabal.project:35](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L35) |
+| paolino/aiken-codegen | `74f364c10e93` | [cabal.project:59](https://github.com/lambdasistemi/cardano-mpfs-offchain/blob/5f200647c003/cabal.project#L59) |
 
 ### lambdasistemi/cardano-node-clients @ `0f44f49c6d7e`
 
@@ -184,7 +185,7 @@ Effective (root pin): [`e4b01cb9efdf`](https://github.com/lambdasistemi/cardano-
 | Declared by | at its own rev | Pins this dep to |
 |-------------|----------------|------------------|
 | cardano-foundation/moog | `main` | [`e4b01cb9efdf`](https://github.com/lambdasistemi/cardano-node-clients/commit/e4b01cb9efdf88e99934cf7a09fed0e25bad1019) |
-| lambdasistemi/cardano-mpfs-offchain | `99cf2a29b4e6` | [`e4b01cb9efdf`](https://github.com/lambdasistemi/cardano-node-clients/commit/e4b01cb9efdf88e99934cf7a09fed0e25bad1019) |
+| lambdasistemi/cardano-mpfs-offchain | `5f200647c003` | [`e4b01cb9efdf`](https://github.com/lambdasistemi/cardano-node-clients/commit/e4b01cb9efdf88e99934cf7a09fed0e25bad1019) |
 | lambdasistemi/cardano-tx-tools | `56918f33ba74` | [`ca86f11d27b3`](https://github.com/lambdasistemi/cardano-node-clients/commit/ca86f11d27b34e37d3814e4d3c3d66e256400403) |
 | lambdasistemi/cardano-tx-tools | `631f1341fde6` | [`ca86f11d27b3`](https://github.com/lambdasistemi/cardano-node-clients/commit/ca86f11d27b34e37d3814e4d3c3d66e256400403) |
 | lambdasistemi/cardano-utxo-csmt | `f4772f73dde0` | [`0f44f49c6d7e`](https://github.com/lambdasistemi/cardano-node-clients/commit/0f44f49c6d7ecf84e8e93750a3bcd9987310690e) |
@@ -196,7 +197,7 @@ Effective (root pin): [`631f1341fde6`](https://github.com/lambdasistemi/cardano-
 | Declared by | at its own rev | Pins this dep to |
 |-------------|----------------|------------------|
 | cardano-foundation/moog | `main` | [`631f1341fde6`](https://github.com/lambdasistemi/cardano-tx-tools/commit/631f1341fde6e4a11e94b058cf5f2925ffeb9eac) |
-| lambdasistemi/cardano-mpfs-offchain | `99cf2a29b4e6` | [`631f1341fde6`](https://github.com/lambdasistemi/cardano-tx-tools/commit/631f1341fde6e4a11e94b058cf5f2925ffeb9eac) |
+| lambdasistemi/cardano-mpfs-offchain | `5f200647c003` | [`631f1341fde6`](https://github.com/lambdasistemi/cardano-tx-tools/commit/631f1341fde6e4a11e94b058cf5f2925ffeb9eac) |
 | lambdasistemi/cardano-utxo-csmt | `f4772f73dde0` | [`56918f33ba74`](https://github.com/lambdasistemi/cardano-tx-tools/commit/56918f33ba74714fb0bd5fb21e03d24013c54774) |
 
 ### lambdasistemi/chain-follower
@@ -206,7 +207,7 @@ Effective (root pin): [`d592a5015f8d`](https://github.com/lambdasistemi/chain-fo
 | Declared by | at its own rev | Pins this dep to |
 |-------------|----------------|------------------|
 | cardano-foundation/moog | `main` | [`d592a5015f8d`](https://github.com/lambdasistemi/chain-follower/commit/d592a5015f8d7edb2d6022936a67a054dfe5329f) |
-| lambdasistemi/cardano-mpfs-offchain | `99cf2a29b4e6` | [`d592a5015f8d`](https://github.com/lambdasistemi/chain-follower/commit/d592a5015f8d7edb2d6022936a67a054dfe5329f) |
+| lambdasistemi/cardano-mpfs-offchain | `5f200647c003` | [`d592a5015f8d`](https://github.com/lambdasistemi/chain-follower/commit/d592a5015f8d7edb2d6022936a67a054dfe5329f) |
 | lambdasistemi/cardano-node-clients | `0f44f49c6d7e` | [`d592a5015f8d`](https://github.com/lambdasistemi/chain-follower/commit/d592a5015f8d7edb2d6022936a67a054dfe5329f) |
 | lambdasistemi/cardano-node-clients | `ca86f11d27b3` | [`371b5930976a`](https://github.com/lambdasistemi/chain-follower/commit/371b5930976ac3bb4e8a4ef576d5098d706984ee) |
 | lambdasistemi/cardano-node-clients | `e4b01cb9efdf` | [`d592a5015f8d`](https://github.com/lambdasistemi/chain-follower/commit/d592a5015f8d7edb2d6022936a67a054dfe5329f) |
@@ -221,7 +222,7 @@ Effective (root pin): [`ab15f7b2dea7`](https://github.com/lambdasistemi/haskell-
 | Declared by | at its own rev | Pins this dep to |
 |-------------|----------------|------------------|
 | cardano-foundation/moog | `main` | [`ab15f7b2dea7`](https://github.com/lambdasistemi/haskell-mts/commit/ab15f7b2dea73165b785c90333bbd09a36528a07) |
-| lambdasistemi/cardano-mpfs-offchain | `99cf2a29b4e6` | [`ab15f7b2dea7`](https://github.com/lambdasistemi/haskell-mts/commit/ab15f7b2dea73165b785c90333bbd09a36528a07) |
+| lambdasistemi/cardano-mpfs-offchain | `5f200647c003` | [`ab15f7b2dea7`](https://github.com/lambdasistemi/haskell-mts/commit/ab15f7b2dea73165b785c90333bbd09a36528a07) |
 | lambdasistemi/cardano-utxo-csmt | `f4772f73dde0` | [`9a5106790759`](https://github.com/lambdasistemi/haskell-mts/commit/9a510679075930bae812fea5f56b47789ce497ca) |
 
 ### lambdasistemi/rocksdb-haskell
@@ -231,7 +232,7 @@ Effective (root pin): [`a3e86b39f951`](https://github.com/lambdasistemi/rocksdb-
 | Declared by | at its own rev | Pins this dep to |
 |-------------|----------------|------------------|
 | cardano-foundation/moog | `main` | [`a3e86b39f951`](https://github.com/lambdasistemi/rocksdb-haskell/commit/a3e86b39f9510fea54abf734ee84aec33d0d683f) |
-| lambdasistemi/cardano-mpfs-offchain | `99cf2a29b4e6` | [`a3e86b39f951`](https://github.com/lambdasistemi/rocksdb-haskell/commit/a3e86b39f9510fea54abf734ee84aec33d0d683f) |
+| lambdasistemi/cardano-mpfs-offchain | `5f200647c003` | [`a3e86b39f951`](https://github.com/lambdasistemi/rocksdb-haskell/commit/a3e86b39f9510fea54abf734ee84aec33d0d683f) |
 | lambdasistemi/cardano-node-clients | `0f44f49c6d7e` | [`a3e86b39f951`](https://github.com/lambdasistemi/rocksdb-haskell/commit/a3e86b39f9510fea54abf734ee84aec33d0d683f) |
 | lambdasistemi/cardano-node-clients | `ca86f11d27b3` | [`a3e86b39f951`](https://github.com/lambdasistemi/rocksdb-haskell/commit/a3e86b39f9510fea54abf734ee84aec33d0d683f) |
 | lambdasistemi/cardano-node-clients | `e4b01cb9efdf` | [`a3e86b39f951`](https://github.com/lambdasistemi/rocksdb-haskell/commit/a3e86b39f9510fea54abf734ee84aec33d0d683f) |
@@ -254,7 +255,7 @@ graph TD
     moog["<a href='https://github.com/cardano-foundation/moog/tree/main'>moog</a><br/>Antithesis CLI<br/><a href='https://github.com/cardano-foundation/moog/commit/main'><code>main</code></a>"]:::haskell
     cardano_ledger_read["<a href='https://github.com/cardano-foundation/cardano-ledger-read/tree/34d0767bd5c3'>cardano-ledger-read</a><br/>Read Cardano block data, parametrized by<br/>era<br/><a href='https://github.com/cardano-foundation/cardano-ledger-read/commit/34d0767bd5c3'><code>34d0767bd5c3</code></a>"]:::haskell
     cardano_mpfs_onchain["<a href='https://github.com/cardano-foundation/cardano-mpfs-onchain/tree/457c1cbcbbf6'>cardano-mpfs-onchain</a><br/>Aiken on-chain validators for Merkle<br/>Patricia Forestry on Cardano<br/><a href='https://github.com/cardano-foundation/cardano-mpfs-onchain/commit/457c1cbcbbf6'><code>457c1cbcbbf6</code></a>"]:::aiken
-    cardano_mpfs_offchain["<a href='https://github.com/lambdasistemi/cardano-mpfs-offchain/tree/99cf2a29b4e6'>cardano-mpfs-offchain</a><br/>Fact CRUD, transaction building, devnet<br/>server for Merkle Patricia Forestry on<br/>Cardano<br/><a href='https://github.com/lambdasistemi/cardano-mpfs-offchain/commit/99cf2a29b4e6'><code>99cf2a29b4e6</code></a>"]:::haskell
+    cardano_mpfs_offchain["<a href='https://github.com/lambdasistemi/cardano-mpfs-offchain/tree/5f200647c003'>cardano-mpfs-offchain</a><br/>Fact CRUD, transaction building, devnet<br/>server for Merkle Patricia Forestry on<br/>Cardano<br/><a href='https://github.com/lambdasistemi/cardano-mpfs-offchain/commit/5f200647c003'><code>5f200647c003</code></a>"]:::haskell
     cardano_node_clients["<a href='https://github.com/lambdasistemi/cardano-node-clients/tree/e4b01cb9efdf'>cardano-node-clients</a><br/>Haskell clients for Cardano node<br/>mini-protocols (N2C + N2N)<br/><a href='https://github.com/lambdasistemi/cardano-node-clients/commit/e4b01cb9efdf'><code>e4b01cb9efdf</code></a>"]:::haskell
     cardano_tx_tools["<a href='https://github.com/lambdasistemi/cardano-tx-tools/tree/631f1341fde6'>cardano-tx-tools</a><br/>Cardano transaction tooling: builder,<br/>structural diff, blueprint decoding.<br/>Uses cardano-node-clients but is not a<br/>node client.<br/><a href='https://github.com/lambdasistemi/cardano-tx-tools/commit/631f1341fde6'><code>631f1341fde6</code></a>"]:::haskell
     cardano_utxo_csmt["<a href='https://github.com/lambdasistemi/cardano-utxo-csmt/tree/f4772f73dde0'>cardano-utxo-csmt</a><br/>HTTP service maintaining a Compact<br/>Sparse Merkle Tree over Cardano's UTxO<br/>set for efficient inclusion proofs<br/><a href='https://github.com/lambdasistemi/cardano-utxo-csmt/commit/f4772f73dde0'><code>f4772f73dde0</code></a>"]:::haskell
@@ -267,6 +268,7 @@ graph TD
     aiken_codegen["<a href='https://github.com/paolino/aiken-codegen/tree/74f364c10e93'>aiken-codegen</a><br/>Haskell DSL for generating Aiken source<br/>code<br/><a href='https://github.com/paolino/aiken-codegen/commit/74f364c10e93'><code>74f364c10e93</code></a>"]:::haskell
     dev_assets["<a href='https://github.com/paolino/dev-assets/tree/b901b08ce8d2'>dev-assets</a><br/>Actions for haskell, nix and mkdocs<br/>workflows<br/><a href='https://github.com/paolino/dev-assets/commit/b901b08ce8d2'><code>b901b08ce8d2</code></a>"]:::nix
 
+    moog -->|"cardano-mpfs-offchain"| cardano_mpfs_offchain
     moog -->|"dev-assets"| dev_assets
     moog -->|"mkdocs"| dev_assets
     moog -->|"asciinema"| dev_assets
@@ -285,15 +287,15 @@ graph TD
     moog ==> aiken_codegen
     cardano_mpfs_offchain ==> cardano_ledger_read
     cardano_mpfs_offchain ==> cardano_mpfs_onchain
-    cardano_mpfs_offchain ==> cardano_node_clients
+    cardano_mpfs_offchain ==>|"cardano-node-clients, devnet"| cardano_node_clients
     cardano_mpfs_offchain ==> cardano_tx_tools
-    cardano_mpfs_offchain ==> cardano_utxo_csmt
+    cardano_mpfs_offchain ==>|"application, library"| cardano_utxo_csmt
     cardano_mpfs_offchain ==> chain_follower
-    cardano_mpfs_offchain ==> contra_tracer_contrib
+    cardano_mpfs_offchain ==>|"contra-tracer-contrib"| contra_tracer_contrib
     cardano_mpfs_offchain ==> github_release_check
-    cardano_mpfs_offchain ==> haskell_mts
-    cardano_mpfs_offchain ==> rocksdb_haskell
-    cardano_mpfs_offchain ==> rocksdb_kv_transactions
+    cardano_mpfs_offchain ==>|"mpf-write, csmt-core, csmt-test-lib, csmt-write, mpf-test-lib, mpf-write, csmt, csmt-core, csmt-test-lib, csmt-verify, mpf, mpf-test-lib, mts, rollbacks, csmt-core, csmt-verify, mpf-write"| haskell_mts
+    cardano_mpfs_offchain ==>|"rocksdb-haskell-jprupp"| rocksdb_haskell
+    cardano_mpfs_offchain ==>|"kv-transactions, rocksdb-kv-transactions"| rocksdb_kv_transactions
     cardano_mpfs_offchain ==> aiken_codegen
     cardano_node_clients ==> cardano_ledger_read
     cardano_node_clients ==> chain_follower
@@ -328,9 +330,9 @@ graph TD
     cardano_utxo_csmt -.->|"skew 9a5106790759"| haskell_mts
     cardano_utxo_csmt -.->|"skew 85977e8673f1"| rocksdb_haskell
 
-    linkStyle 0,1,2 stroke:#2196F3,stroke-width:2px
-    linkStyle 3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52 stroke:#e53935,stroke-width:2px
-    linkStyle 53,54,55,56,57,58,59 stroke:#ffb300,stroke-width:1px,stroke-dasharray:4 3
+    linkStyle 0,1,2,3 stroke:#2196F3,stroke-width:2px
+    linkStyle 4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53 stroke:#e53935,stroke-width:2px
+    linkStyle 54,55,56,57,58,59,60 stroke:#ffb300,stroke-width:1px,stroke-dasharray:4 3
 ```
 
 **Legend**
