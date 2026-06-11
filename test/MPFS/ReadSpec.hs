@@ -15,10 +15,8 @@ import Cardano.MPFS.API.Encoding (Hex (..))
 import Cardano.MPFS.API.Types
     ( FactEntry (..)
     , FactsResponse (..)
-    , RequestJSON (..)
     , RequestsResponse (..)
     , TokenResponse (..)
-    , TokenStateJSON (..)
     , TxInJSON (..)
     , WitnessedRequest (..)
     , WitnessedTokenState (..)
@@ -33,10 +31,12 @@ import Cardano.MPFS.API.Types.Common
 import Core.Types.Change qualified as Change
 import Core.Types.Operation qualified as Operation
 import Cardano.MPFS.Cage.Types
-    ( CageDatum (RequestDatum)
+    ( CageDatum (RequestDatum, StateDatum)
     , OnChainOperation (OpInsert)
     , OnChainRequest (..)
+    , OnChainRoot (..)
     , OnChainTokenId (..)
+    , OnChainTokenState (..)
     )
 import Cardano.MPFS.Client.TrustedRoot (TrustedRoot (..))
 import Control.Lens ((&), (.~))
@@ -168,19 +168,14 @@ sampleTokenResponse =
         { trSnapshot = unusedSnapshot
         , trState =
             WitnessedTokenState
-                { wtsUtxo =
+                { -- 0.2.0 (#342) dropped the server-side state projection;
+                  -- the verified read now decodes owner\/root from this
+                  -- inline-datum TxOut, not from a 'TokenStateJSON' field.
+                  wtsUtxo =
                     WitnessedUtxo
                         { wuTxIn = sampleStateTxIn
-                        , wuTxOut = Hex ""
+                        , wuTxOut = Hex sampleStateTxOut
                         , wuProof = Hex ""
-                        }
-                , wtsState =
-                    TokenStateJSON
-                        { owner = "owner"
-                        , root = Hex sampleRoot
-                        , tip = 1000000
-                        , processTime = 60000
-                        , retractTime = 30000
                         }
                 }
         }
@@ -196,24 +191,13 @@ sampleRequestsResponse =
 sampleWitnessedRequest :: WitnessedRequest
 sampleWitnessedRequest =
     WitnessedRequest
-        { wrUtxo =
+        { -- The verified read decodes the request from this inline-datum
+          -- TxOut; 0.2.0 (#342) removed the old 'RequestJSON' projection.
+          wrUtxo =
             WitnessedUtxo
                 { wuTxIn = sampleRequestTxIn
-                , -- The verified read now decodes the request from this
-                  -- inline-datum TxOut, not from the (unverified, lossy)
-                  -- 'RequestJSON' projection below.
-                  wuTxOut = Hex sampleRequestTxOut
+                , wuTxOut = Hex sampleRequestTxOut
                 , wuProof = Hex ""
-                }
-        , wrRequest =
-            RequestJSON
-                { rjToken = sampleTokenId
-                , rjOwner = "request-owner"
-                , rjKey = Hex $ canonicalBytes sampleKey
-                , rjOperation = "insert"
-                , rjValue = Just $ Hex $ canonicalBytes sampleValue
-                , rjFee = 1000000
-                , rjSubmittedAt = 42
                 }
         }
 
@@ -249,6 +233,37 @@ sampleRequestTxOut =
                         (Data (toData (RequestDatum sampleOnChainRequest)))
                     )
 
+-- | The token-state owner is a 28-byte payment key hash; the decoded moog
+-- owner is its lowercase hex.
+sampleStateOwner :: BS.ByteString
+sampleStateOwner = BS.replicate 28 0x09
+
+-- | The on-chain state datum that 'sampleStateTxOut' carries. Its trie root
+-- is @sampleRoot@ and its owner is @sampleStateOwner@.
+sampleOnChainTokenState :: OnChainTokenState
+sampleOnChainTokenState =
+    OnChainTokenState
+        { stateOwner = toBuiltin sampleStateOwner
+        , stateRoot = OnChainRoot sampleRoot
+        , stateMaxFee = 1000000
+        , stateProcessTime = 60000
+        , stateRetractTime = 30000
+        }
+
+-- | A real serialized Conway 'TxOut' whose inline datum is the state datum
+-- — the reverse of @MPFS.Read.decodeStateDatum@, so the verified read
+-- recovers the token owner\/root from the proof-bound TxOut.
+sampleStateTxOut :: BS.ByteString
+sampleStateTxOut =
+    BL.toStrict
+        $ Ledger.serialize (eraProtVerLow @ConwayEra)
+        $ (mkBasicTxOut sampleAddr (inject (Coin 0)) :: TxOut ConwayEra)
+            & datumTxOutL
+                .~ Datum
+                    ( dataToBinaryData
+                        (Data (toData (StateDatum sampleOnChainTokenState)))
+                    )
+
 -- | A minimal valid testnet enterprise (payment-key) address, parsed from
 -- its raw header + 28-byte key hash, so we needn't hand-build ledger
 -- credential\/hash types.
@@ -264,7 +279,7 @@ sampleToken =
         , tokenState =
             TokenState
                 { tokenRoot = Root $ hexString sampleRoot
-                , tokenOwner = Owner "owner"
+                , tokenOwner = Owner (hexString sampleStateOwner)
                 }
         , tokenRequests =
             [ Identity
