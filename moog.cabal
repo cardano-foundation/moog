@@ -436,6 +436,10 @@ test-suite e2e-tests
   -- Import common warning flags.
   import:           warnings
 
+  -- The devnet server boot (subprocess + concurrent /status polling)
+  -- needs the threaded runtime.
+  ghc-options:      -threaded
+
   -- Base language which the package is written in.
   default-language: Haskell2010
 
@@ -456,11 +460,16 @@ test-suite e2e-tests
 
   -- Test dependencies.
   build-depends:
+    , aeson
     , base
     , bytestring
     , github
     , hspec
+    , http-client
+    , moog
     , process
+    , temporary
+    , text
 
 test-suite unit-tests
   -- Import common warning flags.
