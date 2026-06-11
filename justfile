@@ -36,8 +36,32 @@ build:
     #!/usr/bin/env bash
     cabal build all --enable-tests
 
+# Build the offchain mpfs-devnet-server at the cabal.project-pinned rev and
+# print the `export` lines the hermetic harness needs: MPFS_DEVNET_SERVER plus
+# the blueprint / genesis / PATH captured from the offchain devshell. The
+# integration + E2E recipes `eval` this so the test process self-boots the
+# server and funds genesis -- no docker-compose / yaci / topup. Override
+# OFFCHAIN_DIR for a non-default cardano-mpfs-offchain checkout.
+_devnet-env:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    offchain_dir=${OFFCHAIN_DIR:-/code/cardano-mpfs-offchain}
+    rev=$(awk '/cardano-mpfs-offchain\.git/{f=1} f&&/^[[:space:]]*tag:/{print $2; exit}' cabal.project)
+    offchain="git+file://${offchain_dir}?rev=${rev}"
+    server_store=$(nix --quiet build --print-out-paths "${offchain}#mpfs-devnet-server")
+    # shellcheck disable=SC2016
+    mapfile -t devnet_env < <(
+        nix --quiet develop "${offchain}" -c bash -c \
+            'printf "%s\n%s\n%s\n" "$MPFS_BLUEPRINT" "$E2E_GENESIS_DIR" "$PATH"'
+    )
+    printf 'export MPFS_DEVNET_SERVER=%q\n' "${server_store}/bin/mpfs-devnet-server"
+    printf 'export MPFS_BLUEPRINT=%q\n' "${devnet_env[0]}"
+    printf 'export E2E_GENESIS_DIR=%q\n' "${devnet_env[1]}"
+    printf 'export MPFS_DEVNET_PATH=%q\n' "${devnet_env[2]}"
+
 integration match="":
     #!/usr/bin/env bash
+    set -euo pipefail
     # shellcheck disable=SC2050
     mkdir -p tmp/bin
     cabal install --overwrite-policy=always --installdir=tmp >/dev/null
@@ -50,55 +74,23 @@ integration match="":
         echo "Please set MOOG_SSH_PASSWORD environment variable, this is the passphrase for the cfhal encrypted SSH private key"
         exit 1
     fi
-    if ! test -f  tmp/test.json; then
-        echo "E2E tests expect wallet definition in tmp/test.json file"
+    if ! test -f  tmp/requester.json; then
+        echo "Integration tests expect wallet definition in tmp/requester.json file"
         exit 1
     fi
-    randomMPFSPort=$(shuf -i 1024-65636 -n 1)
-    export MOOG_MPFS_HOST="http://localhost:$randomMPFSPort"
+    # Random port lets concurrent local runs avoid collisions; the harness
+    # reads MPFS_PORT and points MOOG_MPFS_HOST at the server it boots.
+    randomMPFSPort=$(shuf -i 1024-65535 -n 1)
     export MPFS_PORT="$randomMPFSPort"
-    randomYaciAdminPort=$(shuf -i 1024-65536 -n 1)
-    export YACI_ADMIN_PORT="$randomYaciAdminPort"
-    export MOOG_TEST_YACI_ADMIN="http://localhost:$YACI_ADMIN_PORT"
-
-    # shellcheck disable=SC2002
-    randomName=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-    docker compose -p "$randomName" -f test-E2E/fixtures/docker-compose.yml up -d
-    down() {
-      docker compose -p "$randomName" \
-        -f test-E2E/fixtures/docker-compose.yml down
-    }
-    trap down EXIT INT
-
     export MOOG_WALLET_FILE=tmp/requester.json
     export MOOG_TEST_REQUESTER_WALLET=tmp/requester.json # this must be cfhal wallet, get it in 1p at https://start.1password.com/open/i?a=TYQQQLKUDBAFVHQ4P7XKFCUVYM&v=fhipthmhnufti4q2kky6d7336u&i=jgle6xhz6b4pgma7aodrsebfgu&h=cardanofoundation.1password.com
     export MOOG_TEST_ORACLE_WALLET=tmp/requester.json # or create your own wallet
     export MOOG_TEST_AGENT_WALLET=tmp/requester.json # or create your own wallet
     export MOOG_SSH_FILE=test-E2E/fixtures/cfhal_ed25519
     export MOOG_WAIT=2
-    while [[ "$(curl -s "localhost:$MPFS_PORT/tokens" | jq -r '.indexerStatus.ready')" != "true" ]]; do
-        echo "Waiting for indexer to be ready..."
-        sleep 2
-    done
-    address=$(moog wallet info | jq -r '.address')
-    echo "Funding address: $address"
-    topup(){
-        curl -s -X 'POST' \
-            "$MOOG_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
-            -H 'accept: */*' \
-            -H 'Content-Type: application/json' \
-            -d '{
-            "address": "'"$address"'",
-            "adaAmount": 10000
-            }'
-        }
-    while true; do
-        if topup | grep -q "Topup successful"; then
-            break
-        fi
-        echo "Retrying topup..."
-        sleep 2
-    done
+    # Self-boot the offchain devnet-server + fund genesis via the harness.
+    devnet_env=$(just _devnet-env)
+    eval "$devnet_env"
     owner=$(moog wallet info | jq -r '.owner')
     export MOOG_AGENT_PUBLIC_KEY_HASH=$owner
     if [[ '{{ match }}' == "" ]]; then
@@ -112,6 +104,7 @@ integration match="":
     fi
 E2E match="":
     #!/usr/bin/env bash
+    set -euo pipefail
     mkdir -p tmp/bin
     cabal install --overwrite-policy=always --installdir=tmp >/dev/null
     export PATH="$PWD/tmp:$PATH"
@@ -123,55 +116,23 @@ E2E match="":
         echo "Please set MOOG_SSH_PASSWORD environment variable, this is the passphrase for the cfhal encrypted SSH private key"
         exit 1
     fi
-    if ! test -f  tmp/test.json; then
-        echo "E2E tests expect wallet definition in tmp/test.json file"
+    if ! test -f  tmp/requester.json; then
+        echo "E2E tests expect wallet definition in tmp/requester.json file"
         exit 1
     fi
-    randomMPFSPort=$(shuf -i 1024-65636 -n 1)
-    export MOOG_MPFS_HOST="http://localhost:$randomMPFSPort"
+    # Random port lets concurrent local runs avoid collisions; the harness
+    # reads MPFS_PORT and points MOOG_MPFS_HOST at the server it boots.
+    randomMPFSPort=$(shuf -i 1024-65535 -n 1)
     export MPFS_PORT="$randomMPFSPort"
-    randomYaciAdminPort=$(shuf -i 1024-65536 -n 1)
-    export YACI_ADMIN_PORT="$randomYaciAdminPort"
-    export MOOG_TEST_YACI_ADMIN="http://localhost:$YACI_ADMIN_PORT"
-
-    # shellcheck disable=SC2002
-    randomName=$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 8 | head -n 1)
-    docker compose -p "$randomName" -f test-E2E/fixtures/docker-compose.yml up -d
-    down() {
-      docker compose -p "$randomName" \
-        -f test-E2E/fixtures/docker-compose.yml down
-    }
-    trap down EXIT INT
-
     export MOOG_WALLET_FILE=tmp/requester.json
     export MOOG_TEST_REQUESTER_WALLET=tmp/requester.json # this must be cfhal wallet, get it in 1p at https://start.1password.com/open/i?a=TYQQQLKUDBAFVHQ4P7XKFCUVYM&v=fhipthmhnufti4q2kky6d7336u&i=jgle6xhz6b4pgma7aodrsebfgu&h=cardanofoundation.1password.com
     export MOOG_TEST_ORACLE_WALLET=tmp/requester.json # or create your own wallet
     export MOOG_TEST_AGENT_WALLET=tmp/requester.json # or create your own wallet
     export MOOG_SSH_FILE=test-E2E/fixtures/cfhal_ed25519
     export MOOG_WAIT=2
-    while [[ "$(curl -s "localhost:$MPFS_PORT/tokens" | jq -r '.indexerStatus.ready')" != "true" ]]; do
-        echo "Waiting for indexer to be ready..."
-        sleep 2
-    done
-    address=$(moog wallet info | jq -r '.address')
-    echo "Funding address: $address"
-    topup(){
-        curl -s -X 'POST' \
-            "$MOOG_TEST_YACI_ADMIN/local-cluster/api/addresses/topup" \
-            -H 'accept: */*' \
-            -H 'Content-Type: application/json' \
-            -d '{
-            "address": "'"$address"'",
-            "adaAmount": 10000
-            }'
-        }
-    while true; do
-        if topup | grep -q "Topup successful"; then
-            break
-        fi
-        echo "Retrying topup..."
-        sleep 2
-    done
+    # Self-boot the offchain devnet-server + fund genesis via the harness.
+    devnet_env=$(just _devnet-env)
+    eval "$devnet_env"
     owner=$(moog wallet info | jq -r '.owner')
     export MOOG_AGENT_PUBLIC_KEY_HASH=$owner
     echo "Starting E2E tests..."
@@ -200,14 +161,6 @@ CI:
     cabal-fmt -c moog.cabal CI/rewrite-libs/rewrite-libs.cabal
     fourmolu -m check src app test CI/rewrite-libs
     hlint -c src app test CI/rewrite-libs
-
-start-mpfs:
-    #!/usr/bin/env bash
-    docker compose -p "moog-testing" -f test-E2E/fixtures/docker-compose.yml up -d
-
-stop-mpfs:
-    #!/usr/bin/env bash
-    docker compose -p "moog-testing" -f test-E2E/fixtures/docker-compose.yml down
 
 build-moog-agent tag='latest':
     #!/usr/bin/env bash
