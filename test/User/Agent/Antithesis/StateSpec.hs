@@ -312,16 +312,35 @@ spec =
                             )
                 other -> expectationFailure $ "expected one run, got " <> show other
 
-        it "treats a failing assertion as a run failure" $ do
+        it "treats a failing non-excluded assertion as a run failure" $ do
             let props =
                     [ RunProperty "always: ledger valid" False False
-                    , RunProperty "eventually_converged" True False
+                    , RunProperty
+                        "Unexpected terminations: state_timed_out"
+                        True
+                        False
                     ]
             runFailedAssertions props `shouldBe` True
 
-        it "ignores failing event/coverage properties" $ do
+        it "treats a failing event SUT check as a run failure" $ do
+            -- Events now count: a failing event-typed SUT check (an
+            -- `asteria-game/*.sh` command, exit code 1, …) is a real
+            -- failure, not platform coverage noise.
             let props =
-                    [ RunProperty "Sometimes: fork reached" True True
+                    [ RunProperty
+                        "asteria-game/eventually_alive.sh"
+                        True
+                        True
+                    , RunProperty "always: ledger valid" False False
+                    ]
+            runFailedAssertions props `shouldBe` True
+
+        it "ignores failing platform-excluded properties" $ do
+            -- A failing platform property (assert or event) on the
+            -- upstream-escalation list does not by itself flip the run.
+            let props =
+                    [ RunProperty "Unique Edges" True False
+                    , RunProperty "Sometimes: Root moments" True True
                     , RunProperty "always: ledger valid" False False
                     ]
             runFailedAssertions props `shouldBe` False

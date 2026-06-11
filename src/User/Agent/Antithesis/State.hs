@@ -12,6 +12,7 @@ module User.Agent.Antithesis.State
     , parseRunsPage
     , parsePropertiesPage
     , runFailedAssertions
+    , platformExcludedProperties
     , descriptionKey
     , matchingRuns
     , canonicalRun
@@ -152,14 +153,32 @@ parseRunsPage = parseEither parseJSON
 parsePropertiesPage :: Value -> Either String PropertiesPage
 parsePropertiesPage = parseEither parseJSON
 
--- | Did the run fail according to its properties? Initial heuristic (#190,
--- still open): any @Failing@ property that is a real assertion
--- (@is_event = false@) means the run failed; failing event/coverage
--- properties (@Sometimes:@ goals and the like) do not flip it. The exact
--- platform-vs-SUT predicate is an open #190 question.
+-- | Did the run fail according to its properties? A run is @success@ only if
+-- it is green on BOTH the Antithesis platform and the SUT/moog checks, so any
+-- @Failing@ property — assertion OR event — counts as a failure, EXCEPT the
+-- platform properties listed in 'platformExcludedProperties' (which fail
+-- independent of the SUT and are escalated upstream). Event-typed SUT checks
+-- (@asteria-game/*.sh@, @container … exit code: 1@, @cluster fork …@) now
+-- count; failing @Unique Edges@ and friends no longer flip a run.
 runFailedAssertions :: [RunProperty] -> Bool
 runFailedAssertions =
-    any $ \p -> propFailing p && not (propIsEvent p)
+    any $ \p ->
+        propFailing p
+            && propName p `notElem` platformExcludedProperties
+
+-- | Upstream-escalation list of Antithesis-platform/coverage properties that
+-- fail independent of the SUT. A @Failing@ property whose name is on this list
+-- does not by itself flip a run to failure; refine the list as Antithesis
+-- fixes the underlying platform/coverage issues upstream.
+platformExcludedProperties :: [Text]
+platformExcludedProperties =
+    [ "Unique Edges"
+    , "Sometimes: Root moments"
+    , "node - throttle"
+    , "No Antithesis errors"
+    , "systemd-journal"
+    , "Never: There are events with very high output that will fail to materialize & artifact from."
+    ]
 
 -- | Deterministic reconciliation key for a test-run: the description
 -- Antithesis stores under @antithesis.description@. One stable key per
