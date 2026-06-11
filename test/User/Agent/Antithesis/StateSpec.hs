@@ -13,12 +13,16 @@ import User.Agent.Antithesis.State
     ( AntithesisRun (..)
     , AntithesisRunStatus (..)
     , PendingDecision (..)
+    , PropertiesPage (..)
     , RunningDecision (..)
+    , RunProperty (..)
     , RunsPage (..)
     , canonicalRun
     , matchingRuns
+    , parsePropertiesPage
     , parseRunsPage
     , pendingDecision
+    , runFailedAssertions
     , runningDecision
     )
 import User.Agent.PushTest (renderTestRun)
@@ -308,6 +312,52 @@ spec =
                             )
                 other -> expectationFailure $ "expected one run, got " <> show other
 
+        it "treats a failing assertion as a run failure" $ do
+            let props =
+                    [ RunProperty "always: ledger valid" False False
+                    , RunProperty "eventually_converged" True False
+                    ]
+            runFailedAssertions props `shouldBe` True
+
+        it "ignores failing event/coverage properties" $ do
+            let props =
+                    [ RunProperty "Sometimes: fork reached" True True
+                    , RunProperty "always: ledger valid" False False
+                    ]
+            runFailedAssertions props `shouldBe` False
+
+        it "passes when every assertion passes" $ do
+            let props =
+                    [ RunProperty "always: ledger valid" False False
+                    , RunProperty "Sometimes: fork reached" False True
+                    ]
+            runFailedAssertions props `shouldBe` False
+
+        it "parses a properties page with a pagination cursor" $ do
+            parsePropertiesPage
+                ( propertiesPageJson
+                    [ propertyJson "always: ledger valid" "Passing" False
+                    , propertyJson "eventually_converged" "Failing" False
+                    ]
+                    (Just "cursor-2")
+                )
+                `shouldBe` Right
+                    PropertiesPage
+                        { propsPageData =
+                            [ RunProperty
+                                { propName = "always: ledger valid"
+                                , propFailing = False
+                                , propIsEvent = False
+                                }
+                            , RunProperty
+                                { propName = "eventually_converged"
+                                , propFailing = True
+                                , propIsEvent = False
+                                }
+                            ]
+                        , propsPageNextCursor = Just "cursor-2"
+                        }
+
 -- | Reconstructed on-chain test-run for the live Leios fixture (#138). Its
 -- fields must hash (via mkTestRunId) to testRunId 42030238… so matchingRuns
 -- pairs it with the captured Antithesis run.
@@ -381,4 +431,19 @@ runJson runId status description report =
                         ]
                 )
                 report
+        ]
+
+propertiesPageJson :: [Aeson.Value] -> Maybe Text -> Aeson.Value
+propertiesPageJson props nextCursor =
+    Aeson.object
+        [ "data" Aeson..= props
+        , "next_cursor" Aeson..= nextCursor
+        ]
+
+propertyJson :: Text -> Text -> Bool -> Aeson.Value
+propertyJson name status isEvent =
+    Aeson.object
+        [ "name" Aeson..= name
+        , "status" Aeson..= status
+        , "is_event" Aeson..= isEvent
         ]

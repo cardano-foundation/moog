@@ -121,6 +121,10 @@ type AntithesisProxyJsonAPI =
             :> "runs"
             :> Capture "run_id" Text
             :> "properties"
+            -- Properties paginate the same way as @/runs@: follow @after=@
+            -- (the upstream @next_cursor@) or later pages of assertions are
+            -- silently missed.
+            :> QueryParam "after" Text
             :> Get '[PlainJSON] Value
 
 -- | Streaming sub-API. All three handlers return a 'SourceIO ByteString'
@@ -166,7 +170,7 @@ data JsonClient = JsonClient
     { getOpenApi :: ClientM Value
     , listRuns :: Maybe Int -> Maybe Text -> ClientM Value
     , getRun :: Text -> ClientM Value
-    , getProperties :: Text -> ClientM Value
+    , getProperties :: Text -> Maybe Text -> ClientM Value
     }
 
 antithesisProxyJsonClient :: JsonClient
