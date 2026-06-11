@@ -11,6 +11,6 @@
 - [X] T179-SB proof: spec passes against the self-hosted devnet (locally)
 
 ## Slice C — Running→Done (Report) integration test
-- [ ] T179-SC mock Antithesis returns the run completed; drive the agent report (submitDone)
-- [ ] T179-SC assert a Done fact on-chain with correct outcome + requester-encrypted URL
-- [ ] T179-SC fix any agent breakage surfaced; proof: spec passes against the devnet (locally); orchestrator confirms green on PR CI
+- [X] T179-SC mock Antithesis returns the run completed; drive the agent report (submitDone)
+- [X] T179-SC assert a Done fact on-chain with correct outcome + requester-encrypted URL
+- [X] T179-SC fix any agent breakage surfaced; proof: spec passes against the devnet (locally); orchestrator confirms green on PR CI
