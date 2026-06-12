@@ -12,6 +12,7 @@ import Core.Options
     , tokenIdOption
     , walletOption
     )
+import Core.Types.Basic (TokenId (..))
 import Lib.Box (Box (..))
 import OptEnvConf
     ( Alternative (many)
@@ -26,6 +27,8 @@ import OptEnvConf
     , option
     , reader
     , setting
+    , short
+    , str
     , value
     )
 import Oracle.Token.Cli
@@ -42,6 +45,11 @@ tokenCommandParser =
                 <$> tokenIdOption
                 <*> walletOption
                 <*> many outputReferenceParser
+        , command "reject" "Reject token requests"
+            $ fmap (fmap Box) . RejectToken
+                <$> rejectTokenIdOption
+                <*> walletOption
+                <*> many outputReferenceParser
         , command "boot" "Boot a new token"
             $ fmap Box . BootToken
                 <$> walletOption
@@ -49,6 +57,19 @@ tokenCommandParser =
         , command "end" "End the token"
             $ fmap Box . EndToken <$> tokenIdOption <*> walletOption
         ]
+
+rejectTokenIdOption :: Parser TokenId
+rejectTokenIdOption =
+    TokenId
+        <$> setting
+            [ env "MOOG_TOKEN_ID"
+            , long "token-id"
+            , short 't'
+            , metavar "TOKEN"
+            , help "The token ID of the antithesis token"
+            , reader str
+            , option
+            ]
 
 -- | Operator-supplied boot economics. Defaults are network-safe, not
 -- the devnet 5s windows: a request stays processable long enough for
