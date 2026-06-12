@@ -498,6 +498,7 @@ test-suite unit-tests
     MPFS.ReadSpec
     MPFS.WriteFactsSpec
     Oracle.Config.CliSpec
+    Oracle.Token.CliSpec
     Oracle.Config.TypesSpec
     Oracle.TypesSpec
     Oracle.Validate.Requests.ConfigSpec

@@ -2,6 +2,9 @@ module Oracle.Token.Cli
     ( tokenCmdCore
     , TokenCommand (..)
     , TokenUpdateFailure (..)
+    , TokenRejectFailure (..)
+    , TokenRejectRequestValidation (..)
+    , TokenRejectRequestValidationProblem (..)
     , BootParams (..)
     ) where
 
@@ -89,6 +92,38 @@ data TokenUpdateFailure
 
 instance Exception TokenUpdateFailure
 
+data TokenRejectRequestValidation = TokenRejectRequestValidation
+    { rejectValidationRequestId :: RequestRefId
+    , rejectProblem :: TokenRejectRequestValidationProblem
+    }
+    deriving (Show, Eq)
+
+instance Monad m => ToJSON m TokenRejectRequestValidation where
+    toJSON (TokenRejectRequestValidation reqId problem) =
+        object
+            [ "requestId" .= reqId
+            , "problem" .= problem
+            ]
+
+data TokenRejectRequestValidationProblem
+    = TokenRejectRequestNotFound
+    deriving (Show, Eq)
+
+instance Monad m => ToJSON m TokenRejectRequestValidationProblem where
+    toJSON = \case
+        TokenRejectRequestNotFound ->
+            toJSON ("Request not found" :: String)
+
+data TokenRejectFailure
+    = TokenRejectNotParsable TokenId
+    | TokenRejectOfNoRequests
+    | TokenRejectRequestValidations
+        [TokenRejectRequestValidation]
+    | TokenRejectNotRequestedFromTokenOwner
+    deriving (Show, Eq)
+
+instance Exception TokenRejectFailure
+
 data TokenBootFailure
     = NoTokenIdReturned
     | TokenIdNotValidJSON
@@ -114,6 +149,17 @@ instance Monad m => ToJSON m TokenUpdateFailure where
         TokenUpdateNotRequestedFromTokenOwner ->
             toJSON ("Token update not requested from token owner" :: String)
 
+instance Monad m => ToJSON m TokenRejectFailure where
+    toJSON = \case
+        TokenRejectNotParsable tk ->
+            object ["tokenRejectNotParsable" .= tk]
+        TokenRejectOfNoRequests ->
+            toJSON ("No requests to reject" :: String)
+        TokenRejectRequestValidations validations ->
+            object ["tokenRejectRequestValidations" .= validations]
+        TokenRejectNotRequestedFromTokenOwner ->
+            toJSON ("Token reject not requested from token owner" :: String)
+
 data TokenCommand a where
     BootToken
         :: Wallet
@@ -127,6 +173,15 @@ data TokenCommand a where
         -> TokenCommand
             ( AValidationResult
                 TokenUpdateFailure
+                TxHash
+            )
+    RejectToken
+        :: TokenId
+        -> Wallet
+        -> [RequestRefId]
+        -> TokenCommand
+            ( AValidationResult
+                TokenRejectFailure
                 TxHash
             )
     EndToken :: TokenId -> Wallet -> TokenCommand TxHash
@@ -180,6 +235,29 @@ tokenCmdCore command = do
                 WithTxHash txHash _ <- lift
                     $ submit
                     $ \address -> mpfsUpdateTokenFromFacts mpfs address tk wanted
+                pure txHash
+        RejectToken tk wallet wanted -> do
+            Submission submit <- askSubmit wallet
+            lift $ runValidate $ do
+                when (null wanted) $ notValidated TokenRejectOfNoRequests
+                mpendings <- lift $ fromJSON <$> mpfsGetToken mpfs tk
+                token <- liftMaybe (TokenRejectNotParsable tk) mpendings
+                let requests = tokenRequests token
+                    oracle = tokenOwner $ tokenState token
+                when (owner wallet /= oracle)
+                    $ notValidated TokenRejectNotRequestedFromTokenOwner
+                when (null requests) $ notValidated TokenRejectOfNoRequests
+                void
+                    $ mapFailure TokenRejectRequestValidations
+                    $ sequenceValidate
+                    $ wanted
+                    <&> \req ->
+                        liftMaybe
+                            (TokenRejectRequestValidation req TokenRejectRequestNotFound)
+                            $ find ((== req) . requestZooRefId . runIdentity) requests
+                WithTxHash txHash _ <- lift
+                    $ submit
+                    $ \address -> mpfsRejectTokenFromFacts mpfs address tk wanted
                 pure txHash
         BootToken wallet bootParams -> do
             Submission submit <- askSubmit wallet

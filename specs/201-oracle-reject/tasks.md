@@ -6,9 +6,9 @@
 - [X] T201-S1 Proof: focused MPFS write-facts unit tests and `./gate.sh` pass.
 
 ## Slice S2 — oracle token reject CLI
-- [ ] T201-S2 RED unit tests for `RejectToken` validation/submission and parser shape.
-- [ ] T201-S2 GREEN `oracle token reject` command requiring explicit `-o <request-ref>` refs and routing through `mpfsRejectTokenFromFacts`.
-- [ ] T201-S2 Proof: focused Oracle.Token.Cli unit tests and `./gate.sh` pass.
+- [X] T201-S2 RED unit tests for `RejectToken` validation/submission and parser shape.
+- [X] T201-S2 GREEN `oracle token reject` command requiring explicit `-o <request-ref>` refs and routing through `mpfsRejectTokenFromFacts`.
+- [X] T201-S2 Proof: focused Oracle.Token.Cli unit tests and `./gate.sh` pass.
 
 ## Slice S3 — reject boundary proof
 - [ ] T201-S3 RED integration/smoke proof for expired-request reject and fail-closed processable subset.
