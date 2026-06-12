@@ -18,6 +18,7 @@ import Cardano.Ledger.Binary
     , decodeFullAnnotator
     )
 import Cardano.Tx.Ledger (ConwayTx)
+import Control.Monad (when)
 import Control.Concurrent (threadDelay)
 import Control.Exception (throwIO)
 import Control.Lens ((^.))
@@ -26,6 +27,7 @@ import Control.Monad.IO.Class (MonadIO (..))
 import Core.Context (withContext)
 import Core.Types.Basic
     ( Owner (..)
+    , RequestRefId
     , TokenId (..)
     )
 import Core.Types.CageDatum (CageDatum (..))
@@ -34,7 +36,8 @@ import Core.Types.Fact (Fact (..), parseFacts)
 import Core.Types.Mnemonics (Mnemonics (..))
 import Core.Types.Operation (Op (..), Operation (..))
 import Core.Types.Tx
-    ( TxHash
+    ( Root
+    , TxHash
     , UnsignedTx (..)
     , WithTxHash (..)
     , WithUnsignedTx (..)
@@ -77,11 +80,13 @@ import Oracle.Config.Types
     )
 import Oracle.Token.Cli
     ( TokenCommand (..)
+    , TokenRejectFailure
     , tokenCmdCore
     )
 import Oracle.Types
     ( RequestZoo (..)
     , Token (..)
+    , TokenState (..)
     , requestZooRefId
     )
 import Oracle.Validate.Requests.TestRun.Config
@@ -92,7 +97,7 @@ import PlutusTx (Data (..), FromData, fromData)
 import Servant.Client (ClientM, mkClientEnv, parseBaseUrl, runClientM)
 import Submitting
     ( IfToWait (..)
-    , Submission
+    , Submission (..)
     , Submitting (..)
     , readWallet
     , signAndSubmitMPFS
@@ -221,6 +226,15 @@ data Context = Context
     , auth :: Auth
     }
 
+data RejectBoundaryProof = RejectBoundaryProof
+    { rejectBoundaryRejectedRequest :: RequestRefId
+    , rejectBoundaryRootBefore :: Root
+    , rejectBoundaryRootAfter :: Root
+    , rejectBoundaryPendingBefore :: [RequestRefId]
+    , rejectBoundaryPendingAfter :: [RequestRefId]
+    , rejectBoundaryProcessableRefused :: Bool
+    }
+
 setup :: Auth -> IO Context
 setup auth = do
     requesterWallet <- loadRequesterWallet
@@ -314,6 +328,110 @@ pollToken (Call call) tk ok = go (180 :: Int)
             _ -> do
                 threadDelay 1000000
                 go (n - 1)
+
+pendingRequestRefs :: Token Identity -> [RequestRefId]
+pendingRequestRefs =
+    fmap (requestZooRefId . runIdentity) . tokenRequests
+
+submitBoundaryInsert :: Context -> JSValue -> JSValue -> IO RequestRefId
+submitBoundaryInsert Context{mpfs, wait180S, tokenId, requesterWallet} key value = do
+    WithTxHash txHash _ <-
+        calling mpfs
+            $ submit (wait180S requesterWallet)
+            $ \address ->
+                requestInsertFromFacts address tokenId
+                    $ RequestInsertBody key value
+    waitTx mpfs txHash
+    pending <- pollToken mpfs tokenId $ not . null . tokenRequests
+    case pendingRequestRefs pending of
+        [reqId] -> pure reqId
+        reqIds ->
+            expectationFailure
+                ( "expected one pending boundary request, got "
+                    <> show reqIds
+                )
+                >> error "unreachable"
+
+rejectBoundaryRequest
+    :: Context
+    -> RequestRefId
+    -> IO (AValidationResult TokenRejectFailure TxHash)
+rejectBoundaryRequest Context{mpfs, wait180S, tokenId, oracleWallet, auth} reqId =
+    calling mpfs
+        $ withContext mpfsClient (mkEffects auth) wait180S
+        $ tokenCmdCore
+        $ RejectToken tokenId oracleWallet [reqId]
+
+rejectBoundaryRequestRefused :: Context -> RequestRefId -> IO Bool
+rejectBoundaryRequestRefused ctx reqId =
+    ( do
+        result <- rejectBoundaryRequest ctx reqId
+        case result of
+            ValidationFailure _ -> pure True
+            ValidationSuccess _ -> pure False
+    )
+        `catch` \(_ :: SomeException) -> pure True
+
+rejectBoundaryProof :: Context -> IO RejectBoundaryProof
+rejectBoundaryProof ctx@Context{mpfs, tokenId} = do
+    _ <- pollToken mpfs tokenId $ null . tokenRequests
+    rejectedRequest <-
+        submitBoundaryInsert
+            ctx
+            (JSString "moog/reject-boundary/expired")
+            (JSString "reject-me")
+
+    -- canaryBootParams uses 5s process and 5s retract windows.
+    threadDelay 12000000
+    beforeReject <-
+        pollToken mpfs tokenId
+            $ (== [rejectedRequest]) . pendingRequestRefs
+    let rejectBoundaryRootBefore = tokenRoot $ tokenState beforeReject
+        rejectBoundaryPendingBefore = pendingRequestRefs beforeReject
+
+    rejectResult <- rejectBoundaryRequest ctx rejectedRequest
+    rejectTxHash <- case rejectResult of
+        ValidationSuccess txHash -> pure txHash
+        ValidationFailure err ->
+            expectationFailure
+                ("expired reject was refused: " <> show err)
+                >> error "unreachable"
+    waitTx mpfs rejectTxHash
+    afterReject <-
+        pollToken mpfs tokenId
+            $ notElem rejectedRequest . pendingRequestRefs
+    let rejectBoundaryRootAfter = tokenRoot $ tokenState afterReject
+        rejectBoundaryPendingAfter = pendingRequestRefs afterReject
+
+    freshRequest <-
+        submitBoundaryInsert
+            ctx
+            (JSString "moog/reject-boundary/fresh")
+            (JSString "reject-too-early")
+    rejectBoundaryProcessableRefused <-
+        rejectBoundaryRequestRefused ctx freshRequest
+    when rejectBoundaryProcessableRefused $ do
+        threadDelay 12000000
+        cleanupResult <- rejectBoundaryRequest ctx freshRequest
+        cleanupTxHash <- case cleanupResult of
+            ValidationSuccess txHash -> pure txHash
+            ValidationFailure err ->
+                expectationFailure
+                    ("cleanup reject was refused: " <> show err)
+                    >> error "unreachable"
+        waitTx mpfs cleanupTxHash
+        _ <- pollToken mpfs tokenId $ null . tokenRequests
+        pure ()
+
+    pure
+        RejectBoundaryProof
+            { rejectBoundaryRejectedRequest = rejectedRequest
+            , rejectBoundaryRootBefore
+            , rejectBoundaryRootAfter
+            , rejectBoundaryPendingBefore
+            , rejectBoundaryPendingAfter
+            , rejectBoundaryProcessableRefused
+            }
 
 setupAction :: ActionWith Context -> ActionWith Auth
 setupAction action auth = do
@@ -482,3 +600,11 @@ mpfsAPISpec = aroundAllWith setupAction $ do
                     factValue
                     (parseFacts factsJson :: [Fact ConfigKey Config])
                     `shouldBe` [config]
+        it "rejects an expired request without changing the token root and refuses a fresh reject"
+            $ \ctx@Context{} -> do
+                RejectBoundaryProof{..} <- rejectBoundaryProof ctx
+                rejectBoundaryPendingBefore
+                    `shouldBe` [rejectBoundaryRejectedRequest]
+                rejectBoundaryPendingAfter `shouldBe` []
+                rejectBoundaryRootAfter `shouldBe` rejectBoundaryRootBefore
+                rejectBoundaryProcessableRefused `shouldBe` True

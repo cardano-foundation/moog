@@ -11,6 +11,6 @@
 - [X] T201-S2 Proof: focused Oracle.Token.Cli unit tests and `./gate.sh` pass.
 
 ## Slice S3 — reject boundary proof
-- [ ] T201-S3 RED integration/smoke proof for expired-request reject and fail-closed processable subset.
-- [ ] T201-S3 GREEN harness support or documented operator smoke recipe for any non-CI live-boundary portion.
-- [ ] T201-S3 Proof: focused integration/smoke command and `./gate.sh` pass.
+- [X] T201-S3 RED integration/smoke proof for expired-request reject and fail-closed processable subset.
+- [X] T201-S3 GREEN harness support or documented operator smoke recipe for any non-CI live-boundary portion.
+- [X] T201-S3 Proof: focused integration/smoke command and `./gate.sh` pass.
