@@ -226,8 +226,9 @@ The generated `config.json` is what the compose file should mount at
 
 ### `oracle.json`
 
-`oracle.json` is the oracle wallet file. The token owner is bound when
-`moog oracle token boot` mints the token, so a live oracle wallet cannot be
+`oracle.json` is the oracle wallet file. The token owner is bound when the
+token is minted (the `moog oracle token boot` command that did this was
+removed from the CLI in v0.5.1.3), so a live oracle wallet cannot be
 rotated for an existing token unless the on-chain token state is recreated.
 
 Check wallet metadata without printing the wallet:

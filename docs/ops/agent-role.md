@@ -4,26 +4,40 @@
 
 ```mermaid
 flowchart TB
-    subgraph Agent Automation Loop
-        poll[Poll for pending test runs]
-        check[Check pending requests]
+    subgraph loop [Agent Automation Loop]
+        poll[Poll MPFS facts and Antithesis API runs]
+        plan[Plan actions for pending and running test-runs]
         download[Download test assets from GitHub]
         validate[Local docker compose validation]
-        push[Push to Antithesis platform]
-        accept[Report acceptance on-chain]
-        email[Check email for results]
+        push[Push config image and launch on Antithesis]
+        accept[Report acceptance on-chain once the run is observed]
+        reconcile[Match runs to on-chain test-runs by description]
+        outcome[Derive outcome from terminal run status and failing properties]
         report[Report completion on-chain]
     end
 
-    poll --> check --> download --> validate --> push --> accept
-    poll --> email --> report
+    poll --> plan
+    plan -->|pending from trusted requester| download --> validate --> push --> accept
+    plan -->|running| reconcile --> outcome --> report
 
     MPFS[(MPFS)] <--> poll
+    AT[Antithesis API] --> poll
     GH[GitHub] --> download
-    AT[Antithesis] <--> push
+    AT2[Antithesis platform] <--> push
     MPFS <--> accept
     MPFS <--> report
 ```
+
+On every poll cycle the agent reads both the on-chain test-run facts (from
+MPFS) and the runs visible in the Antithesis REST API. Pending test-runs
+from trusted requesters are launched (assets downloaded, validated with
+docker compose, pushed as a config image); the on-chain `accepted` fact is
+only submitted once the launched run becomes observable in the API. Running
+test-runs are matched to API runs by their rendered description; when a
+matched run reaches a terminal status, the agent derives the outcome
+(`completed` with a triage report and no failing test properties maps to
+success; `incomplete` and `cancelled` map to failure) and reports it
+on-chain.
 
 ## Running as Docker Service
 
@@ -36,9 +50,10 @@ For production host paths, GAR `config.json` generation, secret rotation, and po
 
 | Flag | Description | Default |
 |---|---|---|
-| `--poll-interval` | Seconds between polling cycles | 60 |
-| `--minutes` | Time window (in minutes) to search for email results | — |
+| `--poll-interval` | Seconds between polling cycles | 30 |
+| `--minutes` | Time window (in minutes) for the legacy email-collection commands | 1440 |
 | `--trust-all-requesters` | Accept test runs from any requester (skip trusted list check) | disabled |
+| `--trusted-test-requester` | GitHub username of a trusted requester (repeatable) | — |
 
 !!! note "Deprecated flag"
     The `--days` flag was replaced by `--minutes` in v0.4.1.1. Use `--minutes 1440` instead of `--days 1`.
@@ -87,7 +102,7 @@ Two commands are available
 
 This will only work if the repository is not already white-listed and the repository is in GitHub.
 ```bash
-moog agent white-list <platform> <repository>
+moog agent white-list --platform <platform> --repository <repository>
 ```
 
 ATM only GitHub is supported as a platform.
@@ -104,7 +119,7 @@ The format of the repository is `<owner>/<repository>`, e.g. `cardano-foundation
 
 This will only work if the repository is white-listed.
 ```bash
-moog agent black-list <platform> <repository>
+moog agent black-list --platform <platform> --repository <repository>
 ```
 
 ## Query pending test-runs
@@ -167,17 +182,26 @@ This will move it from `pending` to `running` state in the facts.
 
 ## Check for the completion of a test-run
 
-ATM we can only collect results via email.
-The email is passed in the post request when the test-run on the recipients list.
+The agent service derives test results from the **Antithesis REST API**: it
+matches each on-chain `accepted` test-run to an Antithesis run by its
+description and finishes it when the run reaches a terminal status. You can
+inspect the same API data manually with the `moog antithesis` subcommands
+(see the [Antithesis proxy](../antithesis-proxy.md) page):
 
+```bash
+moog antithesis runs --limit 100 --no-pretty
+moog antithesis run --run-id <run-id>
+moog antithesis properties --run-id <run-id>
+```
+
+### Legacy: collecting results via email
+
+Earlier versions collected results from the Antithesis notification emails.
+The email-based commands still exist but are no longer on the result path of
+the agent service:
 
 ```bash
 export MOOG_AGENT_EMAIL="<your-email>"
-```
-
-Then you can check for the completion of a test-run via
-
-```bash
 moog agent collect-results-for --test-run-id <test-run-id> --minutes <n> --ask-agent-email-password
 ```
 

@@ -80,16 +80,16 @@ To grant the Antithesis tester role, a GitHub repository must explicitly list Gi
 
 Any GitHub repository that has been registered with the system (i.e., contains a valid user public key and is whitelisted for test execution) can host a directory containing test definitions that meet the required format and standards. Currently only a runnable docker-compose.yaml is required.
 
-- Example: [test definition](https://github.com/cardano-foundation/moog/tree/main/compose/testnets/cardano_node_master)
+- Example: [test definition](https://github.com/cardano-foundation/cardano-node-antithesis/tree/main/testnets/cardano_node_master)
 
 ### Antithesis Platform
 
 ```mermaid
 graph TD
-        A[Antithesis Platform] -->|runs tests via| B[Antithesis API]
-        A -->|provides test results via| C[email with test results]
+        A[Antithesis Platform] -->|runs tests via| B[Antithesis launch API]
+        A -->|provides test results via| C[Antithesis REST read API]
 ```
-Antithesis is the test execution platform that provides the infrastructure to run tests and collect results. Currently we use a POST API to create test runs and fetch results via email parsing. In the future the platform will provide a better API to manage test runs and fetch results.
+Antithesis is the test execution platform that provides the infrastructure to run tests and collect results. We use a POST API to create test runs, and the Antithesis REST read API (run status, properties, triage report links) to collect results — the agent reconciles on-chain test-runs against the API runs on every poll cycle. Earlier versions parsed result notification emails; that path is no longer used by the agent service.
 
 - Antithesis docs: [API](https://antithesis.com/docs/webhook/test_webhook/)
 
@@ -183,10 +183,10 @@ The `requester` role is fully manual, requiring users to perform all actions thr
 ```mermaid
 graph LR
         A[Agent role] -->|accept test execution requests via| TR[*]
-        TR -->|submission of| B[a create-test request to MPFS service]
-        TR -->|POST to| C[Antithesis API]
+        TR -->|submission of| B[an accept-test request to MPFS service]
+        TR -->|POST to| C[Antithesis launch API]
         A -->|collect test results via| RR[*]
-        RR -->|email parsing from| D[email with test results]
+        RR -->|polling of| D[the Antithesis REST read API]
         RR -->|submission of| E[a report-test request to MPFS service]
 
 ```
