@@ -85,6 +85,7 @@ import MPFS.API
     , awaitTransactionV2
     , mpfsClient
     )
+import MPFS.Canary (canaryBootParams)
 import Oracle.Config.Types
     ( ConfigKey (..)
     , mkCurrentConfig
@@ -342,7 +343,7 @@ bootToken client@MPFSClient{runMPFS, submitTx} auth oracle = do
         runMPFS
             $ withContext mpfsClient (mkEffects auth) submitTx
             $ tokenCmdCore
-            $ BootToken oracle
+            $ BootToken oracle canaryBootParams
     case res of
         ValidationSuccess (WithTxHash txh (Just tokenId)) -> do
             waitConfirmed client txh
