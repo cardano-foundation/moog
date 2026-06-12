@@ -16,6 +16,7 @@ module MPFS.API
     , bootToken
     , endToken
     , MPFS (..)
+    , BootParams (..)
     , mpfsClient
     ) where
 
@@ -50,7 +51,7 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.Data (Proxy (..))
 import Data.Text.Encoding qualified as Text
 import Lib.JSON.Canonical.Extra (fromAesonThrow)
-import MPFS.Boot (bootTokenFromFacts)
+import MPFS.Boot (BootParams (..), bootTokenFromFacts)
 import MPFS.End (endTokenFromFacts)
 import MPFS.Read
     ( getTokenFactsFromVerifiedRead
@@ -162,7 +163,7 @@ type AwaitTransactionV2 =
         :> Get '[JSON] NoContent
 
 bootToken
-    :: Address -> ClientM (WithUnsignedTx JSValue)
+    :: BootParams -> Address -> ClientM (WithUnsignedTx JSValue)
 bootToken =
     bootTokenFromFacts status' bootFacts'
 endToken
@@ -313,7 +314,7 @@ mpfsClient =
         }
 
 data MPFS m = MPFS
-    { mpfsBootToken :: Address -> m (WithUnsignedTx JSValue)
+    { mpfsBootToken :: BootParams -> Address -> m (WithUnsignedTx JSValue)
     , mpfsEndToken :: Address -> TokenId -> m (WithUnsignedTx JSValue)
     , mpfsRequestInsertFromFacts
         :: Address
