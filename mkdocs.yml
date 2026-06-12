@@ -80,10 +80,11 @@ nav:
     - Usage: user/usage.md
     - CI: user/ci.md
     - Secrets Management: user/secrets-management.md
+  - Architecture:
+    - Overview: ops/architecture.md
+    - Protocol: ops/protocol.md
   - Operations Manual:
     - Introduction: ops/intro.md
-    - Architecture: ops/architecture.md
-    - Protocol: ops/protocol.md
     - Deployment: ops/deployment.md
     - Agent/Oracle Config & Secrets: ops/agent-oracle-config-secrets.md
     - Oracle Role: ops/oracle-role.md
