@@ -4,6 +4,7 @@ module MPFS.API
     , requestUpdateFromFacts
     , retractChangeFromFacts
     , updateTokenFromFacts
+    , rejectTokenFromFacts
     , getToken
     , getTokenV2
     , getTokenFacts
@@ -31,6 +32,7 @@ import Cardano.MPFS.API.Types
     , RequestDeleteFacts
     , RequestInsertFacts
     , RequestUpdateFacts
+    , RejectRequest
     , RequestsResponse
     , RetractFacts
     , RetractRequest
@@ -42,7 +44,7 @@ import Cardano.MPFS.API.Types
     , UpdateValueRequest
     )
 import Cardano.MPFS.API.Encoding (Hex (..))
-import Cardano.MPFS.API.Types.Facts (UpdateFacts)
+import Cardano.MPFS.API.Types.Facts (RejectFacts, UpdateFacts)
 import Control.Monad (void)
 import Core.Types.Basic (Address, RequestRefId, TokenId)
 import Core.Types.Tx (SignedTx (..), TxHash (..), WithUnsignedTx)
@@ -63,6 +65,7 @@ import MPFS.Request
     , RequestUpdateBody (..)
     )
 import MPFS.Request qualified as Request
+import MPFS.Reject qualified as Reject
 import MPFS.Retract qualified as Retract
 import MPFS.Update qualified as Update
 import Servant.API
@@ -122,6 +125,12 @@ type UpdateFactsEndpoint =
         :> "update"
         :> ReqBody '[JSON] UpdateRequest
         :> Post '[JSON] UpdateFacts
+
+type RejectFactsEndpoint =
+    "facts"
+        :> "reject"
+        :> ReqBody '[JSON] RejectRequest
+        :> Post '[JSON] RejectFacts
 
 type RetractFactsEndpoint =
     "facts"
@@ -203,6 +212,14 @@ updateTokenFromFacts
 updateTokenFromFacts =
     Update.updateTokenFromFacts status' updateFacts'
 
+rejectTokenFromFacts
+    :: Address
+    -> TokenId
+    -> [RequestRefId]
+    -> ClientM (WithUnsignedTx JSValue)
+rejectTokenFromFacts =
+    Reject.rejectTokenFromFacts status' rejectFacts'
+
 retractChangeFromFacts
     :: Address -> RequestRefId -> ClientM (WithUnsignedTx JSValue)
 retractChangeFromFacts =
@@ -277,6 +294,10 @@ updateFacts' :: UpdateRequest -> ClientM UpdateFacts
 updateFacts' =
     client (Proxy :: Proxy UpdateFactsEndpoint)
 
+rejectFacts' :: RejectRequest -> ClientM RejectFacts
+rejectFacts' =
+    client (Proxy :: Proxy RejectFactsEndpoint)
+
 retractFacts' :: RetractRequest -> ClientM RetractFacts
 retractFacts' =
     client (Proxy :: Proxy RetractFactsEndpoint)
@@ -309,6 +330,7 @@ mpfsClient =
         , mpfsRequestUpdateFromFacts = requestUpdateFromFacts
         , mpfsRetractChangeFromFacts = retractChangeFromFacts
         , mpfsUpdateTokenFromFacts = updateTokenFromFacts
+        , mpfsRejectTokenFromFacts = rejectTokenFromFacts
         , mpfsGetToken = getToken
         , mpfsGetTokenFacts = getTokenFacts
         }
@@ -336,6 +358,11 @@ data MPFS m = MPFS
         -> RequestRefId
         -> m (WithUnsignedTx JSValue)
     , mpfsUpdateTokenFromFacts
+        :: Address
+        -> TokenId
+        -> [RequestRefId]
+        -> m (WithUnsignedTx JSValue)
+    , mpfsRejectTokenFromFacts
         :: Address
         -> TokenId
         -> [RequestRefId]

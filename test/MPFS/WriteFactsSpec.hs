@@ -4,6 +4,7 @@ import Cardano.MPFS.API.Encoding (Hex (..))
 import Cardano.MPFS.API.Types
     ( DeleteRequest (..)
     , InsertRequest (..)
+    , RejectRequest (..)
     , RetractRequest (..)
     , UpdateRequest (..)
     , UpdateValueRequest (..)
@@ -29,6 +30,7 @@ import MPFS.API
     , RequestInsertBody (..)
     , RequestUpdateBody (..)
     )
+import MPFS.Reject (rejectTokenFactsRequest)
 import MPFS.Request
     ( requestDeleteFactsRequest
     , requestInsertFactsRequest
@@ -98,6 +100,17 @@ spec =
                     urAddr `shouldBe` Hex sampleAddressBytes
                     urRequests `shouldBe` [requestId sampleRequestRef]
 
+        it "builds POST /facts/reject request bodies" $
+            case rejectTokenFactsRequest
+                sampleAddress
+                sampleToken
+                [sampleRequestRef] of
+                Left err -> error err
+                Right RejectRequest{..} -> do
+                    rejToken `shouldBe` sampleTokenJSON
+                    rejAddr `shouldBe` Hex sampleAddressBytes
+                    rejRequests `shouldBe` [requestId sampleRequestRef]
+
         it "builds POST /facts/retract request bodies" $
             case retractFactsRequest sampleAddress sampleRequestRef of
                 Left err -> error err
@@ -126,12 +139,22 @@ spec =
                             \_ _ _ -> Identity tx
                         , mpfsUpdateTokenFromFacts =
                             \_ _ _ -> Identity tx
+                        , mpfsRejectTokenFromFacts =
+                            \_ _ _ -> Identity tx
                         , mpfsRetractChangeFromFacts =
                             \_ _ -> Identity tx
                         }
 
             runIdentity
                 ( mpfsUpdateTokenFromFacts
+                    mpfs
+                    sampleAddress
+                    sampleToken
+                    [sampleRequestRef]
+                )
+                `shouldBe` tx
+            runIdentity
+                ( mpfsRejectTokenFromFacts
                     mpfs
                     sampleAddress
                     sampleToken

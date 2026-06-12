@@ -35,6 +35,8 @@ mockMPFS =
             \_ _ -> error "retract change facts not implemented"
         , mpfsUpdateTokenFromFacts =
             \_ _ _ -> error "update token facts not implemented"
+        , mpfsRejectTokenFromFacts =
+            \_ _ _ -> error "reject token facts not implemented"
         , mpfsGetToken = \_ -> toJSON $ mockToken []
         , mpfsGetTokenFacts = \_ -> toJSON ([] :: [JSFact])
         }
