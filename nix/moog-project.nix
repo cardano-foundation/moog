@@ -12,6 +12,8 @@ let
       lib.mkForce [[ pkgs.libsodium-vrf pkgs.secp256k1 ]];
     packages.cardano-crypto-class.components.library.pkgconfig =
       lib.mkForce [[ pkgs.libsodium-vrf pkgs.secp256k1 pkgs.libblst ]];
+    packages.cardano-lmdb.components.library.pkgconfig =
+      lib.mkForce [[ pkgs.lmdb.dev ]];
     packages.cardano-ledger-binary.components.library.doHaddock =
       lib.mkForce false;
     packages.plutus-core.components.library.doHaddock =
@@ -40,6 +42,7 @@ let
         project.hsPkgs.cardano-addresses.components.exes.cardano-address
         project.hsPkgs.bech32.components.exes.bech32
         pkgs.nixfmt-classic
+        pkgs.lmdb.dev
         pkgs.mkdocs
         mkdocs.from-nixpkgs
         mkdocs.asciinema-plugin
