@@ -3,6 +3,7 @@
 module MPFS.Canary
     ( BootCanaryFailure (..)
     , FullLifecycleCanaryResult (..)
+    , canaryBootParams
     , fullLifecycleCanary
     , pollGoneBoundaryWithDelay
     , tokenIdFromBootValue
