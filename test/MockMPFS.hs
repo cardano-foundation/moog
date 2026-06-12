@@ -19,7 +19,7 @@ import Text.JSON.Canonical (ToJSON (..))
 mockMPFS :: Monad m => MPFS m
 mockMPFS =
     MPFS
-        { mpfsBootToken = \_ -> error "boot token not implemented"
+        { mpfsBootToken = \_ _ -> error "boot token not implemented"
         , mpfsEndToken = \_ _ -> error "end token not implemented"
         , mpfsRequestInsertFromFacts = \_ _ RequestInsertBody{value = body} ->
             pure
