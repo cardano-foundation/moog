@@ -24,4 +24,6 @@ jobs:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
       - name: nix develop -c builds the project
-        run: nix develop --accept-flake-config -c cabal build all -O0
+        # A fresh runner has no cabal package index, so `cabal build`
+        # cannot resolve deps until the Hackage/CHaP index is fetched.
+        run: nix develop --accept-flake-config -c bash -c 'cabal update && cabal build -O0 all'
