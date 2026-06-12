@@ -43,6 +43,7 @@ let
         project.hsPkgs.bech32.components.exes.bech32
         pkgs.nixfmt-classic
         pkgs.lmdb.dev
+        pkgs.liburing.dev
         pkgs.mkdocs
         mkdocs.from-nixpkgs
         mkdocs.asciinema-plugin
