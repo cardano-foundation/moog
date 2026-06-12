@@ -6,7 +6,7 @@ This is the role of the user that wants to run a service to control access to th
 
 ```mermaid
 flowchart TB
-    sleep[Sleep MOOG_WAIT seconds] --> poll[Query MPFS for pending requests]
+    sleep[Sleep POLL_INTERVAL_SECONDS, default 30] --> poll[Query MPFS for pending requests]
     poll --> validate[Validate each request against GitHub]
     validate --> submit[Submit batch state update transaction]
     submit --> sleep
@@ -52,7 +52,7 @@ For production host paths, oracle wallet ownership checks, secret rotation, and 
 
 Alternatively, oracle commands can be run manually, using the `moog` CLI. See the [Installation instructions](../user/installation.md) for how to install it.
 
-## Creating the moog token (only once)
+## The oracle wallet and the moog token
 
 Oracle operations need a wallet. Since the oracle role is critical, in addition to setting the `MOOG_WALLET_FILE` environment variable to point to the wallet file, you should also set the `MOOG_WALLET_PASSPHRASE` environment variable to encrypt the wallet.
 
@@ -78,13 +78,17 @@ Example output:
 }
 ```
 
-To create the Antithesis token, you can use the `moog oracle token create` command.
-
-```bash
-moog oracle token boot
-```
-
-It will create the Antithesis token. This token is a unique identifier for the Antithesis platform and will be used by all users to interact with the platform. You have to distribute it so that users can set the `MOOG_TOKEN_ID` environment variable to point to it.
+!!! warning "Token creation and deletion commands were removed"
+    The `moog oracle token boot` and `moog oracle token end` commands were
+    removed in v0.5.1.3 because they targeted the new facts-only MPFS API,
+    which the production MPFS server does not yet serve
+    ([#144](https://github.com/cardano-foundation/moog/issues/144)). The
+    production moog token was created once with an earlier release and is
+    distributed to users, who point at it with the `MOOG_TOKEN_ID`
+    environment variable (see [Configuration](../user/configuration.md)).
+    The token owner is permanently bound to the oracle wallet that minted
+    it. The token lifecycle commands will return with the MPFS v2 cutover
+    on the `moog-v2` branch.
 
 You can review the token info anytime with
 
@@ -112,14 +116,6 @@ Updating the token with new requests is done with the `moog oracle token update`
 
 ```bash
 moog oracle token update -o b6fc7cca5bcae74e6a5983f7922d0e0985285f1f19e62ccc9cb9fd4d3766a81b-0
-```
-
-## Deleting the moog token (DANGEROUS)
-
-To delete the Antithesis token, you can use the `moog oracle token delete` command.
-
-```bash
-moog oracle token delete
 ```
 
 ## Publishing the oracle configuration

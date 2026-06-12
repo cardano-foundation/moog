@@ -34,7 +34,6 @@ download the source code for cardano-node (which you don't need to do).
 Then, go from the top-level directory of your cloned Moog and enter:
 
 ```
-cd cli
 cabal update
 cabal build
 cabal run moog -- --help
@@ -71,7 +70,7 @@ If you are a Nix user and want to run the CLI directly from the official
 repository, without cloning the repository:
 
 ```bash
-nix shell github:cardano-foundation/moog?dir=cli#moog
+nix shell github:cardano-foundation/moog#moog
 ```
 
 

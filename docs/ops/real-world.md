@@ -16,14 +16,14 @@ For details of how to achieve this, see [configuration](../user/configuration.md
 
 ### Setting up an interface
 
-To bootstrap the system, the oracle must create an moog token:
+To bootstrap the system, the oracle must create a moog token. The
+`moog oracle token boot` command that did this was removed in v0.5.1.3
+together with `token end`, because both targeted the new facts-only MPFS
+API that production does not yet serve
+([#144](https://github.com/cardano-foundation/moog/issues/144)); token
+creation will return with the MPFS v2 cutover on the `moog-v2` branch.
 
-```
-moog oracle token boot
-
-```
-
-This token is unique for a system. It enables all the actors to collaborate. It needs to be shared by some means with users. For example, the one that has been created (currently on preprod) for this project (an interface the the moogthesis instance managed by Cardano Foundation) is provided in the [configuration](../user/configuration.md). In order to "connect" to this interface all roles need to set the MOOG_TOKEN_ID environment variable to the value that was returned by the above command.
+The token is unique for a system. It enables all the actors to collaborate. It needs to be shared by some means with users. For example, the one that has been created (currently on preprod) for this project (an interface to the Antithesis instance managed by Cardano Foundation) is provided in the [configuration](../user/configuration.md). In order to "connect" to this interface all roles need to set the MOOG_TOKEN_ID environment variable to its value.
 
 Then, the agent must configure this interface on-chain, in particular test durations and the public key hash of the agent:
 

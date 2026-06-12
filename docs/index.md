@@ -5,12 +5,14 @@
     moog is migrating from the legacy MPFS HTTP API to the new facts-only MPFS
     service ([cardano-mpfs-offchain](https://github.com/lambdasistemi/cardano-mpfs-offchain)),
     where the server returns indexed *facts* and the client builds, signs, and
-    submits transactions. The current release (**v0.5.1.4**) runs against the
-    **legacy** MPFS server in production; the oracle `token boot` / `token end`
-    commands were removed because they already targeted the new API, which
-    production does not yet serve. The full client-side facts cutover happens on
-    a long-lived **`moog-v2`** branch and will land as a single coordinated
-    release. **`main` is frozen during the migration.**
+    submits transactions. Current releases (**v0.5.1.5** at the time of
+    writing) run against the **legacy** MPFS server in production; the oracle
+    `token boot` / `token end` commands were removed in v0.5.1.3 because they
+    already targeted the new API, which production does not yet serve
+    ([#144](https://github.com/cardano-foundation/moog/issues/144)). The full
+    client-side facts cutover is developed on the long-lived
+    [`moog-v2`](https://github.com/cardano-foundation/moog/tree/moog-v2)
+    branch.
 
 # Moog
 

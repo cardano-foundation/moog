@@ -40,7 +40,7 @@ graph TB
 - **GitHub PAT** with `repo` scope for the agent (used to download test assets)
 - **Antithesis credentials** for the agent (registry password, platform user)
 - **MPFS service** accessible from both machines (default: `https://mpfs.plutimus.com`)
-- **Moog token** already created by the oracle (`moog oracle token boot`)
+- **Moog token** already created by the oracle (the `moog oracle token boot` command was removed in v0.5.1.3; the production token was minted with an earlier release)
 
 ## Oracle Deployment
 

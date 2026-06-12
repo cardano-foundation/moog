@@ -7,12 +7,19 @@ The Moog command-line-interface (CLI) can run on Linux and MacOS.
 ## Installing Moog's CLI
 
 The recommended way for end-users to install the Moog CLI is to download the
-pre-built binaries for your platform from the [releases page](https://github.com/cardano-foundation/moog/releases)
+pre-built binaries for your platform from the [releases page](https://github.com/cardano-foundation/moog/releases).
+Each release ships, for the `moog` CLI (and separately for `moog-agent` and
+`moog-oracle`):
+
+- statically linked Linux tarballs: `moog-<version>-x86_64-linux-musl.tar.gz`
+  and `moog-<version>-aarch64-linux-musl.tar.gz`
+- Linux packages: `.AppImage`, `.deb` and `.rpm` for both architectures
+- a macOS tarball: `moog-<version>-aarch64-darwin.tar.gz`
 
 Alternatively, if you are a Nix user you may run the CLI directly from the official repository:
 
 ```bash
-nix shell github:cardano-foundation/moog?dir=cli#moog
+nix shell github:cardano-foundation/moog#moog
 ```
 
 For additional ways, see the CONTRIBUTING files in the [source repository](https://github.com/cardano-foundation/moog).
