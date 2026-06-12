@@ -1,8 +1,10 @@
 module MPFS.Boot
     ( addressBytesForBoot
     , bootTokenFromFacts
+    , BootParams (..)
     ) where
 
+import Cardano.Ledger.Coin (Coin (..))
 import Cardano.Ledger.Mary.Value
     ( AssetName (..)
     , MultiAsset (..)
@@ -52,12 +54,41 @@ addressBytesForBoot :: Address -> Either String ByteString
 addressBytesForBoot =
     addressBytesForCage
 
+-- | Operator-supplied economics for booting a new token. These values
+-- populate the State datum at mint time and are immutable across
+-- @Modify@; every other operation reads them back from on-chain state.
+-- The devnet 5s defaults baked into 'loadCageConfig' make a token
+-- un-foldable on a real network (Phase 1 closes before a request
+-- confirms), so boot must take them from the operator.
+data BootParams = BootParams
+    { bootProcessTimeMs :: !Integer
+    -- ^ Phase-1 window (ms): the oracle must process a request within
+    -- this window of its submission.
+    , bootRetractTimeMs :: !Integer
+    -- ^ Phase-2 window (ms): the requester may retract before the
+    -- oracle may reject.
+    , bootTipLovelace :: !Integer
+    -- ^ Oracle tip (lovelace) per request, taken from the requester's
+    -- locked value when the request is processed or rejected.
+    }
+    deriving (Eq, Show)
+
+-- | Overlay operator-supplied 'BootParams' onto a loaded 'CageConfig'.
+applyBootParams :: BootParams -> CageConfig -> CageConfig
+applyBootParams bootParams cfg =
+    cfg
+        { defaultProcessTime = bootProcessTimeMs bootParams
+        , defaultRetractTime = bootRetractTimeMs bootParams
+        , defaultTip = Coin (bootTipLovelace bootParams)
+        }
+
 bootTokenFromFacts
     :: ClientM StatusResponse
     -> (BootRequest -> ClientM BootFacts)
+    -> BootParams
     -> Address
     -> ClientM (WithUnsignedTx JSValue)
-bootTokenFromFacts getStatus postBootFacts address = do
+bootTokenFromFacts getStatus postBootFacts bootParams address = do
     rawAddress <- liftEitherClientM $ addressBytesForBoot address
     StatusResponse{currentUtxoRoot} <- getStatus
     trustedRoot <-
@@ -67,7 +98,7 @@ bootTokenFromFacts getStatus postBootFacts address = do
         liftEitherClientM
             $ firstShow
             $ verifyBootFacts (TrustedRoot trustedRoot) facts
-    cfg <- liftIO $ loadCageConfig rawAddress
+    cfg <- applyBootParams bootParams <$> liftIO (loadCageConfig rawAddress)
     evalCtx <- resolveEvalContext
     tx <-
         liftEitherClientM

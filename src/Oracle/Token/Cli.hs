@@ -2,6 +2,7 @@ module Oracle.Token.Cli
     ( tokenCmdCore
     , TokenCommand (..)
     , TokenUpdateFailure (..)
+    , BootParams (..)
     ) where
 
 import Control.Exception (Exception)
@@ -22,7 +23,8 @@ import Data.Functor.Identity (Identity (..))
 import Data.List (find)
 import Lib.JSON.Canonical.Extra (object, (.=))
 import MPFS.API
-    ( MPFS (..)
+    ( BootParams (..)
+    , MPFS (..)
     , mpfsGetToken
     )
 import Oracle.Types
@@ -115,6 +117,7 @@ instance Monad m => ToJSON m TokenUpdateFailure where
 data TokenCommand a where
     BootToken
         :: Wallet
+        -> BootParams
         -> TokenCommand
             (AValidationResult TokenBootFailure (WithTxHash TokenId))
     UpdateToken
@@ -178,10 +181,11 @@ tokenCmdCore command = do
                     $ submit
                     $ \address -> mpfsUpdateTokenFromFacts mpfs address tk wanted
                 pure txHash
-        BootToken wallet -> do
+        BootToken wallet bootParams -> do
             Submission submit <- askSubmit wallet
             lift $ do
-                WithTxHash txHash jTokenId <- submit $ mpfsBootToken mpfs
+                WithTxHash txHash jTokenId <-
+                    submit $ mpfsBootToken mpfs bootParams
                 runValidate $ do
                     tkId <- liftMaybe NoTokenIdReturned jTokenId
                     tokenId <- liftMaybe TokenIdNotValidJSON $ fromJSON tkId

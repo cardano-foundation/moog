@@ -41,7 +41,8 @@ import Lib.JSON.Canonical.Extra
     , (.=)
     )
 import MPFS.API
-    ( MPFS (..)
+    ( BootParams (..)
+    , MPFS (..)
     , RequestInsertBody (..)
     , awaitTransactionV2
     , getTokenV2
@@ -118,6 +119,16 @@ instance Monad m => ToJSON m FullLifecycleCanaryResult where
             , ("tokenGonePolls", intJSON tokenGonePolls)
             ]
 
+-- | Devnet boot economics for the canary: short 5s windows are fine
+-- on a fast local devnet, where the oracle can fold within seconds.
+canaryBootParams :: BootParams
+canaryBootParams =
+    BootParams
+        { bootProcessTimeMs = 5_000
+        , bootRetractTimeMs = 5_000
+        , bootTipLovelace = 1_000_000
+        }
+
 fullLifecycleCanary
     :: MPFSClient
     -> Wallet
@@ -125,7 +136,7 @@ fullLifecycleCanary
     -> IO FullLifecycleCanaryResult
 fullLifecycleCanary MPFSClient{runMPFS} wallet@Wallet{sign} maxPolls = do
     WithUnsignedTx unsignedTx rawTokenId <-
-        runMPFS $ mpfsBootToken mpfsClient (address wallet)
+        runMPFS $ mpfsBootToken mpfsClient canaryBootParams (address wallet)
     signedTx <-
         case sign unsignedTx of
             Right tx -> pure tx
