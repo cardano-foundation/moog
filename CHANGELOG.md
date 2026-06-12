@@ -1,5 +1,22 @@
 # Changelog for moog-cli
 
+### v0.5.1.5 - 2026-06-11
+
+#### Fixed
+
+- **The agent launch is idempotent and duplicate Antithesis runs drain
+  instead of stalling.** A launched-but-not-yet-observed test-run is
+  tracked with an in-process marker so a slow-to-appear run is not
+  launched twice, and when multiple API runs match the same on-chain
+  test-run the agent prefers the completed run as the canonical one and
+  drains the duplicates. (#175)
+- **The finished outcome is derived from run properties, not only run
+  status.** A `completed` Antithesis run with failing test properties
+  now finishes as a failure; Antithesis-platform/coverage properties are
+  excluded from that check so platform noise cannot fail a run. (#190)
+- **The dev shell solves again on GHC 9.12.3** by allowing a newer
+  `base` for `cabal-fmt`. (#191)
+
 ### v0.5.1.4 - 2026-06-09
 
 #### Fixed
