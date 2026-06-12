@@ -62,6 +62,7 @@ import MPFS.API
     , requestInsertFromFacts
     , requestUpdateFromFacts
     )
+import MPFS.Canary (canaryBootParams)
 import Network.HTTP.Client
     ( ManagerSettings (managerResponseTimeout)
     , newManager
@@ -251,7 +252,7 @@ setup auth = do
             (mkEffects auth)
             wait180S
             $ tokenCmdCore
-            $ BootToken oracleWallet
+            $ BootToken oracleWallet canaryBootParams
     liftIO $ waitTx call txHash
     case mTokenId of
         Nothing -> error "BootToken failed, no TokenId returned"
