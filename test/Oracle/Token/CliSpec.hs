@@ -4,8 +4,8 @@ module Oracle.Token.CliSpec
     ( spec
     ) where
 
-import Control.Exception (bracket_)
 import Cli (Command (OracleCommand))
+import Control.Exception (bracket_)
 import Core.Context (withContext)
 import Core.Types.Basic
     ( Address (..)
@@ -14,7 +14,10 @@ import Core.Types.Basic
     , TokenId (..)
     )
 import Core.Types.Change (Change (..), Key (..))
-import Core.Types.Mnemonics (Mnemonics (ClearText), MnemonicsPhase (DecryptedS))
+import Core.Types.Mnemonics
+    ( Mnemonics (ClearText)
+    , MnemonicsPhase (DecryptedS)
+    )
 import Core.Types.Operation (Operation (..))
 import Core.Types.Tx
     ( Root (..)
@@ -40,7 +43,12 @@ import Oracle.Token.Cli
     , TokenRejectRequestValidationProblem (..)
     , tokenCmdCore
     )
-import Oracle.Types (Request (..), RequestZoo (..), Token (..), TokenState (..))
+import Oracle.Types
+    ( Request (..)
+    , RequestZoo (..)
+    , Token (..)
+    , TokenState (..)
+    )
 import Oracle.Validate.Requests.TestRun.Lib (mkEffects, noValidation)
 import Oracle.Validate.Types (AValidationResult (..))
 import Submitting (Submission (..), readWallet)
@@ -106,18 +114,18 @@ spec =
                 parsed <-
                     withParserEnv
                         $ withArgs
-                        [ "oracle"
-                        , "token"
-                        , "reject"
-                        , "-t"
-                        , "token"
-                        , "-w"
-                        , walletPath
-                        , "-o"
-                        , "aaa-0"
-                        , "-o"
-                        , "bbb-1"
-                        ]
+                            [ "oracle"
+                            , "token"
+                            , "reject"
+                            , "-t"
+                            , "token"
+                            , "-w"
+                            , walletPath
+                            , "-o"
+                            , "aaa-0"
+                            , "-o"
+                            , "bbb-1"
+                            ]
                         $ parseArgs (makeVersion [0])
                 case parsed of
                     Box
@@ -137,8 +145,8 @@ spec =
                             ) -> do
                             token `shouldBe` sampleToken
                             refs
-                                `shouldBe` [ RequestRefId "aaa-0"
-                                           , RequestRefId "bbb-1"
+                                `shouldBe` [ RequestRefId "aaa#0"
+                                           , RequestRefId "bbb#1"
                                            ]
                     _ -> expectationFailure "expected oracle token reject command"
 
@@ -176,7 +184,8 @@ runRejectAs wallet mpfs wanted =
             (const recordingSubmission)
             (tokenCmdCore (RejectToken sampleToken wallet wanted))
 
-withRequestsOwnedBy :: Monad m => Owner -> [RequestZoo] -> MPFS m -> MPFS m
+withRequestsOwnedBy
+    :: Monad m => Owner -> [RequestZoo] -> MPFS m -> MPFS m
 withRequestsOwnedBy tokenOwner reqs mpfs =
     mpfs
         { mpfsGetToken =
@@ -195,7 +204,9 @@ withRequestsOwnedBy tokenOwner reqs mpfs =
 
 markedMPFS :: MPFS Identity
 markedMPFS =
-    withRequestsOwnedBy (Wallet.owner sampleWallet) [sampleRequest]
+    withRequestsOwnedBy
+        (Wallet.owner sampleWallet)
+        [sampleRequest]
         mockMPFS
             { mpfsRejectTokenFromFacts =
                 \_ _ _ -> pure $ marker "facts-reject"
