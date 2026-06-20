@@ -9,6 +9,7 @@ module Core.Options
     , sshPublicKeyHashParser
     , vkeyOption
     , outputReferenceParser
+    , parseOutputReference
     , durationOption
     , tryOption
     , tokenIdOption
@@ -173,25 +174,26 @@ outputReferenceParser =
     setting
         [ long "outref"
         , short 'o'
-        , metavar "OUTPUT_REF"
-        , help "The transaction hash and index for the output reference"
+        , metavar "txHash#index"
+        , help "The output reference in txHash#index format"
         , reader parseOutputReference
         , option
         ]
 
 parseOutputReference :: Reader RequestRefId
 parseOutputReference = Reader $ \s -> do
-    case break (== '-') s of
-        (_txHash, '-' : indexStr) -> do
+    case break (`elem` ['#', '-']) s of
+        (txHash, separator : indexStr) | separator `elem` ['#', '-'] -> do
             _index :: Int <- case reads indexStr of
                 [(i, "")] -> pure i
                 _ ->
                     Left
-                        "Invalid index format. Use 'txHash-index' where index is an integer."
+                        "Invalid index format. Use 'txHash#index' where index is an integer."
             pure
                 $ RequestRefId
-                $ T.pack s
-        _ -> Left "Invalid output reference format. Use 'txHash-index'"
+                $ T.pack
+                $ txHash <> "#" <> indexStr
+        _ -> Left "Invalid output reference format. Use 'txHash#index'"
 
 durationOption :: Parser Duration
 durationOption =
