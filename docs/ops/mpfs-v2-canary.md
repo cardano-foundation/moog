@@ -57,3 +57,14 @@ The executable creates a deterministic MOOG wallet, patches a temporary
 copy of the devnet genesis to fund that wallet, starts
 `mpfs-devnet-server`, and runs the boot-then-end canary path against the
 live HTTP API.
+
+## Full v2 facts flow demo
+
+This cast shows the facts-only lifecycle against a local MPFS devnet:
+wallet creation and genesis funding, fast token boot, a config request
+applied by the oracle, an expired request rejected by the oracle, and a
+fresh request rejected too early by the Phase-3 guard.
+
+```asciinema-player
+{ "file": "assets/video/v2-full-flow.cast" }
+```
