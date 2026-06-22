@@ -1,5 +1,5 @@
 site_name: Moog Documentation
-site_url: https://cardano-foundation.github.io/moog/
+site_url: !ENV [MKDOCS_SITE_URL, "https://cardano-foundation.github.io/moog/"]
 site_description: Testing Cardano on Cardano with Antithesis
 repo_url: https://github.com/cardano-foundation/moog
 repo_name: cardano-foundation/moog
