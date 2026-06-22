@@ -10,10 +10,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-  issues: write
-  pull-requests: write
 
 concurrency:
   group: >-
@@ -29,44 +25,63 @@ concurrency:
 jobs:
   build:
     if: github.event.action != 'closed'
-    runs-on: nixos
+    runs-on: [self-hosted, moog]
+    env:
+      PREVIEW_HAS_DEPLOY_KEY: ${{ secrets.PREVIEW_DEPLOY_KEY != '' && secrets.PREVIEW_SSH_TARGET != '' }}
     steps:
       - uses: actions/checkout@v6
-      - uses: cachix/cachix-action@v17
+
+      - uses: paolino/dev-assets/setup-nix@v0.1.0
         with:
-          name: paolino
-          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
       - name: Build docs
         env:
-          MKDOCS_SITE_URL: >-
-            ${{
-              github.event_name == 'pull_request'
-                && format(
-                    'https://preview.dev.plutimus.com/{0}/pr-{1}/',
-                    github.repository,
-                    github.event.pull_request.number
-                  )
-                || 'https://cardano-foundation.github.io/moog/'
-            }}
+          MKDOCS_SITE_URL: https://preview.dev.plutimus.com/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/
         run: >-
           nix develop github:paolino/dev-assets?dir=mkdocs
           -c mkdocs build --strict --site-dir site
+
       - name: Publish PR preview
-        if: github.event_name == 'pull_request'
-        uses: paolino/dev-assets/static-preview@main
-        with:
-          path: site
-      - name: Clean up site/
+        if: github.event_name == 'pull_request' && env.PREVIEW_HAS_DEPLOY_KEY == 'true'
+        env:
+          PREVIEW_DEPLOY_KEY: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+          PREVIEW_SSH_TARGET: ${{ secrets.PREVIEW_SSH_TARGET }}
+        run: |
+          key="${RUNNER_TEMP}/preview_deploy_key"
+          install -m 600 /dev/null "$key"
+          printf '%s\n' "$PREVIEW_DEPLOY_KEY" > "$key"
+
+          dest="/opt/services/previews/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/"
+          ssh -i "$key" -o StrictHostKeyChecking=accept-new "$PREVIEW_SSH_TARGET" "mkdir -p '$dest'"
+          rsync -az --delete -e "ssh -i $key -o StrictHostKeyChecking=accept-new" site/ "$PREVIEW_SSH_TARGET:$dest"
+
+      - name: Clean up deploy key and site
         if: always()
         run: |
-          chmod -R u+w site 2>/dev/null || true
-          rm -rf site
+          rm -f "${RUNNER_TEMP}/preview_deploy_key"
+          if [ -d site ]; then
+            chmod -R u+w site
+            rm -rf site
+          fi
 
   pr-preview-cleanup:
     name: Remove PR Preview
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: nixos
+    runs-on: [self-hosted, moog]
+    env:
+      PREVIEW_HAS_DEPLOY_KEY: ${{ secrets.PREVIEW_DEPLOY_KEY != '' && secrets.PREVIEW_SSH_TARGET != '' }}
     steps:
-      - uses: paolino/dev-assets/static-preview@main
-        with:
-          mode: cleanup
+      - name: Remove PR preview
+        if: env.PREVIEW_HAS_DEPLOY_KEY == 'true'
+        env:
+          PREVIEW_DEPLOY_KEY: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+          PREVIEW_SSH_TARGET: ${{ secrets.PREVIEW_SSH_TARGET }}
+        run: |
+          key="${RUNNER_TEMP}/preview_deploy_key"
+          install -m 600 /dev/null "$key"
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$PREVIEW_DEPLOY_KEY" > "$key"
+
+          dest="/opt/services/previews/${{ github.repository }}/pr-${{ github.event.pull_request.number }}/"
+          ssh -i "$key" -o StrictHostKeyChecking=accept-new "$PREVIEW_SSH_TARGET" "rm -rf '$dest'"
