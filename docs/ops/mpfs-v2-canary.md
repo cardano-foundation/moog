@@ -66,5 +66,8 @@ applied by the oracle, an expired request rejected by the oracle, and a
 fresh request rejected too early by the Phase-3 guard.
 
 ```asciinema-player
-{ "file": "assets/video/v2-full-flow.cast" }
+{ "file": "assets/video/v2-full-flow.cast"
+, "mkap_theme": "none"
+, "cols": 80
+}
 ```
