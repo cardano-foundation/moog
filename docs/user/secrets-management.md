@@ -131,10 +131,21 @@ walletPassphrase: your_passphrase   # wallet encryption passphrase (if any)
 | `githubPAT` | oracle, agent, requester | secret | GitHub Personal Access Token |
 | `walletPassphrase` | oracle, agent, requester | secret | Wallet encryption passphrase |
 | `mnemonics` | oracle, agent, requester | secret | Wallet mnemonics in clear text (alternative to `walletFile`) |
-| `encryptedMnemonics` | oracle, agent, requester | secret | Encrypted wallet mnemonics (alternative to `walletFile`) |
+| `encryptedMnemonics` | oracle, agent, requester | secret | Age-vault encrypted wallet mnemonics, stored as `age-v1:` plus base64 age bytes (alternative to `walletFile`) |
 | `antithesisPassword` | agent | secret | Antithesis platform/registry password |
 | `agentEmail` | agent | secret | Email address for receiving test results |
 | `agentEmailPassword` | agent | secret | App password for the email account |
 | `slackWebhook` | agent | secret | Slack webhook URL for notifications |
 | `trustedRequesters` | agent | secret | List of trusted requester GitHub usernames |
 | `sshPassword` | requester | secret | SSH password for Git operations |
+
+## Wallet mnemonic vaults
+
+When `moog wallet create --ask-wallet-passphrase` or `moog wallet encrypt` writes
+encrypted mnemonics, the `encryptedMnemonics` JSON value is an authenticated age
+vault. Moog uses the passphrase-only scrypt recipient from
+`Cardano.Tx.Sign.Vault.Age` with `defaultVaultWorkFactor` 18. The stored text is
+`age-v1:` followed by base64-encoded binary age data.
+
+Wrong passphrases, modified vault text, and malformed age data fail closed during
+wallet loading. Moog v2 does not read the older wallet encryption format.

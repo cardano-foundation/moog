@@ -76,6 +76,12 @@ Optionally you can provide a passphrase to encrypt the mnemonic phrase in the wa
 
 > Setting a passphrase is highly recommended to protect your wallet
 
+Encrypted wallet files store the mnemonic phrase as an authenticated age vault
+using the passphrase-only scrypt mode with work factor 18. The JSON
+`encryptedMnemonics` value starts with `age-v1:` followed by base64-encoded age
+data. A wrong passphrase or any modified vault text is rejected during wallet
+loading.
+
 A less secure way to provide the passphrase is to set the `MOOG_WALLET_PASSPHRASE` environment variable:
 
 ```bash
@@ -124,7 +130,8 @@ For the both cases `MOOG_WALLET_FILE` is set as before.
     Store a copy of your encrypted/plaintext wallet file in a password manager.
     Think twice before storing a plaintext wallet file. Store your passphrase in a
     password manager too. Currently we do not support hardware wallets like Ledger
-    or Trezor.
+    or Trezor. Moog v2 does not read wallet files encrypted with the older wallet
+    encryption format.
 
 Fund your wallet with some tAda tokens on preprod, for example using the
 [Cardano Testnet
