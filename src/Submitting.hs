@@ -74,7 +74,6 @@ import Control.Exception (Exception, SomeException, throwIO)
 import Control.Lens ((%~))
 import Control.Monad.Catch (MonadCatch (..))
 import Control.Monad.IO.Class (MonadIO (..))
-import Core.Encryption (encryptText)
 import Core.Types.Basic (Address (..), Owner (..))
 import Core.Types.Mnemonics
     ( Mnemonics (..)
@@ -91,6 +90,7 @@ import Core.Types.Tx
 import Core.Types.Wallet
     ( Wallet (..)
     )
+import Core.WalletVault (encryptWalletVaultText)
 import Crypto.Error (CryptoFailable (..))
 import Crypto.PubKey.Ed25519 qualified as Ed25519
 import Data.Aeson
@@ -178,7 +178,7 @@ writeWallet walletFile (ClearText mnemonicsText) passphrase = do
         else do
             case passphrase of
                 Just p -> do
-                    encrypted <- encryptText p 10 $ T.unwords mnemonicWords
+                    encrypted <- encryptWalletVaultText p $ T.unwords mnemonicWords
                     BL.writeFile walletFile $ encode $ Encrypted encrypted
                 Nothing ->
                     BL.writeFile walletFile

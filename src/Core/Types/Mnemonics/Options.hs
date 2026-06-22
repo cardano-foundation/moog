@@ -5,13 +5,15 @@ module Core.Types.Mnemonics.Options
     , walletFileArgOption
     ) where
 
+import Cardano.Tx.Sign.Vault.Age (renderAgeVaultError)
 import Control.Exception (try)
-import Core.Encryption (decryptText)
 import Core.Types.Mnemonics (Mnemonics (..), MnemonicsPhase (..))
+import Core.WalletVault (decryptWalletVaultText)
 import Data.Aeson
     ( Object
     )
 import Data.Aeson qualified as Aeson
+import Data.Bifunctor (first)
 import Data.ByteString.Lazy qualified as BL
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -90,7 +92,15 @@ coreMnemonicsParser =
         <|> (True,) . ClearText
             <$> checkEither
                 id
-                (decryptText <$> walletPassphraseCommon <*> mnemonicsEncryptedOption)
+                ( decryptMnemonics
+                    <$> walletPassphraseCommon
+                    <*> mnemonicsEncryptedOption
+                )
+
+decryptMnemonics :: Text -> Text -> Either String Text
+decryptMnemonics passphrase encrypted =
+    first (T.unpack . renderAgeVaultError)
+        $ decryptWalletVaultText passphrase encrypted
 
 readJSONFile :: FilePath -> IO (Either String Object)
 readJSONFile fp = do

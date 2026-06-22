@@ -96,7 +96,6 @@ library
     App
     Cli
     Core.Context
-    Core.Encryption
     Core.Options
     Core.Types.Basic
     Core.Types.CageDatum
@@ -109,6 +108,7 @@ library
     Core.Types.Tx
     Core.Types.VKey
     Core.Types.Wallet
+    Core.WalletVault
     Docker
     Docker.FaultExclusion
     Effects
@@ -472,10 +472,10 @@ test-suite unit-tests
 
   -- Modules included in this executable, other than Main.
   other-modules:
-    Core.EncryptionSpec
     Core.OptionsSpec
     Core.Types.FactSpec
     Core.Types.VKeySpec
+    Core.WalletVaultSpec
     Docker.FaultExclusionSpec
     Lib.CryptoBoxSpec
     Lib.EdToCurveSpec

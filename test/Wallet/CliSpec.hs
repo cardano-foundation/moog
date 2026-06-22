@@ -7,6 +7,13 @@ import Core.Types.Mnemonics
     ( Mnemonics (..)
     )
 import Core.Types.Wallet (Wallet)
+import Core.WalletVault
+    ( decryptWalletVaultText
+    , walletVaultPrefix
+    )
+import Data.Aeson qualified as Aeson
+import Data.Aeson.Types qualified as Aeson
+import Data.ByteString.Lazy qualified as BL
 import Data.Either (fromRight, isLeft, isRight)
 import Data.Text (Text)
 import Submitting (readWallet)
@@ -49,6 +56,18 @@ tryRetrieveCreatedWallet filepath = do
                 $ mnemonicObj
     pure $ tryObtainingDecryptedWallet mnemonicText
 
+readEncryptedMnemonics :: FilePath -> IO Text
+readEncryptedMnemonics filepath = do
+    mnemonicObj <- BL.readFile filepath
+    case Aeson.eitherDecode mnemonicObj >>= parseEncryptedMnemonic of
+        Left err -> fail err
+        Right encrypted -> pure encrypted
+  where
+    parseEncryptedMnemonic =
+        Aeson.parseEither
+            $ Aeson.withObject "wallet file"
+            $ \obj -> obj Aeson..: "encryptedMnemonics"
+
 getDecryptedWalletForTesting :: Wallet
 getDecryptedWalletForTesting = do
     let mnemonicText =
@@ -73,6 +92,17 @@ spec = do
                 let command = Create wallet (Nothing :: Maybe Text)
                 res <- walletCmd command
                 res `shouldSatisfy` isRight
+        it "writes encrypted mnemonics as an age vault" $ do
+            withSystemTempDirectory "wallet-cli-spec" $ \dir -> do
+                let wallet = dir <> "/wallet"
+                let command = Create wallet (Just "password")
+                res <- walletCmd command
+                res `shouldSatisfy` isRight
+                encryptedMnemonics <- readEncryptedMnemonics wallet
+                encryptedMnemonics
+                    `shouldSatisfy` T.isPrefixOf walletVaultPrefix
+                decryptWalletVaultText "password" encryptedMnemonics
+                    `shouldSatisfy` isRight
     describe "wallet encrypt/decrypt" $ do
         it "wallet can be created from valid mnemonic" $ do
             let mnemonicText =
