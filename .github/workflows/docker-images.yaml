@@ -9,7 +9,7 @@ on:
 jobs:
   build:
     name: Build and upload docker image
-    runs-on: ubuntu-latest
+    runs-on: nix-enabled-runners
     steps:
       - run: sudo rm -rf /opt&
       - uses: actions/checkout@v6

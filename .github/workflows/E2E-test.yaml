@@ -9,8 +9,7 @@ on:
 jobs:
   integration-tests:
     name: Run moog E2E tests
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: nix-enabled-runners
     env:
       MOOG_MPFS_HOST: "http://localhost:3000"
       MOOG_TEST_YACI_ADMIN: "http://localhost:10000"
