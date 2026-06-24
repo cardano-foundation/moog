@@ -10,7 +10,7 @@ jobs:
 
   unit-tests:
     name: Run unit tests
-    runs-on: nix-enabled-runners
+    runs-on: ubuntu-latest
 
     steps:
       - run: sudo rm -rf /opt&
