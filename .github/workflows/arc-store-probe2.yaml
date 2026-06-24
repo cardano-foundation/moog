@@ -1,0 +1,61 @@
+name: ARC shared-store probe v2
+
+# Does the fleet share /nix/STORE (not just /nix root) across jobs?
+# Also dumps the mount table / fs type so we know if /nix or /nix/store
+# is a real shared volume (PVC/NFS/CSI) vs the pod's ephemeral overlayfs.
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  producer:
+    name: producer (adds a unique path to the store)
+    runs-on: nix-enabled-runners
+    outputs:
+      path: ${{ steps.add.outputs.path }}
+    steps:
+      - name: filesystem of /nix and /nix/store (pre-nix)
+        run: |
+          set +e
+          echo "host=$(hostname)"
+          echo "== mount entries under /nix =="; mount | grep -E '/nix' || echo "(no separate /nix* mount — part of rootfs/overlay)"
+          echo "== df -hT =="; df -hT /nix /nix/store 2>&1
+          echo "== fstype =="; stat -f -c '/nix=%T' /nix 2>&1; stat -f -c '/nix/store=%T' /nix/store 2>&1
+          echo "== ls =="; ls -ld /nix /nix/store 2>&1
+      - uses: paolino/dev-assets/setup-nix@v0.1.0
+        with:
+          cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
+      - name: add a unique (uncacheable) path to /nix/store
+        id: add
+        run: |
+          set +e
+          echo "nix: $(nix --version)"
+          echo "== mount entries under /nix (post setup-nix) =="; mount | grep -E '/nix' || echo "(no separate /nix* mount)"
+          marker="arc-store-probe2-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          printf 'unique-%s\n' "$marker" > "$marker"
+          p=$(nix-store --add "$marker")
+          echo "STORE_PATH=$p"
+          echo "path=$p" >> "$GITHUB_OUTPUT"
+          ls -ld "$p" 2>&1
+
+  consumer:
+    name: consumer (looks for that store path)
+    needs: producer
+    runs-on: nix-enabled-runners
+    steps:
+      - name: check the store path on a different pod (no nix install)
+        run: |
+          set +e
+          echo "host=$(hostname)"
+          p="${{ needs.producer.outputs.path }}"
+          echo "looking for: $p"
+          echo "== mount entries under /nix =="; mount | grep -E '/nix' || echo "(no separate /nix* mount — part of rootfs/overlay)"
+          echo "== df -hT =="; df -hT /nix /nix/store 2>&1
+          echo "== ls =="; ls -ld /nix /nix/store 2>&1
+          if [ -e "$p" ]; then
+            echo "RESULT: SHARED-STORE — $p present (content: $(cat "$p" 2>&1))"
+          else
+            echo "RESULT: NOT-SHARED-STORE — $p absent on this pod"
+          fi
