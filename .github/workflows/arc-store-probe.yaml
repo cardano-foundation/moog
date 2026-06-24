@@ -1,0 +1,52 @@
+name: ARC shared-store probe
+
+# Throwaway: does the nix-enabled-runners fleet share /nix across jobs,
+# or is each job an ephemeral pod with its own store?
+# producer writes a sentinel into /nix; consumer (different pod) looks for it.
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  producer:
+    name: producer (writes /nix sentinel)
+    runs-on: nix-enabled-runners
+    steps:
+      - name: write sentinel into /nix
+        run: |
+          set +e
+          host=$(hostname)
+          echo "producer host=$host"
+          ls -ld /nix
+          sentinel="/nix/arc-store-probe-${GITHUB_RUN_ID}"
+          stamp="$host $(date -u +%FT%TZ)"
+          if echo "$stamp" | tee "$sentinel" >/dev/null 2>&1; then
+            echo "wrote $sentinel (no sudo)"
+          elif echo "$stamp" | sudo tee "$sentinel" >/dev/null 2>&1; then
+            echo "wrote $sentinel (sudo)"
+          else
+            echo "could NOT write to /nix"
+          fi
+          echo "sentinels visible to producer:"; ls -l /nix/arc-store-probe-* 2>&1 || echo "(none)"
+
+  consumer:
+    name: consumer (reads /nix sentinel)
+    needs: producer
+    runs-on: nix-enabled-runners
+    steps:
+      - name: read sentinel from /nix
+        run: |
+          set +e
+          host=$(hostname)
+          echo "consumer host=$host"
+          ls -ld /nix
+          sentinel="/nix/arc-store-probe-${GITHUB_RUN_ID}"
+          if [ -e "$sentinel" ]; then
+            echo "RESULT: SHARED — found $sentinel -> $(cat "$sentinel")"
+          else
+            echo "RESULT: NOT-SHARED — $sentinel absent on this pod"
+          fi
+          echo "all probe sentinels visible to consumer (prior runs => persistent):"
+          ls -l /nix/arc-store-probe-* 2>&1 || echo "(none)"
