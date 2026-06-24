@@ -24,6 +24,7 @@ jobs:
           echo "== df -hT =="; df -hT /nix /nix/store 2>&1
           echo "== fstype =="; stat -f -c '/nix=%T' /nix 2>&1; stat -f -c '/nix/store=%T' /nix/store 2>&1
           echo "== ls =="; ls -ld /nix /nix/store 2>&1
+          exit 0
       - uses: paolino/dev-assets/setup-nix@v0.1.0
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
@@ -39,6 +40,7 @@ jobs:
           echo "STORE_PATH=$p"
           echo "path=$p" >> "$GITHUB_OUTPUT"
           ls -ld "$p" 2>&1
+          exit 0
 
   consumer:
     name: consumer (looks for that store path)
@@ -59,3 +61,4 @@ jobs:
           else
             echo "RESULT: NOT-SHARED-STORE — $p absent on this pod"
           fi
+          exit 0
