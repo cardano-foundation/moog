@@ -46,9 +46,9 @@ concurrency:
 jobs:
   linux-bundles:
     name: Build Linux ${{ matrix.executable.name }} (${{ matrix.arch.id }})
-    # x86_64 non-fork builds run on the self-hosted builder-new fleet (label: moog);
+    # x86_64 non-fork builds run on the ARC nix-enabled-runners;
     # fork PRs and aarch64 fall back to the matrix runner (GitHub-hosted).
-    runs-on: ${{ (matrix.arch.id == 'x86_64' && !github.event.pull_request.head.repo.fork) && fromJSON('["self-hosted","moog"]') || matrix.arch.runner }}
+    runs-on: ${{ (matrix.arch.id == 'x86_64' && !github.event.pull_request.head.repo.fork) && 'nix-enabled-runners' || matrix.arch.runner }}
     strategy:
       fail-fast: false
       matrix:
