@@ -1,0 +1,65 @@
+name: ARC verify (nix-in-OS + shared store)
+
+# Verify the fleet now matches a nixos-style runner WITHOUT setup-nix:
+#  2.1 nix on PATH for a bare run: step
+#  2.2 IOG substituters in the system nix.conf
+#  2.3 /nix/store shared across jobs (producer path visible to a different pod)
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  verify:
+    name: verify (nix on PATH, substituters, add store path)
+    runs-on: nix-enabled-runners
+    outputs:
+      path: ${{ steps.add.outputs.path }}
+    steps:
+      - name: 2.1 nix on PATH (no setup-nix)
+        run: |
+          set +e
+          echo "host=$(hostname)"
+          echo "== command -v nix =="; command -v nix
+          echo "== nix --version =="; nix --version 2>&1
+          exit 0
+      - name: 2.2 substituters in system config
+        run: |
+          set +e
+          echo "== /etc/nix/nix.conf =="; cat /etc/nix/nix.conf 2>&1
+          echo "== effective config =="; nix config show 2>/dev/null | grep -iE 'substituters|trusted-public-keys|trusted-users|accept-flake' 2>&1
+          exit 0
+      - name: 2.3a add a unique uncacheable store path
+        id: add
+        run: |
+          set +e
+          echo "== mount /nix =="; mount | grep -E '/nix' || echo "(no /nix mount)"
+          echo "== df =="; df -hT /nix /nix/store 2>&1
+          marker="arc-verify-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          printf 'unique-%s\n' "$marker" > "$marker"
+          p=$(nix-store --add "$marker" 2>&1)
+          echo "STORE_PATH=$p"
+          echo "path=$p" >> "$GITHUB_OUTPUT"
+          ls -ld "$p" 2>&1
+          exit 0
+
+  consumer:
+    name: consumer (is the store path visible on another pod?)
+    needs: verify
+    runs-on: nix-enabled-runners
+    steps:
+      - name: 2.3b check the path on a different pod (no setup-nix)
+        run: |
+          set +e
+          echo "host=$(hostname)"
+          echo "== nix --version =="; nix --version 2>&1
+          echo "== mount /nix =="; mount | grep -E '/nix' || echo "(no /nix mount)"
+          p="${{ needs.verify.outputs.path }}"
+          echo "looking for: $p"
+          if [ -e "$p" ]; then
+            echo "RESULT: SHARED-STORE — present (content: $(cat "$p" 2>&1))"
+          else
+            echo "RESULT: NOT-SHARED-STORE — absent on this pod"
+          fi
+          exit 0
