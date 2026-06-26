@@ -101,7 +101,15 @@ in {
   packages.unit-tests = project.hsPkgs.moog.components.tests.unit-tests;
   packages.integration-tests =
     project.hsPkgs.moog.components.tests.integration-tests;
-  packages.e2e-tests = project.hsPkgs.moog.components.tests.e2e-tests;
+  packages.e2e-tests =
+    let
+      testBin = project.hsPkgs.moog.components.tests.e2e-tests;
+      moogBin = project.hsPkgs.moog.components.exes.moog;
+    in
+    pkgs.writeShellScriptBin "e2e-tests" ''
+      export PATH="${moogBin}/bin:$PATH"
+      exec ${testBin}/bin/e2e-tests "$@"
+    '';
   musl64 = project.projectCross.musl64.hsPkgs;
   aarch64-musl = project.projectCross.aarch64-multiplatform-musl.hsPkgs;
 }
