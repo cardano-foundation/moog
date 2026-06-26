@@ -24,7 +24,7 @@
     };
     cardano-mpfs-offchain = {
       url =
-        "github:lambdasistemi/cardano-mpfs-offchain/5f200647c00308bb67641b94a16284c68494bff9";
+        "github:lambdasistemi/cardano-mpfs-offchain/c33c1bdd658b725965c9f404ec0477dabea70de3";
       flake = false;
     };
     cardano-node-runtime = {
