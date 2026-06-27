@@ -54,7 +54,7 @@ printFacts() {
 getOutputRef() {
     # shellcheck disable=SC2155
     local txHash=$(echo "$1" | jq -r '.txHash')
-    echo "${txHash}-0"
+    echo "${txHash}#0"
 }
 
 fund () {
