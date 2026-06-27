@@ -17,7 +17,6 @@ fund_wallets
 log "Create an moog token"
 being_oracle
 result=$(moog oracle token boot)
-echo "Boot result: $result" >&2
 tokenId=$(echo "$result" | jq -r '.value')
 export MOOG_TOKEN_ID="$tokenId"
 unset MOOG_SSH_FILE
@@ -123,9 +122,6 @@ validation=$(moog agent query)
 references=$(echo "$validation" | jq -r '.pending | .[] | .id')
 moog agent reject-test -i "$references" > /dev/null
 
-log "Include the test run rejection"
-include_requests
-
 log "Create a new test run request for the same repository, directory, and commit and duration, second try"
 being_requester
 moog requester create-test \
@@ -146,9 +142,6 @@ validation=$(moog agent query)
 reference=$(echo "$validation" | jq -r '.pending | .[] | .id')
 moog agent accept-test -i "$reference" > /dev/null
 
-log "Include the test run acceptance"
-include_requests
-
 log "Finish the test run"
 being_agent
 validation=$(moog agent query)
@@ -156,9 +149,6 @@ moog agent report-test -i "$reference" \
     --duration 1 \
     --url "https://example.com/report" \
     --outcome "success"
-
-log "Include the test run report"
-include_requests
 
 validation=$(moog agent query)
 
