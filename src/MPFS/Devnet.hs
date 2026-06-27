@@ -89,6 +89,7 @@ import System.Process
     ( CreateProcess (..)
     , ProcessHandle
     , StdStream (UseHandle)
+    , callCommand
     , createProcess
     , getProcessExitCode
     , proc
@@ -321,6 +322,14 @@ startServer
     -> Handle
     -> IO ProcessHandle
 startServer cfg env logHandle = do
+    -- Kill any stale server from a previous cancelled run that still holds
+    -- the port. fuser -k exits non-zero when no process is found, so wrap
+    -- in `; true` to always succeed.  Suppress stderr so missing-fuser
+    -- noise doesn't pollute the test output.
+    callCommand
+        $ "fuser -k "
+            <> show cfg.port
+            <> "/tcp 2>/dev/null; sleep 0.5; true"
     (_, _, _, processHandle) <-
         createProcess
             (proc cfg.serverBin ["--port", show cfg.port])
@@ -345,19 +354,23 @@ waitForStatus host logFile processHandle = do
     manager <- newManager defaultManagerSettings
     request <- parseRequest $ host <> "/status"
     let go attempt = do
-            ready <-
-                ( do
-                    response <- httpNoBody request manager
-                    pure $ statusCode (responseStatus response) == 200
-                )
-                    `catch` \(_ :: HttpException) -> pure False
-            if ready
-                then pure ()
-                else do
-                    exitCode <- getProcessExitCode processHandle
-                    case exitCode of
-                        Just code -> failWithServerLog logFile code
-                        Nothing -> do
+            -- Check liveness first: if the server we just started has
+            -- already exited (e.g. port still held by a stale process
+            -- that fuser didn't catch in time), fail immediately rather
+            -- than accepting a 200 from the old server.
+            exitCode <- getProcessExitCode processHandle
+            case exitCode of
+                Just code -> failWithServerLog logFile code
+                Nothing -> do
+                    ready <-
+                        ( do
+                            response <- httpNoBody request manager
+                            pure $ statusCode (responseStatus response) == 200
+                        )
+                            `catch` \(_ :: HttpException) -> pure False
+                    if ready
+                        then pure ()
+                        else do
                             unless (attempt < 120)
                                 $ failTestWithServerLog
                                     logFile
