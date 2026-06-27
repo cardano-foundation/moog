@@ -94,6 +94,7 @@ being_requester (){
 include_requests() {
     being_oracle
     validation=$(moog token)
+    old_ref=$(echo "$validation" | jq -r '.outputRefId')
     references=$(echo "$validation" | jq -r '.requests | .[] | select(.validation == "validated") | .request.outputRefId')
     if [ -z "$references" ]; then
         log "No references validated: $validation"
@@ -101,6 +102,18 @@ include_requests() {
     fi
     # shellcheck disable=SC2046
     moog oracle token update $(echo "$references" | xargs -I {} echo -o {}) > /dev/null
+    # Poll until the MPFS server reflects the new oracle token state
+    local tries=0
+    while true; do
+        new_ref=$(moog token 2>/dev/null | jq -r '.outputRefId' 2>/dev/null || echo "")
+        [[ "$new_ref" != "$old_ref" && -n "$new_ref" && "$new_ref" != "null" ]] && break
+        tries=$((tries + 1))
+        if [[ $tries -ge 30 ]]; then
+            log "Timed out waiting for oracle token update to be indexed"
+            exit 1
+        fi
+        sleep 1
+    done
 }
 
 export_agent_public_key_hash() {
