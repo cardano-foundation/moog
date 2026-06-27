@@ -280,23 +280,6 @@
         "type": "github"
       }
     },
-    "cardano-mpfs-offchain": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1779726741,
-        "narHash": "sha256-CcYfcfmkdpxVi8KSlP4cvptwyqXIL17ywKSZQ6P4lao=",
-        "owner": "lambdasistemi",
-        "repo": "cardano-mpfs-offchain",
-        "rev": "c33c1bdd658b725965c9f404ec0477dabea70de3",
-        "type": "github"
-      },
-      "original": {
-        "owner": "lambdasistemi",
-        "repo": "cardano-mpfs-offchain",
-        "rev": "c33c1bdd658b725965c9f404ec0477dabea70de3",
-        "type": "github"
-      }
-    },
     "cardano-node-runtime": {
       "inputs": {
         "CHaP": "CHaP_2",
@@ -2016,7 +1999,6 @@
         "CHaP": "CHaP",
         "asciinema": "asciinema",
         "bundlers": "bundlers",
-        "cardano-mpfs-offchain": "cardano-mpfs-offchain",
         "cardano-node-runtime": "cardano-node-runtime",
         "dev-assets": "dev-assets",
         "flake-parts": "flake-parts_2",

@@ -1,5 +1,4 @@
-{ CHaP, cardano-mpfs-offchain, indexState, pkgs, cardano-cli ? null, mkdocs
-, asciinema, ... }:
+{ CHaP, indexState, pkgs, cardano-cli ? null, mkdocs, asciinema, ... }:
 
 let
   libOverlay = { lib, pkgs, ... }: {
@@ -40,8 +39,6 @@ let
         project.hsPkgs.cardano-addresses.components.exes.cardano-address
         project.hsPkgs.bech32.components.exes.bech32
         pkgs.nixfmt-classic
-        pkgs.lmdb.dev
-        pkgs.liburing.dev
         pkgs.mkdocs
         mkdocs.from-nixpkgs
         mkdocs.asciinema-plugin
@@ -73,11 +70,7 @@ let
     compiler-nix-name = "ghc9123";
     shell = shell { inherit pkgs; };
     modules = [ libOverlay ];
-    inputMap = {
-      "https://chap.intersectmbo.org/" = CHaP;
-      "https://github.com/lambdasistemi/cardano-mpfs-offchain.git" =
-        cardano-mpfs-offchain;
-    };
+    inputMap = { "https://chap.intersectmbo.org/" = CHaP; };
   };
   project = pkgs.haskell-nix.cabalProject' mkProject;
 
