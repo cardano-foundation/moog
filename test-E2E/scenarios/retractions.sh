@@ -15,6 +15,7 @@ fund_wallets
 log "Create an moog token"
 being_oracle
 result=$(moog oracle token boot)
+echo "Boot: $result" >&2
 tokenId=$(echo "$result" | jq -r '.value')
 export MOOG_TOKEN_ID="$tokenId"
 log "Moog token id $tokenId"
