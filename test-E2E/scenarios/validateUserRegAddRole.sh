@@ -13,6 +13,7 @@ log "Using MOOG_MPFS_HOST: $MOOG_MPFS_HOST"
 
 log "Creating an moog token..."
 result=$(moog oracle token boot)
+echo "Boot: $result" >&2
 
 tokenId=$(echo "$result" | jq -r '.value')
 log "Moog token ID: $tokenId"
