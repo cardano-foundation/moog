@@ -22,11 +22,6 @@
       url = "github:intersectmbo/cardano-haskell-packages/repo";
       flake = false;
     };
-    cardano-mpfs-offchain = {
-      url =
-        "github:lambdasistemi/cardano-mpfs-offchain/c33c1bdd658b725965c9f404ec0477dabea70de3";
-      flake = false;
-    };
     cardano-node-runtime = {
       url = "github:IntersectMBO/cardano-node?ref=10.7.0";
     };
@@ -60,14 +55,6 @@
         };
       };
 
-      # The Haskell `lzma` package declares `extra-libraries: lzma`, which
-      # haskell.nix resolves to the top-level `pkgs.lzma` attribute. Recent
-      # nixpkgs removed that attribute (it became `pkgs.xz`, which still
-      # provides liblzma), so the lookup threw "Nixpkgs package set does not
-      # contain the package: lzma" and broke `nix develop`. Restore the
-      # historical alias so the system-library mapping resolves again.
-      fix-lzma = final: prev: { lzma = prev.xz; };
-
       perSystem =
         system:
         let
@@ -87,14 +74,12 @@
               iohkNix.overlays.cardano-lib
               haskellNix.overlay # some functions
               fix-blst
-              fix-lzma
             ];
             inherit system;
           };
           project = import ./nix/moog-project.nix {
             indexState = "2026-02-17T10:15:41Z";
             inherit CHaP;
-            cardano-mpfs-offchain = inputs.cardano-mpfs-offchain;
             inherit pkgs;
             inherit cardano-cli;
             mkdocs = mkdocs.packages.${system};

@@ -15,9 +15,7 @@ source-repository-package
   --sha256: 1almz2il76d4q3r5wby8lp5716xy3kz994n2idarqxm4z5qizih9
   subdir:
     cardano-mpfs-api
-    cardano-mpfs-cage-tx
     cardano-mpfs-client
-    cardano-mpfs-verify
 
 repository cardano-haskell-packages
   url: https://chap.intersectmbo.org/
@@ -45,14 +43,14 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/chain-follower
-  tag: d592a5015f8d7edb2d6022936a67a054dfe5329f
-  --sha256: 1pm2yhsm2zg5nv01aixv6ss21f2ka8ysq6dv2q4mpf9smz0m8g78
+  tag: 371b5930976ac3bb4e8a4ef576d5098d706984ee
+  --sha256: 1rks78zmgmxz5cg4v82vnc6hwib8vrylwk2m7y82iqaymmnskdvf
 
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/haskell-mts
-  tag: ab15f7b2dea73165b785c90333bbd09a36528a07
-  --sha256: 081wz3vq8d15wh1mziqnqhk2ai4i304gv7vxrhw9hqjr2sa9xy1a
+  tag: 13264a52b47e3a1f43a6ebeebd424a10f9e4466a
+  --sha256: 1bqgpxdy79ncsz8hyg2qyd7jnm8hqj4q8rq8mhr3iirix66c77fb
 
 source-repository-package
   type: git
@@ -83,14 +81,8 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/cardano-tx-tools
-  tag: 631f1341fde6e4a11e94b058cf5f2925ffeb9eac
-  --sha256: 0asp3sx7hd8hip739kbz65986jlv8qx9342m9gqpqcxih6pxfgjj
-
-source-repository-package
-  type: git
-  location: https://github.com/lambdasistemi/cardano-utxo-csmt
-  tag: f4772f73dde0a84dff9608d6ac2b168c4315b05f
-  --sha256: 129sv2ayp7y2s5mhapx3720pr005dnfybz02nwibgyhsjqp292vz
+  tag: 97374ffb611d08d2e0e7c17dfdac5699ac2b3ed8
+  --sha256: 0jsnq3hbay8y12jc0sz3jqdd99rrhkiqc0qkppf37hc3qv46p5fx
 
 source-repository-package
   type: git
@@ -113,8 +105,8 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/lambdasistemi/cardano-node-clients
-  tag: e4b01cb9efdf88e99934cf7a09fed0e25bad1019
-  --sha256: 1ll7lsyfk2a8flmrlrbbvd609mk8szkjpcpd6xxnj46p9vbm5r61
+  tag: 38fc1917ba475b90edd974576e1c71790d165532
+  --sha256: 09i3ysv7650imhd4b26cwybjckfs8qfv75kh1r6511zyjvmxykrh
 
 source-repository-package
   type: git
