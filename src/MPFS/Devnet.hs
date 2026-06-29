@@ -89,7 +89,6 @@ import System.Process
     ( CreateProcess (..)
     , ProcessHandle
     , StdStream (UseHandle)
-    , callCommand
     , createProcess
     , getProcessExitCode
     , proc
@@ -322,14 +321,6 @@ startServer
     -> Handle
     -> IO ProcessHandle
 startServer cfg env logHandle = do
-    -- Kill any stale server from a previous cancelled run that still holds
-    -- the port. fuser -k exits non-zero when no process is found, so wrap
-    -- in `; true` to always succeed.  Suppress stderr so missing-fuser
-    -- noise doesn't pollute the test output.
-    callCommand
-        $ "fuser -k "
-            <> show cfg.port
-            <> "/tcp 2>/dev/null; sleep 0.5; true"
     (_, _, _, processHandle) <-
         createProcess
             (proc cfg.serverBin ["--port", show cfg.port])
