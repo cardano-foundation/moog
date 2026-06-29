@@ -27,6 +27,16 @@ import Network.HTTP.Client
     , parseRequest
     , responseBody
     )
+import Network.Socket
+    ( AddrFamily (..)
+    , SocketType (..)
+    , bind
+    , close
+    , defaultProtocol
+    , getSocketName
+    , socket
+    )
+import Network.Socket (SockAddr (..))
 import Submitting (readWallet)
 import System.Environment (lookupEnv, setEnv)
 import System.IO.Temp (withSystemTempDirectory)
@@ -39,11 +49,26 @@ import Test.Hspec (beforeAll, hspec)
 -- specs. No external docker-compose @mpfs@\/@yaci@ is required; the
 -- requester\/oracle CLI flows are fully hermetic (no agent\/Antithesis
 -- network calls).
+-- | Ask the OS for a free TCP port by binding to 0, reading the
+-- assigned port, and immediately closing the socket.  There is a
+-- small TOCTOU window, but in practice the OS re-uses the port only
+-- after a delay, so the server will bind it successfully.
+getFreePort :: IO Int
+getFreePort = do
+    s <- socket AF_INET Stream defaultProtocol
+    bind s (SockAddrInet 0 0)
+    SockAddrInet port _ <- getSocketName s
+    close s
+    pure (fromIntegral port)
+
 main :: IO ()
 main = do
     wallets <- traverse loadEnvWallet roleWalletEnvVars
     rawAddresses <- nub <$> traverse rawWalletAddress wallets
-    port <- maybe 38_092 read <$> lookupEnv "MPFS_PORT"
+    -- Use MPFS_PORT if set (allows manual override), otherwise ask the
+    -- OS for a free port.  A fresh port each run avoids connecting to a
+    -- stale mpfs-devnet-server left behind by a cancelled CI job.
+    port <- maybe getFreePort (pure . read) =<< lookupEnv "MPFS_PORT"
     withSystemTempDirectory "moog-e2e-devnet" $ \tmp -> do
         cfg <- loadDevnetConfig port
         genesisDir <- fundedGenesisMany tmp cfg rawAddresses

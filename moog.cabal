@@ -467,6 +467,7 @@ test-suite e2e-tests
     , hspec
     , http-client
     , moog
+    , network
     , process
     , temporary
     , text
