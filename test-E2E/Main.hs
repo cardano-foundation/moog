@@ -28,7 +28,8 @@ import Network.HTTP.Client
     , responseBody
     )
 import Network.Socket
-    ( AddrFamily (..)
+    ( Family (..)
+    , SockAddr (..)
     , SocketType (..)
     , bind
     , close
@@ -36,7 +37,6 @@ import Network.Socket
     , getSocketName
     , socket
     )
-import Network.Socket (SockAddr (..))
 import Submitting (readWallet)
 import System.Environment (lookupEnv, setEnv)
 import System.IO.Temp (withSystemTempDirectory)
