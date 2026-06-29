@@ -287,7 +287,11 @@ withDevnetServer
     -> (String -> IO a)
     -> IO a
 withDevnetServer tmp cfg genesisDir action = do
-    env <- serverEnvironment cfg genesisDir
+    -- Isolate the cardano-node working dir per run: concurrent CI jobs
+    -- share /tmp, so without a unique TMPDIR they trample each other's
+    -- /tmp/cardano-e2e (prepareTmpDir in withCardanoNode uses $TMPDIR).
+    let serverTmpDir = tmp
+    env <- serverEnvironment cfg genesisDir serverTmpDir
     let logFile = tmp </> "mpfs-devnet.log"
         host = "http://127.0.0.1:" <> show cfg.port
     withFile logFile WriteMode $ \logHandle ->
@@ -298,10 +302,11 @@ withDevnetServer tmp cfg genesisDir action = do
                 waitForStatus host logFile processHandle
                 action host
 
-serverEnvironment :: DevnetConfig -> FilePath -> IO [(String, String)]
-serverEnvironment cfg genesisDir =
+serverEnvironment :: DevnetConfig -> FilePath -> FilePath -> IO [(String, String)]
+serverEnvironment cfg genesisDir serverTmpDir =
     setEnv "E2E_GENESIS_DIR" genesisDir
         . setEnv "MPFS_BLUEPRINT" cfg.mpfsBlueprint
+        . setEnv "TMPDIR" serverTmpDir
         . maybe id prependPath cfg.devnetPath
         <$> getEnvironment
 
