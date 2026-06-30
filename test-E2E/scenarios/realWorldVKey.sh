@@ -143,9 +143,23 @@ validation=$(moog agent query)
 reference=$(echo "$validation" | jq -r '.pending | .[] | .id')
 moog agent accept-test -i "$reference" > /dev/null
 
+# Poll until the accept TX is indexed (test run leaves .pending)
+tries=0
+while true; do
+    still_pending=$(moog agent query 2>/dev/null \
+        | jq -r --arg ref "$reference" '.pending | .[] | select(.id == $ref) | .id' 2>/dev/null \
+        || echo "")
+    [ -z "$still_pending" ] && break
+    tries=$((tries + 1))
+    if [[ $tries -ge 30 ]]; then
+        log "Timed out waiting for test run $reference to be accepted"
+        exit 1
+    fi
+    sleep 1
+done
+
 log "Finish the test run"
 being_agent
-validation=$(moog agent query)
 moog agent report-test -i "$reference" \
     --duration 1 \
     --url "https://example.com/report" \
