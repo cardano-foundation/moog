@@ -56,6 +56,7 @@ import Lib.JSON.Canonical.Extra
     )
 import MPFS.Cage
     ( addressBytesForCage
+    , awaitStatus
     , liftEitherClientM
     , loadCageConfig
     , txHex
@@ -136,7 +137,7 @@ requestInsertFromFacts getStatus postFacts address tokenId body = do
     request <-
         liftEitherClientM
             $ requestInsertFactsRequest address tokenId body
-    StatusResponse{currentUtxoRoot} <- getStatus
+    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     facts <- postFacts request
@@ -163,7 +164,7 @@ requestDeleteFromFacts getStatus postFacts address tokenId body = do
     request <-
         liftEitherClientM
             $ requestDeleteFactsRequest address tokenId body
-    StatusResponse{currentUtxoRoot} <- getStatus
+    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     facts <- postFacts request
@@ -190,7 +191,7 @@ requestUpdateFromFacts getStatus postFacts address tokenId body = do
     request <-
         liftEitherClientM
             $ requestUpdateFactsRequest address tokenId body
-    StatusResponse{currentUtxoRoot} <- getStatus
+    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     facts <- postFacts request

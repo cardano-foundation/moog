@@ -43,6 +43,7 @@ import Cardano.Ledger.Api.Tx.Body (mintTxBodyL)
 import Cardano.Tx.Ledger (ConwayTx)
 import MPFS.Cage
     ( addressBytesForCage
+    , awaitStatus
     , liftEitherClientM
     , loadCageConfig
     , resolveEvalContext
@@ -90,7 +91,7 @@ bootTokenFromFacts
     -> ClientM (WithUnsignedTx JSValue)
 bootTokenFromFacts getStatus postBootFacts bootParams address = do
     rawAddress <- liftEitherClientM $ addressBytesForBoot address
-    StatusResponse{currentUtxoRoot} <- getStatus
+    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     facts <- postBootFacts $ BootRequest $ Hex rawAddress

@@ -26,6 +26,7 @@ import Data.ByteString.Base16 qualified as Base16
 import Data.ByteString.Char8 qualified as B
 import MPFS.Cage
     ( addressBytesForCage
+    , awaitStatus
     , liftEitherClientM
     , loadCageConfig
     , resolveEvalContext
@@ -44,7 +45,7 @@ endTokenFromFacts
 endTokenFromFacts getStatus postEndFacts address tokenId = do
     rawAddress <- liftEitherClientM $ addressBytesForCage address
     token <- liftEitherClientM $ tokenIdJSONFromTokenId tokenId
-    StatusResponse{currentUtxoRoot} <- getStatus
+    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     facts <- postEndFacts $ EndRequest token $ Hex rawAddress
