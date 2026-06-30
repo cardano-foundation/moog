@@ -66,7 +66,7 @@ import Lib.JSON.Canonical.Extra
     , parseJSValue
     , (.=)
     )
-import MPFS.Cage (awaitStatus, liftEitherClientM, loadCageConfig)
+import MPFS.Cage (liftEitherClientM, loadCageConfig)
 import MPFS.End (tokenIdJSONFromTokenId)
 import Oracle.Types
     ( RequestZoo
@@ -85,7 +85,7 @@ getTokenFactsFromVerifiedRead
     -> TokenId
     -> ClientM JSValue
 getTokenFactsFromVerifiedRead getStatus getFacts tokenId = do
-    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
+    StatusResponse{currentUtxoRoot} <- getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     facts <- getFacts tokenId
@@ -104,7 +104,7 @@ getTokenFromVerifiedRead
     -> TokenId
     -> ClientM JSValue
 getTokenFromVerifiedRead getStatus getTokenState getRequests tokenId = do
-    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
+    StatusResponse{currentUtxoRoot} <- getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     token <- liftEitherClientM $ tokenIdJSONFromTokenId tokenId
