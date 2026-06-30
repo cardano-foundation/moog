@@ -141,7 +141,8 @@ log "Accept the new test run request because it's a scenario"
 being_agent
 validation=$(moog agent query)
 reference=$(echo "$validation" | jq -r '.pending | .[] | .id')
-moog agent accept-test -i "$reference" > /dev/null
+accept_result=$(moog agent accept-test -i "$reference")
+log "accept-test result: $accept_result" >&2
 
 # Poll until the accept TX is indexed (test run leaves .pending)
 tries=0
