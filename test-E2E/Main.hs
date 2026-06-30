@@ -21,10 +21,13 @@ import MPFS.Devnet
     , withDevnetServer
     )
 import Network.HTTP.Client
-    ( defaultManagerSettings
+    ( RequestBody (..)
+    , defaultManagerSettings
     , httpLbs
+    , method
     , newManager
     , parseRequest
+    , requestBody
     , responseBody
     )
 import Network.Socket
@@ -122,24 +125,33 @@ loadEnvWallet envVar = do
         Nothing ->
             error $ "Failed to decode wallet file at " <> file
 
--- | Poll @GET \/status@ until the indexer has computed a CSMT snapshot,
--- i.e. the response carries a present, non-null top-level @utxo_root@.
--- That field is absent\/null while the indexer is still warming up;
--- once present the token-state reads the scenarios need are
--- serviceable.
+-- | Poll until the MPFS indexer has both a non-null @utxo_root@ in
+-- @GET \/status@ AND proof-read endpoints are available (not 503
+-- "Indexer syncing").  On slower CI runners the CSMT is briefly
+-- absent or still being built after @utxo_root@ first appears, which
+-- causes the first boot call to receive a 503.
 waitForSnapshotReady :: String -> IO ()
 waitForSnapshotReady host = do
     manager <- newManager defaultManagerSettings
-    request <- parseRequest $ host <> "/status"
-    let ready =
+    statusReq <- parseRequest $ host <> "/status"
+    probeReq0 <- parseRequest $ host <> "/facts/boot"
+    -- POST with empty body; if server is syncing it returns 503, otherwise
+    -- 400/422/500 (bad data) — any non-503 means proof reads are live.
+    let probeReq = probeReq0 { method = "POST", requestBody = RequestBodyLBS "" }
+        snapshotOk =
+            (snapshotReady . responseBody <$> httpLbs statusReq manager)
+                `catch` \(_ :: SomeException) -> pure False
+        proofReadsOk =
             ( do
-                response <- httpLbs request manager
-                pure $ snapshotReady $ responseBody response
+                resp <- httpLbs probeReq manager
+                let body = BL.toStrict (responseBody resp)
+                pure $ not $ "Indexer syncing" `BC.isInfixOf` body
             )
                 `catch` \(_ :: SomeException) -> pure False
+        ready = (&&) <$> snapshotOk <*> proofReadsOk
         go 0 =
             error
-                "mpfs-devnet-server /status never reported a utxo_root"
+                "mpfs-devnet-server never became ready for proof reads"
         go n = do
             isReady <- ready
             unless isReady $ do
