@@ -25,6 +25,7 @@ import Core.Types.Tx
     )
 import MPFS.Cage
     ( addressBytesForCage
+    , awaitStatus
     , liftEitherClientM
     , loadCageConfig
     , resolveEvalContext
@@ -42,7 +43,7 @@ retractChangeFromFacts
     -> ClientM (WithUnsignedTx JSValue)
 retractChangeFromFacts getStatus postFacts address requestRef = do
     request <- liftEitherClientM $ retractFactsRequest address requestRef
-    StatusResponse{currentUtxoRoot} <- getStatus
+    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     facts <- postFacts request

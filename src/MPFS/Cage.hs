@@ -2,6 +2,7 @@
 
 module MPFS.Cage
     ( addressBytesForCage
+    , awaitStatus
     , liftEitherClientM
     , loadCageConfig
     , resolveEvalContext
@@ -32,6 +33,8 @@ import Cardano.MPFS.Client.Cage.Policy (WalletPolicy (..))
 import Cardano.Slotting.Slot (SlotNo (..))
 import Codec.Binary.Bech32 qualified as Bech32
 import Control.Applicative ((<|>))
+import Cardano.MPFS.API.Types (StatusResponse (..))
+import Control.Concurrent (threadDelay)
 import Control.Exception (throwIO)
 import Control.Monad.IO.Class (liftIO)
 import Core.Types.Basic (Address (..))
@@ -47,6 +50,21 @@ import Servant.Client (ClientM, client)
 import System.Environment (lookupEnv)
 
 import Cardano.Tx.Ledger (ConwayTx)
+
+-- | Poll GET /status until the CSMT snapshot is ready, retrying every 0.5s
+-- for up to 15s.  The MPFS indexer briefly returns null utxo_root while it
+-- is computing the snapshot for a newly processed block; callers that check
+-- immediately after a block-indexed event (e.g. oracle token update) can hit
+-- that window.
+awaitStatus :: ClientM StatusResponse -> ClientM StatusResponse
+awaitStatus getStatus = go (30 :: Int)
+  where
+    go 0 = getStatus
+    go n = do
+        s@StatusResponse{currentUtxoRoot} <- getStatus
+        case currentUtxoRoot of
+            Just _ -> pure s
+            Nothing -> liftIO (threadDelay 500_000) >> go (n - 1)
 
 addressBytesForCage :: Address -> Either String ByteString
 addressBytesForCage (Address address) = do

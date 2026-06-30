@@ -24,6 +24,7 @@ import Core.Types.Tx
     )
 import MPFS.Cage
     ( addressBytesForCage
+    , awaitStatus
     , liftEitherClientM
     , loadCageConfig
     , resolveEvalContext
@@ -43,7 +44,7 @@ updateTokenFromFacts
     -> ClientM (WithUnsignedTx JSValue)
 updateTokenFromFacts getStatus postFacts address tokenId requests = do
     request <- liftEitherClientM $ updateTokenFactsRequest address tokenId requests
-    StatusResponse{currentUtxoRoot} <- getStatus
+    StatusResponse{currentUtxoRoot} <- awaitStatus getStatus
     trustedRoot <-
         liftEitherClientM $ maybeToEither noUtxoRoot currentUtxoRoot
     facts <- postFacts request
