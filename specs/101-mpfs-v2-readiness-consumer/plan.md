@@ -2,6 +2,12 @@
 
 ## Strategy
 
+Two contracts, deliberately kept apart. C-DEP-PINS is a build-composition
+contract and lands first as its own slice, because the pin skew it catches
+blocks every M2 unit that claims a moog-v2 boundary and it must be enforcing
+**before** the offchain pin moves forward. C-CANARY is the readiness contract
+and is untouched by it.
+
 Promote readiness out of the devnet lifecycle helper into its own module so the
 contract has one owner and one testable surface, then move the canary onto it.
 The two heavyweight suites migrate in a later slice, because migrating them
@@ -18,6 +24,13 @@ couples all of moog-v2's integration/E2E CI to the producer landing.
   `feat/mpfs-v2-readiness-gate-canary-m2` -> `moog-v2` once immutable gates and
   accepted commits exist. PR #101 is not mutated, closed, retargeted, or
   commented on; it is recorded as superseded in the final evidence.
+- The producer revision for the final pin move is **unknown until M2-T275 is
+  accepted**. Specify and gate the alignment now; park the pin commit and its
+  composed-build proof on the accepted producer (`R-101-12`). Guessing the SHA
+  is forbidden.
+- The offchain repository is public: the revision-comparison check can read a
+  pinned revision's `cabal.project` unauthenticated (verified, HTTP 200 for
+  `5f200647`). It needs no credential and must not acquire one.
 - `gate.sh` is tracked on the baseline. Per ruling `A-002` there is **no
   waiver**: the legacy tracked gate is migrated in one orchestrator-owned
   cleanup slice (`S0`) that is mechanically separate from C-CANARY behaviour.
@@ -49,6 +62,14 @@ Coverage is split deliberately:
   `./gate.sh`. No production behaviour changes; it is prerequisite hygiene so the
   finalization audit's untracked-gate rule can hold, and it is explained as such
   in the PR body.
+- **SD1 — dependency-pin alignment gate.** *(C-DEP-PINS; per `A-002` this
+  ticket owns it.)* An enforcing check that reads moog's declared
+  `cardano-mpfs-onchain` revision and the revision declared by the offchain
+  revision moog pins, fails when they differ naming both, and then requires the
+  real composed build. Wired into CI and the ticket gate. Green at the accepted
+  baseline and proved red against `39bf3302`. Independent of the producer;
+  landable today, and deliberately ahead of S1 so the skew cannot ride in
+  behind a readiness change.
 - **S1 — readiness gate and canary consumer.** New readiness module owning the
   probe path, the poll loop, the not-ready accounting, and the distinct failure
   vocabulary. `withDevnetServer` takes an explicit readiness policy; the canary
@@ -64,6 +85,12 @@ Coverage is split deliberately:
 - **S3 — live-boundary integration proof.** *(WAITING on M2-T275.)* Dispatch the
   canary workflow with `offchain_ref` set to the producer branch; record run URL
   and JSON as the C-CANARY artifact.
+- **SD2 — pin move to the accepted producer.** *(WAITING on M2-T275
+  acceptance.)* Move moog's offchain pin to the accepted producer revision and
+  its `cardano-mpfs-onchain` pin to the revision that producer declares, with
+  both `--sha256` hashes refreshed. SD1's check is what proves the pair is
+  consistent; the composed build and moog unit suite are what prove it works.
+  This is also the rerun that closes `m2-t387`'s `INV-5`.
 
 S1 leaves the canary red against the currently pinned offchain revision,
 because that revision has no `/ready`. That is the contract working: the
@@ -71,9 +98,24 @@ dependency stays gated until the backend is current. It must not be "fixed".
 
 ## Verification
 
-Ticket gate (`./gate.sh`, untracked and ignored after `S0`, authoritative
-copy under the runtime root): `cabal build all --enable-tests`,
-`cabal test unit-tests`, `cabal-fmt -c`, `fourmolu -m check`, `hlint`,
-`actionlint` on the touched workflow, plus the focused readiness spec.
+Two levels, because two slices are dispatched against the same tree.
+
+**Ticket gate** `./gate.sh` — untracked and ignored after `S0`, authoritative
+copy under the runtime root. It holds the legs every slice must satisfy:
+`git diff --check`, `cabal-fmt -c`, `fourmolu -m check`, `hlint`,
+`cabal build all --enable-tests`, `cabal test unit-tests`, and `actionlint` on
+a touched workflow. It accumulates each accepted slice's focused leg as that
+slice lands.
+
+**Frozen slice gates**, under the runtime root, one per dispatched slice. Each
+runs the ticket gate and then its own focused leg — `gate/slice-SD1.sh` for the
+pin check, `gate/slice-S1.sh` for the readiness spec. They are separate because
+a single gate carrying both focused legs would fail a perfect candidate for
+either slice by construction.
+
+Every leg is falsified per class before dispatch, not once overall: a gate
+proved able to fail on a missing spec has been proved able to fail on missing
+specs and on nothing else.
+
 `just CI` is not usable as a gate here: it requires `MOOG_GITHUB_PAT`,
 `MOOG_SSH_PASSWORD` and wallet files, and runs the credentialed suites.

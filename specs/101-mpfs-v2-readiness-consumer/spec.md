@@ -1,6 +1,7 @@
 # 101 — moog-v2 becomes the real `/ready` consumer
 
-Ticket: M2-T101. Contract consumed: C-SIGNALS. Contract produced: C-CANARY.
+Ticket: M2-T101. Contract consumed: C-SIGNALS. Contracts produced: C-CANARY,
+C-DEP-PINS.
 Baseline: `origin/moog-v2` @ `190048f7f7e47cd838c3fb5961ad10e4cc654091`.
 
 ## Problem
@@ -20,6 +21,29 @@ publish. The third matches on an error string — a contract nobody declared.
 A-003 rules that a client may trust only readiness, and that readiness is
 `/ready`. C-CANARY requires the canary to poll `/ready`, never `/status`, and
 to prove the dependency stays gated until the backend is current.
+
+### The second problem: moog cannot compile against a current producer
+
+Ruling `A-002` (filed as `m2-t387` `Q-002`) hands this ticket C-DEP-PINS.
+Measured, with a treatment/control pair over disposable moog-v2 clones that
+differ only in the offchain revision: moog-v2 fails to compile against offchain
+`main` (`0f82465`) **and** against PR #387 (`495d123`), identically, on
+`OnChainTokenState` not having field `stateStakeScript`.
+
+The cause is not either offchain revision. moog declares its own
+`cardano-mpfs-onchain` source-repository-package, and in the composed build
+moog's pin wins:
+
+| Declares `cardano-mpfs-onchain` | revision |
+|---|---|
+| moog `cabal.project:128` | `457c1cbc` |
+| offchain `5f200647` (the revision moog pins) `cabal.project:96` | `457c1cbc` |
+| offchain `main` / `#387` `cabal.project:103` | `39bf3302` |
+
+So the pins agree **today** and disagree the moment the offchain pin moves
+forward — which is exactly what this milestone is about to do. Every M2 unit
+claiming a moog-v2 boundary proof is blocked behind that skew, not only #387.
+A gate that catches it must therefore land before the pin moves, not after.
 
 ## User stories
 
@@ -49,6 +73,20 @@ to prove the dependency stays gated until the backend is current.
 - **R-101-8** moog adds no container healthcheck, supervisor probe, or autoheal
   configuration against MPFS, and records in its ops doc that `/live` is the
   only supervisor signal and `/ready` is the dependency gate.
+- **R-101-9** moog's declared `cardano-mpfs-onchain` revision equals the
+  revision declared by the offchain revision moog pins. The comparison reads
+  both from their real sources; neither side may be a value transcribed into
+  moog and left to rot.
+- **R-101-10** That comparison is enforcing: it fails the build in CI and in
+  the ticket gate, and it is proved able to fail against the known-skewed
+  revision (`39bf3302`) rather than only observed passing.
+- **R-101-11** After the revisions agree, the real composed consumer compiles
+  and its unit suite passes. Revision equality is a necessary condition that is
+  reported first because it names the cause; it never substitutes for the
+  build.
+- **R-101-12** moog moves to the accepted M2 producer revision and to the
+  `cardano-mpfs-onchain` revision that producer declares. The producer SHA is
+  **not** guessed ahead of M2-T275 acceptance.
 
 ## Rejection behaviour
 
@@ -60,6 +98,11 @@ to prove the dependency stays gated until the backend is current.
 - server process exits → fail immediately with the server log.
 - a data route answers 200 while `/ready` is not 200 → fail naming the
   C-SIGNALS data-gating violation.
+- moog's onchain revision differs from the one its pinned offchain revision
+  declares → fail naming both revisions and both file positions, **before**
+  spending a compile that would fail later with an unrelated-looking type
+  error. The `stateStakeScript` error is what a skew looks like when nothing
+  reports the skew.
 
 ## Observable success
 
@@ -67,6 +110,8 @@ to prove the dependency stays gated until the backend is current.
   each outcome above, with every assertion demonstrated able to fail.
 - The canary, run against an M2-T275 producer build, completes with
   `readyNotReadyPolls >= 1` in its canonical JSON, proving it was gated.
+- The pin check passes at the accepted baseline, fails against `39bf3302`, and
+  both results are recorded as evidence.
 
 ## Non-goals
 
