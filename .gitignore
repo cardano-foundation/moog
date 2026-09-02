@@ -29,6 +29,7 @@ result
 site
 
 # resolve-ticket worktree scratch + spec-kit / claude agent local state
+/gate.sh
 .claude/settings.local.json
 WIP.md
 .llm/

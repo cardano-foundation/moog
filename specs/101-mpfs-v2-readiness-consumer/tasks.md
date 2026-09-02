@@ -2,7 +2,7 @@
 
 ## S0 — legacy gate migration (orchestrator-owned)
 
-- [ ] T101-S0-1 Untrack the baseline's root `gate.sh` (`git rm --cached
+- [X] T101-S0-1 Untrack the baseline's root `gate.sh` (`git rm --cached
       gate.sh`), add the `/gate.sh` ignore rule, and install the frozen ticket
       gate at `./gate.sh`. Owned by the ticket orchestrator, not the commit
       owner; no production behaviour changes (`A-002`).
