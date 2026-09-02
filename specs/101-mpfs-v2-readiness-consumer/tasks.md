@@ -9,17 +9,17 @@
 
 ## SD1 — dependency-pin alignment gate (C-DEP-PINS)
 
-- [ ] T101-SD1-1 A check reads moog's declared `cardano-mpfs-onchain` revision
+- [X] T101-SD1-1 A check reads moog's declared `cardano-mpfs-onchain` revision
       and the revision declared by the offchain revision moog pins, both from
       their real sources, and fails naming both revisions and both file
       positions when they differ (R-101-9).
-- [ ] T101-SD1-2 The check is enforcing in CI and in the ticket gate, and runs
+- [X] T101-SD1-2 The check is enforcing in CI and in the ticket gate, and runs
       before the composed build so it names the cause rather than leaving a
       `stateStakeScript` type error to be misread (R-101-10, R-101-11).
-- [ ] T101-SD1-3 Negative control: the check is demonstrated failing against
+- [X] T101-SD1-3 Negative control: the check is demonstrated failing against
       `39bf3302` — the revision current offchain `main` declares — and the
       output of that run is the evidence (R-101-10).
-- [ ] T101-SD1-4 `docs/ops/mpfs-v2-canary.md` (or the ops doc it names) records
+- [X] T101-SD1-4 `docs/ops/mpfs-v2-canary.md` (or the ops doc it names) records
       why moog declares this pin at all and what must move together when the
       offchain pin moves.
 

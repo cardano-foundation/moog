@@ -20,6 +20,11 @@ jobs:
         with:
           cachix-auth-token: "${{ secrets.CACHIX_AUTH_TOKEN }}"
 
+      # C-DEP-PINS: name a moog/offchain onchain-pin skew before spending the
+      # composed build on a stateStakeScript-style type error.
+      - name: Fail on moog/offchain dependency-pin skew
+        run: nix develop --quiet --accept-flake-config -c just dep-pins
+
       - name: Run moog unit tests
         run: nix --quiet run .#unit-tests
 

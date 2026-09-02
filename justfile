@@ -36,6 +36,18 @@ build:
     #!/usr/bin/env bash
     cabal build all --enable-tests
 
+# C-DEP-PINS (M2-T101 SD1): fail when moog's cardano-mpfs-onchain pin differs
+# from the one declared by the cardano-mpfs-offchain revision moog pins.
+# Runs the offline fixture proof first, then the real check. The gate's
+# negative control points the check at a known-skewed revision with
+# DEP_PINS_OFFCHAIN_REV=<40hex>.
+dep-pins:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root='{{ justfile_directory() }}'
+    "$root/scripts/dep-pins-test.sh"
+    exec "$root/scripts/dep-pins.sh"
+
 # Build the offchain mpfs-devnet-server at the cabal.project-pinned rev and
 # print the `export` lines the hermetic harness needs: MPFS_DEVNET_SERVER plus
 # the blueprint / genesis / PATH captured from the offchain devshell. The
