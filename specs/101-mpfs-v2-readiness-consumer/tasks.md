@@ -1,5 +1,12 @@
 # Tasks — 101
 
+## S0 — legacy gate migration (orchestrator-owned)
+
+- [ ] T101-S0-1 Untrack the baseline's root `gate.sh` (`git rm --cached
+      gate.sh`), add the `/gate.sh` ignore rule, and install the frozen ticket
+      gate at `./gate.sh`. Owned by the ticket orchestrator, not the commit
+      owner; no production behaviour changes (`A-002`).
+
 ## S1 — readiness gate and canary consumer
 
 - [ ] T101-S1-1 `MPFS.Readiness` owns the policy, observation vocabulary,

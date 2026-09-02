@@ -14,9 +14,16 @@ couples all of moog-v2's integration/E2E CI to the producer landing.
   the accepted C-SIGNALS schema; **final integration proof waits for M2-T275's
   pushed producer branch.** Do not mock the final boundary to reach a green.
 - `/code/moog-issue-275` is read-only. PR #101's own branch is not this lane's
-  branch (see `Q-001`).
-- `gate.sh` is tracked on the baseline (see `Q-002`); this ticket's gate lives
-  under the runtime root and does not touch it.
+  branch: per ruling `A-001`, this lane opens a **new** draft PR
+  `feat/mpfs-v2-readiness-gate-canary-m2` -> `moog-v2` once immutable gates and
+  accepted commits exist. PR #101 is not mutated, closed, retargeted, or
+  commented on; it is recorded as superseded in the final evidence.
+- `gate.sh` is tracked on the baseline. Per ruling `A-002` there is **no
+  waiver**: the legacy tracked gate is migrated in one orchestrator-owned
+  cleanup slice (`S0`) that is mechanically separate from C-CANARY behaviour.
+  After `S0` the ticket gate lives at `./gate.sh`, untracked and ignored, with
+  the authoritative copy under the runtime root, and absent from every later
+  commit.
 
 ## Live boundary
 
@@ -36,6 +43,12 @@ Coverage is split deliberately:
 
 ## Ordered slices
 
+- **S0 — legacy gate migration.** *(Orchestrator-owned; not commit-owner work.)*
+  Per `A-002`, untrack the baseline's root `gate.sh` (`git rm --cached gate.sh`),
+  add a `/gate.sh` ignore rule, and install this ticket's frozen gate at
+  `./gate.sh`. No production behaviour changes; it is prerequisite hygiene so the
+  finalization audit's untracked-gate rule can hold, and it is explained as such
+  in the PR body.
 - **S1 — readiness gate and canary consumer.** New readiness module owning the
   probe path, the poll loop, the not-ready accounting, and the distinct failure
   vocabulary. `withDevnetServer` takes an explicit readiness policy; the canary
@@ -58,7 +71,8 @@ dependency stays gated until the backend is current. It must not be "fixed".
 
 ## Verification
 
-Ticket gate (runtime root, untracked): `cabal build all --enable-tests`,
+Ticket gate (`./gate.sh`, untracked and ignored after `S0`, authoritative
+copy under the runtime root): `cabal build all --enable-tests`,
 `cabal test unit-tests`, `cabal-fmt -c`, `fourmolu -m check`, `hlint`,
 `actionlint` on the touched workflow, plus the focused readiness spec.
 `just CI` is not usable as a gate here: it requires `MOOG_GITHUB_PAT`,
