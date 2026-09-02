@@ -57,6 +57,24 @@
 - [ ] T101-SD2-2 SD1's check passes on the moved pair, and the composed build
       plus moog unit suite pass against it. Record the run as the evidence that
       closes `m2-t387` `INV-5`.
+- [ ] T101-SD2-3 Close the residuals SD1 shipped with, all `ADVISORY`, all
+      owned by the ticket owner, all in code `SD2` has to touch anyway:
+      `SD1-R4` the success token is forgeable by the ambient working directory
+      (`project=` is a relative literal, so it does not identify which
+      `cabal.project` was read; print the resolved identity and have the judge
+      compare it against one it independently expects);
+      `SD1-R5` three guards — `parse_srps` unreadable-file, the
+      `DEP_PINS_OFFCHAIN_REV` 40-hex validation, and the `raw_cabal_url` shape
+      guard — emit a distinct diagnostic no assertion discriminates, so the
+      covering property is over the **set** of the check's failure vocabulary,
+      not the instances a report enumerated;
+      `SD1-R3` credential-freedom is inherited from curl's defaults and the
+      host's configuration rather than asserted;
+      `SD1-R6` three proxy limits in the ticket owner's own gate legs — the
+      `moog-v2` trigger leg greps the string anywhere in the file, a step
+      neutralised to `true` is not caught (only deletion is), and
+      `pin_line < build_line` is a line-number proxy a separate concurrent job
+      defeats.
 
 ## S3 — live-boundary integration proof (WAITING on M2-T275)
 
