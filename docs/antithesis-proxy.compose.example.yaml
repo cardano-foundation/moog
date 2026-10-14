@@ -13,6 +13,13 @@ services:
       - MOOG_PROXY_AUTHORIZED_TEAM=antithesis-access
       - MOOG_PROXY_MEMBERSHIP_TTL_SEC=60
       - MOOG_PROXY_LOG_LEVEL=info
+      # Set all three to enable browser sign-in. Empty or partial settings
+      # disable browser access while keeping the bearer API available.
+      - MOOG_PROXY_BROWSER_CLIENT_ID=${MOOG_PROXY_BROWSER_CLIENT_ID:-}
+      - MOOG_PROXY_BROWSER_CLIENT_SECRET_FILE=${MOOG_PROXY_BROWSER_CLIENT_SECRET_FILE:-}
+      - MOOG_PROXY_BROWSER_CALLBACK_URL=${MOOG_PROXY_BROWSER_CALLBACK_URL:-}
+      - MOOG_PROXY_BROWSER_SESSION_TTL_SEC=${MOOG_PROXY_BROWSER_SESSION_TTL_SEC:-3600}
+      - MOOG_PROXY_BROWSER_STATE_TTL_SEC=${MOOG_PROXY_BROWSER_STATE_TTL_SEC:-300}
     volumes:
       - /secrets/moog-antithesis-proxy/new:/run/secrets:ro
       - /etc/ssl/certs/ca-certificates.crt:/etc/ssl/certs/ca-certificates.crt:ro

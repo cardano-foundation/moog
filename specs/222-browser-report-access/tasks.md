@@ -1,9 +1,13 @@
 # Tasks
 
-- [ ] Establish baseline and ignored runnable branch gate; record exact source and receipts.
-- [ ] Implement browser configuration, bounded sessions and single-use state with executable failure controls.
-- [ ] Implement GitHub web sign-in, callback, fresh membership authorization and safe report redirect through production HTTP routes; verify callback binding/replay, allowed/denied/removed memberships, expiry, sign-out, upstream/destination failures and CLI separation.
-- [ ] Update Nix packaging/Compose configuration, API and operator documentation, rollback and verification commands.
+- [x] Establish baseline and ignored runnable branch gate; record exact source and receipts. Baseline: `72e29786`; packaged unit suite: 248 examples, zero failures; worker receipt `handoffs/baseline-unit.log`. Ignored gate frozen before production edits.
+- [x] Implement browser configuration, bounded sessions and single-use state with executable failure controls. Local implementation commit: `a61596fb`; initial route/cache RED receipts and six compiled security controls are under the worker's `handoffs/`.
+- [x] Implement GitHub web sign-in, callback, fresh membership authorization and safe report redirect through production HTTP routes; verify callback binding/replay, allowed/denied/removed memberships, expiry, sign-out, upstream/destination failures and CLI separation. Local implementation commit: `a61596fb`; `handoffs/green-unit-final.log`: 273 examples, zero failures, including real loopback HTTP routing.
+- [x] Update Nix packaging/Compose configuration, API and operator documentation, rollback and verification commands. Existing Nix proxy/image definitions consume the updated Cabal library; image build and isolated configured/unconfigured Docker smokes passed. Compose settings and operator/browser docs accompany this task receipt.
 - [ ] Run branch gate, record exact commits and verification limits, deliver reviewable local commits and PR-ready handoff. Production OAuth configuration/account verification stays pending until genuine evidence exists.
+
+The final branch gate was executed and its limits recorded. The default dev-shell Cabal build cannot resolve existing `cardano-lmdb` bounds/native `lmdb` configuration; the full formatter diagnoses 34 files with unchanged base blobs, and full HLint reports inherited hints. These failures remain open for parent disposition; they are not GREEN. The packaged unit suite and proxy image, changed-path formatting, new-module lint, Cabal formatting, strict docs, scoped presentation and Compose checks have fresh receipts. Full-gate acceptance, hosted checks and real OAuth installation/account verification remain pending.
+
+Worker evidence root: `/home/paolino/.orch-runtime/moog-antithesis-dashboard/milestone-3/sol-antithesis222-20261014/`. The worker handoff records exact commits/tree, command receipts, security controls, image digests and remaining installation inputs. No independent agent audit was included in the approved roster.
 
 Task review: one vertical source/test slice per behavior; no separated failing-test commit in accepted history; no external agent audit claimed. Parent-authored mandate, child implementation only. Mark completion with commit/receipt references; no hand-typed GREEN conclusions.
