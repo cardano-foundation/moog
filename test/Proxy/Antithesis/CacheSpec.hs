@@ -72,9 +72,9 @@ spec =
             second `shouldBe` NotMember
             calls `shouldBe` 2
 
-        it "hashes only the first sixteen token bytes" $ do
+        it "binds membership cache entries to the complete token" $ do
             tokenPrefixHash (OAuthToken "abcdefghijklmnopAAAA")
-                `shouldBe` tokenPrefixHash (OAuthToken "abcdefghijklmnopBBBB")
+                `shouldNotBe` tokenPrefixHash (OAuthToken "abcdefghijklmnopBBBB")
             tokenPrefixHash (OAuthToken "abcdefghijklmnopAAAA")
                 `shouldNotBe` tokenPrefixHash (OAuthToken "abcdefghijklmnoXAAAA")
 

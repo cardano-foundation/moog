@@ -1,14 +1,14 @@
 # Antithesis Proxy
 
-`moog-antithesis-proxy` exposes the Antithesis tenant read API behind
-GitHub team authorization. It keeps the Antithesis API key on plutimus
-and accepts GitHub bearer tokens from clients such as
-`moog antithesis runs`.
+As an authorized GitHub team member, use the Antithesis proxy to open
+reports in your browser or read the tenant API with a bearer credential.
+The proxy keeps the Antithesis API key on the server.
+The executable is `moog-antithesis-proxy`.
 
 ```mermaid
-flowchart LR
+flowchart TD
   CLI[moog antithesis ...] -->|GitHub bearer token| Traefik[Traefik on plutimus]
-  Traefik --> Proxy[moog-antithesis-proxy]
+  Traefik --> Proxy[Antithesis proxy]
   Proxy -->|whoami and team check| GitHub[GitHub API]
   Proxy -->|server-side Bearer API key| Antithesis[Antithesis tenant API]
 ```
@@ -17,7 +17,7 @@ flowchart LR
 
 All endpoints below sit behind the `pragma-org/antithesis-access` GitHub
 team check. Public probe routes (`/healthz`, `/readyz`) require no
-auth; everything else returns `401` for missing/invalid bearer tokens
+auth; API routes return `401` for missing/invalid bearer tokens
 and `403` for tokens whose owner is not an active team member.
 
 | Path | Upstream shape | Notes |
@@ -35,7 +35,9 @@ and `403` for tokens whose owner is not an active team member.
 The NDJSON endpoints stream upstream bytes through the proxy verbatim
 (via Servant `StreamGet NoFraming PlainStream (SourceIO ByteString)`);
 the proxy holds the upstream connection open through the WAI response
-emission. Anything not in the table above returns `404`.
+emission. Unknown API paths return `404` after authorization.
+The separate [browser routes](#open-a-report-in-your-browser) use server
+sessions and fresh team checks.
 
 ## CLI
 
@@ -157,7 +159,8 @@ Read logs with:
 docker logs antithesis-proxy-moog-antithesis-proxy-1
 ```
 
-Each request emits one structured JSON line:
+Each bearer API or public probe request emits one structured JSON line.
+Browser routes omit request logging to protect sign-in and report secrets:
 
 ```json
 {"login":"paolino","path":"/api/v0/runs","status":200,"upstream_status":200,"latency_ms":1641,"request_id":"-","ts":"…"}
@@ -275,3 +278,150 @@ smoke (device-flow login from a clean container + `moog antithesis
 runs`) is covered by the `antithesis-api` skill's `anti runs` flow
 once a member of `pragma-org/antithesis-access` has authorized the
 `moog` OAuth App.
+
+## Open a report in your browser
+
+As an active member of the GitHub team `pragma-org/antithesis-access`,
+open a run's report link from the dashboard. The Antithesis proxy asks
+GitHub to sign you in, then opens the selected report. Access is shared
+across the team, including reports requested by automation or another
+person. You need a GitHub account with active team membership.
+
+The dashboard links to
+`https://antithesis-proxy.plutimus.com/browser/report/<run-id>`.
+It publishes the run ID, while the signed report URL stays private until
+the proxy authorizes its disclosure. The browser navigates to the proxy
+as a top-level page; cookies belong to the proxy origin.
+
+Sign-in binds the callback to the initiating browser and resumes only
+its selected run. The code exchange and its verifier remain on the server.
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 10, 'width': 95, 'mirrorActors': false, 'wrap': true}}}%%
+sequenceDiagram
+    participant Viewer as Viewer
+    participant Proxy as Proxy
+    participant GitHub as GitHub
+    Viewer->>Proxy: Open run
+    Proxy-->>Viewer: GitHub sign-in
+    Viewer->>GitHub: Authorize
+    GitHub-->>Viewer: Code and state
+    Viewer->>Proxy: Callback
+    Proxy->>GitHub: Code exchange
+    Proxy-->>Viewer: Session and run
+```
+
+For every report opening, the proxy checks current membership before
+asking Antithesis for a link. It validates the destination before redirecting.
+
+```mermaid
+%%{init: {'sequence': {'actorMargin': 10, 'width': 95, 'mirrorActors': false, 'wrap': true}}}%%
+sequenceDiagram
+    participant Proxy as Proxy
+    participant GitHub as GitHub
+    participant Provider as Antithesis
+    Note over Proxy: Viewer opens run
+    Proxy->>GitHub: Identity and team
+    GitHub-->>Proxy: Active member
+    Proxy->>Provider: Get run
+    Provider-->>Proxy: Report link
+    Note over Proxy: Redirect viewer
+```
+
+The proxy checks identity and current membership before each report
+lookup. Pending invitations and non-members receive `403`. An expired
+session starts sign-in again. A revoked GitHub credential receives
+`401`; sign out and open the report again. GitHub verification failures
+and provider failures receive `502` with a safe message. Starting or
+running tests receive `409`; runs with no report receive `404`.
+Cancelled or invalid callbacks receive `400` and grant no session.
+
+Visit `/browser/account` on the proxy to sign out through its form.
+Sign-out requires a same-origin POST and a session-specific form token.
+Session expiry, sign-out and membership removal prevent future report
+retrieval through the proxy. **They do not revoke a signed URL already
+disclosed.** Anyone possessing that URL can reuse or share it, subject
+to the tenant's own report access policy. See
+[Antithesis report access](https://antithesis.com/docs/configuration/auth/#report-access).
+
+| Design choice | Reason |
+|---|---|
+| Top-level navigation to the proxy | Works without cross-origin credentialed fetch or third-party cookies |
+| Server-side opaque sessions | OAuth credentials stay on the server; browser JavaScript does not decide authorization |
+| Fresh GitHub identity and team checks | A previous grant cannot hide removed membership; the CLI retains its separate membership cache |
+| HTTPS destination on the configured tenant under `/report/` | Provider output cannot redirect the viewer to an arbitrary host or API path |
+
+Browser routes return `Cache-Control: no-store`, `Referrer-Policy:
+no-referrer` and a restrictive content security policy. Session and
+login-binding cookies are host-only, Secure and HttpOnly, with
+`SameSite=Lax`. Only the browser routes accept these cookies; CLI API
+routes still require GitHub bearer tokens. Browser routes deliberately
+emit no request audit lines, so callbacks, session values and report
+capabilities cannot enter the daemon's request log.
+
+## Install browser sign-in
+
+As the proxy operator, configure an OAuth application with its callback
+on the proxy's HTTPS origin and a mounted client secret. Keep the client
+secret and Antithesis API key server-side. Organization approval for the
+application and a token with `read:org` access are needed to verify team
+membership. GitHub's
+[web authorization flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps)
+documents authorization-code exchange and PKCE using SHA-256.
+
+| Environment variable | Value |
+|---|---|
+| `MOOG_PROXY_BROWSER_CLIENT_ID` | Browser OAuth application client ID; explicitly supplied |
+| `MOOG_PROXY_BROWSER_CLIENT_SECRET_FILE` | Mounted secret file, for example `/run/secrets/github-browser-client-secret` |
+| `MOOG_PROXY_BROWSER_CALLBACK_URL` | Exact HTTPS URL ending in `/browser/callback`, for example `https://antithesis-proxy.plutimus.com/browser/callback` |
+| `MOOG_PROXY_BROWSER_SESSION_TTL_SEC` | Positive lifetime, default `3600`, maximum `86400` |
+| `MOOG_PROXY_BROWSER_STATE_TTL_SEC` | Positive single-use state lifetime, default `300`, maximum `86400` |
+
+Missing, partial, invalid or unreadable browser settings disable the
+browser routes with `503`; the bearer API remains available. Callback
+URLs accept a plain HTTPS hostname and the fixed callback path. The
+configured `MOOG_ANTITHESIS_URL` must be a plain HTTPS tenant origin for
+report redirects; custom ports and provider API paths are refused.
+
+Each process holds at most 10,000 pending sign-ins and 10,000 sessions.
+Expired entries are removed on browser requests. At capacity new
+sign-ins receive `503`. A restart discards all sessions and login state.
+Deploy one proxy instance; multiple instances require a shared session
+store or routing affinity, which this implementation does not provide.
+
+Extend the existing restricted secret mount with
+`github-browser-client-secret`, then set the explicit browser variables
+from the Compose example. Confirm the registered callback and organization
+approval before enabling the browser configuration. Inspect the reverse
+proxy's access logging: it must omit callback query strings, cookies,
+OAuth codes/tokens, response Location headers and report URLs. Do not
+send these values to telemetry or paste them into issues.
+
+### Verification and rollback
+
+Run the compiled local HTTP suite and the proxy image build:
+
+```bash
+nix run .#unit-tests -- --match Proxy.Antithesis
+nix build .#moog-antithesis-proxy-docker-image
+MOOG_VERSION=<pinned-tag> docker compose -f docs/antithesis-proxy.compose.example.yaml config --quiet
+```
+
+The HTTP suite runs the production router and real loopback upstreams.
+It verifies callback binding/replay, PKCE using SHA-256, session expiry/rotation,
+protected sign-out, membership denial/removal/failure, destination
+refusal and cookie/bearer separation. It does not establish genuine
+GitHub sign-in or production tenant acceptance.
+
+After deploying the pinned image and configuration, open a known report
+in a browser with an active member, then with a non-member. Check
+cancellation, expiry and sign-out. Verify a subsequent lookup after team
+membership removal is refused. Record only outcomes and public run IDs;
+keep signed report URLs and credentials out of receipts. Verify the CLI
+still works with its existing bearer credential. Installation is complete
+only after these actual account and deployment checks succeed.
+
+To disable browser access, remove its three required settings and
+recreate the service. To roll back the release, restore the saved image
+pin and Compose settings and recreate it. Either action clears browser
+sessions. Previously disclosed Antithesis report URLs remain usable.

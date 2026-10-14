@@ -5,10 +5,12 @@ module Proxy.Antithesis.ConfigSpec
     )
 where
 
+import Control.Monad (forM_)
 import Data.ByteString.Char8 qualified as BC
 import Lib.GitHub.Auth.TeamCheck (Org (..), TeamSlug (..))
 import Proxy.Antithesis.Config
-    ( Settings (..)
+    ( BrowserSettings (..)
+    , Settings (..)
     , loadSettingsWith
     )
 import Test.Hspec (Spec, describe, it, shouldBe)
@@ -28,9 +30,44 @@ spec =
                 `shouldBe` "https://amaru-cardano.antithesis.com"
             settingsAntithesisApiKey settings `shouldBe` "secret"
             settingsAuthorizedOrg settings `shouldBe` Org "pragma-org"
-            settingsAuthorizedTeam settings `shouldBe` TeamSlug "antithesis-access"
+            settingsAuthorizedTeam settings
+                `shouldBe` TeamSlug "antithesis-access"
             settingsMembershipTtlSeconds settings `shouldBe` 60
             settingsLogLevel settings `shouldBe` "info"
+            settingsBrowser settings `shouldBe` Nothing
+
+        it
+            "loads explicit browser settings and documented lifetimes without displaying the secret"
+            $ do
+                settings <- browserSettingsFrom browserEnvironment
+                let browser = settingsBrowser settings
+                fmap browserSessionSeconds browser `shouldBe` Just 3600
+                fmap browserStateSeconds browser `shouldBe` Just 300
+                fmap browserClientSecret browser `shouldBe` Just "browser-secret"
+                show browser `shouldBe` "Just BrowserSettings <redacted>"
+
+        it
+            "disables only browser access for partial, invalid or unreadable configuration"
+            $ do
+                forM_
+                    [ drop 1 browserEnvironment
+                    , ( "MOOG_PROXY_BROWSER_CALLBACK_URL"
+                      , "http://proxy.example/browser/callback"
+                      )
+                        : browserEnvironment
+                    , ( "MOOG_PROXY_BROWSER_CALLBACK_URL"
+                      , "https://proxy.example.evil/path/browser/callback"
+                      )
+                        : browserEnvironment
+                    , ("MOOG_PROXY_BROWSER_CLIENT_SECRET_FILE", "/missing")
+                        : browserEnvironment
+                    , ("MOOG_PROXY_BROWSER_SESSION_TTL_SEC", "0") : browserEnvironment
+                    , ("MOOG_PROXY_BROWSER_STATE_TTL_SEC", "garbage") : browserEnvironment
+                    ]
+                    $ \env -> do
+                        settings <- browserSettingsFrom env
+                        settingsBrowser settings `shouldBe` Nothing
+                        settingsAntithesisApiKey settings `shouldBe` "secret"
 
         it "honours environment overrides" $ do
             settings <-
@@ -60,7 +97,28 @@ spec =
 lookupEnvFrom :: [(String, String)] -> String -> IO (Maybe String)
 lookupEnvFrom env name = pure $ lookup name env
 
-readFileFrom :: [(FilePath, BC.ByteString)] -> FilePath -> IO BC.ByteString
+browserEnvironment :: [(String, String)]
+browserEnvironment =
+    [ ("MOOG_PROXY_BROWSER_CLIENT_ID", "browser-client")
+    , ("MOOG_PROXY_BROWSER_CLIENT_SECRET_FILE", "/browser-secret")
+    ,
+        ( "MOOG_PROXY_BROWSER_CALLBACK_URL"
+        , "https://proxy.example/browser/callback"
+        )
+    ]
+
+browserSettingsFrom :: [(String, String)] -> IO Settings
+browserSettingsFrom env =
+    loadSettingsWith
+        (lookupEnvFrom env)
+        ( readFileFrom
+            [ ("/run/secrets/antithesis-api-key", "secret")
+            , ("/browser-secret", "browser-secret\n")
+            ]
+        )
+
+readFileFrom
+    :: [(FilePath, BC.ByteString)] -> FilePath -> IO BC.ByteString
 readFileFrom files path =
     case lookup path files of
         Just contents -> pure contents
