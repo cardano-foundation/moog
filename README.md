@@ -2,6 +2,8 @@
 
 > A tool to administer Antithesis test execution through Cardano.
 
+For live test runs and service status, open the [Moog dashboard][Dashboard].
+
 <!-- Badges -->
 [![Unit Tests](https://github.com/cardano-foundation/moog/actions/workflows/unit-tests.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/unit-tests.yaml)
 [![Integration Tests](https://github.com/cardano-foundation/moog/actions/workflows/integration-tests.yaml/badge.svg)](https://github.com/cardano-foundation/moog/actions/workflows/integration-tests.yaml)
@@ -179,3 +181,4 @@ without Nix) and for the integration/E2E test setup.
 [HAL]: https://github.com/cardano-foundation/hal
 [CF]: https://github.com/cardano-foundation
 [Cardano]: https://cardano.org/
+[Dashboard]: https://lambdasistemi.github.io/moog-antithesis-dashboard/
