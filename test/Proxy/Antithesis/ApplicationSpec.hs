@@ -28,7 +28,14 @@ import Network.HTTP.Types
     )
 import Network.Wai
     ( Application
-    , Request (pathInfo, queryString, rawPathInfo, rawQueryString, requestHeaders, requestMethod)
+    , Request
+        ( pathInfo
+        , queryString
+        , rawPathInfo
+        , rawQueryString
+        , requestHeaders
+        , requestMethod
+        )
     , responseLBS
     )
 import Network.Wai.Handler.Warp (testWithApplication)
@@ -55,6 +62,11 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 spec :: Spec
 spec =
     describe "Proxy.Antithesis.Application" $ do
+        it "fails closed for browser access without browser configuration" $ do
+            response <-
+                runProxyApp True True (requestFor "/browser/report/run-123" [])
+            simpleStatus response `shouldBe` status503
+
         it "serves health without auth" $ do
             response <- runProxyApp True True (requestFor "/healthz" [])
 
@@ -112,7 +124,8 @@ runProxyApp antithesisReady githubReady request' =
     withUpstream (\_ respond -> respond $ responseLBS status200 [] "[]") $ \baseUrl ->
         runProxyAppWithReadiness baseUrl antithesisReady githubReady request'
 
-runProxyAppWithUpstream :: String -> Network.Wai.Request -> IO SResponse
+runProxyAppWithUpstream
+    :: String -> Network.Wai.Request -> IO SResponse
 runProxyAppWithUpstream baseUrl =
     runProxyAppWithReadiness baseUrl True True
 
@@ -138,8 +151,8 @@ testApplication baseUrl antithesisReady githubReady = do
                 , upstreamManager = manager
                 }
         servantApp = makeServantApp cfg
-    pure $
-        proxyApplication
+    pure
+        $ proxyApplication
             ProxyApplicationConfig
                 { proxyAuthConfig =
                     AuthConfig
@@ -151,6 +164,7 @@ testApplication baseUrl antithesisReady githubReady = do
                         , authCheckTeamMembership = activeMembership
                         }
                 , proxyServantApp = servantApp
+                , proxyBrowserApp = Nothing
                 , proxyReadinessConfig =
                     ReadinessConfig
                         { readinessAntithesis = pure antithesisReady
@@ -201,7 +215,9 @@ captureUpstream seenRef body request' respond = do
             , rawQueryString request'
             , lookup hAuthorization $ requestHeaders request'
             )
-    respond $ responseLBS status200 [("content-type", "text/plain")] $ BC.fromStrict body
+    respond
+        $ responseLBS status200 [("content-type", "text/plain")]
+        $ BC.fromStrict body
 
 baseTime :: UTCTime
 baseTime = UTCTime (toEnum 0) (secondsToDiffTime 0)

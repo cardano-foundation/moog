@@ -159,6 +159,7 @@ library
     Proxy.Antithesis.Api
     Proxy.Antithesis.Application
     Proxy.Antithesis.Audit
+    Proxy.Antithesis.Browser
     Proxy.Antithesis.Cache
     Proxy.Antithesis.Config
     Proxy.Antithesis.Middleware.Auth
@@ -214,7 +215,7 @@ library
     , cardano-slotting
     , cardano-tx-tools
     , case-insensitive
-    , containers             >=0.6.8 && <0.8
+    , containers             >=0.6.8     && <0.8
     , crypton
     , crypton-box
     , directory
@@ -227,6 +228,7 @@ library
     , html-parse
     , http-client
     , http-client-tls
+    , http-media
     , http-types
     , lens
     , memory
@@ -243,7 +245,6 @@ library
     , servant
     , servant-client
     , servant-server
-    , http-media
     , streaming
     , string-qq
     , temporary
@@ -251,8 +252,8 @@ library
     , time
     , transformers
     , unix
-    , vector
     , vault
+    , vector
     , wai
     , yaml
 
@@ -341,7 +342,6 @@ executable moog-antithesis-proxy
 
   -- .hs or .lhs file containing the Main module.
   main-is:          app/moog-antithesis-proxy.hs
-
   ghc-options:      -threaded
 
   -- Other library packages from which modules are imported.
@@ -509,9 +509,10 @@ test-suite unit-tests
     Oracle.Validate.Requests.TestRun.FinishSpec
     Oracle.Validate.Requests.TestRun.Lib
     Oracle.Validate.Requests.TestRun.RejectSpec
-    Proxy.Antithesis.AuditSpec
     Proxy.Antithesis.ApplicationSpec
+    Proxy.Antithesis.AuditSpec
     Proxy.Antithesis.AuthSpec
+    Proxy.Antithesis.BrowserSpec
     Proxy.Antithesis.CacheSpec
     Proxy.Antithesis.ConfigSpec
     Proxy.Antithesis.ServerSpec
@@ -536,10 +537,7 @@ test-suite unit-tests
   type:               exitcode-stdio-1.0
 
   -- Directories containing source files.
-  hs-source-dirs:
-    test
-    src
-    app
+  hs-source-dirs:     test src app
 
   -- The entrypoint to the test suite.
   main-is:            Main.hs
@@ -577,17 +575,18 @@ test-suite unit-tests
     , haskeline
     , HaskellNet
     , HaskellNet-SSL
-    , html-parse
     , hspec
+    , html-parse
     , http-client
     , http-client-tls
+    , http-media
     , http-types
     , lens
     , memory
     , mmark
+    , monad-control
     , moog
     , moog:test-lib
-    , monad-control
     , old-time
     , opt-env-conf
     , path
@@ -607,9 +606,8 @@ test-suite unit-tests
     , time
     , transformers
     , unix
-    , vector
     , vault
-    , http-media
+    , vector
     , wai
     , wai-extra
     , warp

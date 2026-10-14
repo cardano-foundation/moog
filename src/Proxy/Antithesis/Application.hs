@@ -52,6 +52,11 @@ import Proxy.Antithesis.Audit
     , RequestId (..)
     , renderAuditEvent
     )
+import Proxy.Antithesis.Browser
+    ( browserApplication
+    , browserDependencies
+    , privateResponse
+    )
 import Proxy.Antithesis.Cache (newMembershipCache)
 import Proxy.Antithesis.Config
     ( Settings (..)
@@ -72,6 +77,7 @@ data ProxyApplicationConfig = ProxyApplicationConfig
     { proxyAuthConfig :: AuthConfig
     , proxyServantApp :: Application
     , proxyReadinessConfig :: ReadinessConfig
+    , proxyBrowserApp :: Maybe Application
     }
 
 data ReadinessConfig = ReadinessConfig
@@ -82,6 +88,14 @@ data ReadinessConfig = ReadinessConfig
 proxyApplication :: ProxyApplicationConfig -> Application
 proxyApplication config request respond =
     case (requestMethod request, pathInfo request) of
+        (_, "browser" : _) -> case proxyBrowserApp config of
+            Just browser -> browser request respond
+            Nothing ->
+                respond
+                    $ privateResponse
+                        status503
+                        [(hContentType, "text/plain")]
+                        "Browser sign-in is unavailable."
         ("GET", ["healthz"]) -> do
             start <- getCurrentTime
             auditAndRespond request start Nothing (plain status200 "ok") respond
@@ -97,7 +111,12 @@ proxyApplication config request respond =
                     else plain status503 "not ready"
                 )
                 respond
-        _ -> protectedRoute (proxyAuthConfig config) (proxyServantApp config) request respond
+        _ ->
+            protectedRoute
+                (proxyAuthConfig config)
+                (proxyServantApp config)
+                request
+                respond
 
 -- | Run the auth middleware against the request; on success pass the
 -- (auth-attached) request to @innerApp@, audit the response status, and
@@ -146,8 +165,8 @@ productionApplication :: Settings -> IO Application
 productionApplication settings = do
     manager <- HC.newManager tlsManagerSettings
     cache <-
-        newMembershipCache $
-            fromIntegral (settingsMembershipTtlSeconds settings)
+        newMembershipCache
+            $ fromIntegral (settingsMembershipTtlSeconds settings)
     baseUrl <- parseBaseUrl (settingsAntithesisUrl settings)
     let upstreamCfg =
             UpstreamConfig
@@ -156,21 +175,35 @@ productionApplication settings = do
                 , upstreamManager = manager
                 }
         servantApp = makeServantApp upstreamCfg
-    pure $
-        proxyApplication
+        auth =
+            AuthConfig
+                { authOrg = settingsAuthorizedOrg settings
+                , authTeam = settingsAuthorizedTeam settings
+                , authCache = cache
+                , authNow = getCurrentTime
+                , authWhoami = whoami
+                , authCheckTeamMembership = checkTeamMembership
+                }
+    browser <- case settingsBrowser settings of
+        Nothing -> pure Nothing
+        Just cfg -> do
+            deps <-
+                browserDependencies
+                    manager
+                    "https://github.com/login/oauth/access_token"
+                    auth
+                    upstreamCfg
+                    (settingsAntithesisUrl settings)
+            Just <$> browserApplication cfg deps
+    pure
+        $ proxyApplication
             ProxyApplicationConfig
                 { proxyAuthConfig =
-                    AuthConfig
-                        { authOrg = settingsAuthorizedOrg settings
-                        , authTeam = settingsAuthorizedTeam settings
-                        , authCache = cache
-                        , authNow = getCurrentTime
-                        , authWhoami = whoami
-                        , authCheckTeamMembership = checkTeamMembership
-                        }
+                    auth
                 , proxyServantApp = servantApp
                 , proxyReadinessConfig =
                     productionReadinessConfig settings manager
+                , proxyBrowserApp = browser
                 }
 
 productionReadinessConfig :: Settings -> HC.Manager -> ReadinessConfig
@@ -214,7 +247,8 @@ antithesisBearerAuthorization settings =
 
 plain :: Status -> ByteString -> Response
 plain status body =
-    responseLBS status [(hContentType, "text/plain")] $ LBS.fromStrict body
+    responseLBS status [(hContentType, "text/plain")]
+        $ LBS.fromStrict body
 
 stripTrailingSlash :: String -> String
 stripTrailingSlash =
@@ -229,8 +263,8 @@ auditAndRespond
     -> IO responseReceived
 auditAndRespond request start upstreamStatus response respond = do
     end <- getCurrentTime
-    LBS.putStr $
-        renderAuditEvent
+    LBS.putStr
+        $ renderAuditEvent
             AuditEvent
                 { auditTimestamp = end
                 , auditLogin =
@@ -248,11 +282,11 @@ auditAndRespond request start upstreamStatus response respond = do
 
 requestId :: Request -> RequestId
 requestId request =
-    RequestId $
-        T.decodeUtf8With lenientDecode $
-            fromMaybe "-" $
-                lookup "X-Request-Id" $
-                    requestHeaders request
+    RequestId
+        $ T.decodeUtf8With lenientDecode
+        $ fromMaybe "-"
+        $ lookup "X-Request-Id"
+        $ requestHeaders request
 
 waiResponseStatus :: Response -> Status
 waiResponseStatus response =

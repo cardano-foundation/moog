@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 -- | Short-lived membership cache for GitHub token authorization.
 module Proxy.Antithesis.Cache
     ( MembershipCache
@@ -11,7 +9,6 @@ module Proxy.Antithesis.Cache
 where
 
 import Crypto.Hash (Digest, SHA256, hash)
-import Data.ByteString.Char8 qualified as BC
 import Data.IORef
     ( IORef
     , atomicModifyIORef'
@@ -28,7 +25,8 @@ import Lib.GitHub.Auth.TeamCheck (MembershipResult)
 
 data MembershipCache = MembershipCache
     { cacheTtl :: NominalDiffTime
-    , cacheEntries :: IORef (Map TokenPrefixHash (UTCTime, MembershipResult))
+    , cacheEntries
+        :: IORef (Map TokenPrefixHash (UTCTime, MembershipResult))
     }
 
 newtype TokenPrefixHash = TokenPrefixHash Text
@@ -64,7 +62,9 @@ cachedMembership cache getNow token fetchMembership = do
     key = tokenPrefixHash token
 
 tokenPrefixHash :: OAuthToken -> TokenPrefixHash
+-- The exported name is retained for CLI compatibility; authority binds the
+-- complete credential, including suffixes shared by tokens with one prefix.
 tokenPrefixHash (OAuthToken token) =
     TokenPrefixHash
         $ T.pack
-        $ show (hash (BC.take 16 token) :: Digest SHA256)
+        $ show (hash token :: Digest SHA256)
