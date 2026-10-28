@@ -6,6 +6,7 @@ pkgs.dockerTools.buildImage {
   config = {
     EntryPoint = [ "moog-antithesis-proxy" ];
     ExposedPorts = { "8080/tcp" = { }; };
+    Labels."org.opencontainers.image.source" = "https://github.com/cardano-foundation/moog";
   };
   copyToRoot = pkgs.buildEnv {
     name = "image-root";
