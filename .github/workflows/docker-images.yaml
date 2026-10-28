@@ -5,6 +5,9 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -61,6 +64,25 @@ jobs:
         with:
           name: moog-antithesis-proxy-image
           path: ./moog-antithesis-proxy-image
+  publish-antithesis-proxy:
+    name: Publish Antithesis proxy image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: moog-antithesis-proxy-image
+      - name: Push to ghcr.io
+        run: |
+          IMAGE=$(docker load < moog-antithesis-proxy-image | grep "Loaded image:" | awk '{print $3}')
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker push "$IMAGE"
+          DIGEST=$(docker image inspect --format '{{index .RepoDigests 0}}' "$IMAGE")
+          echo "Published \`$IMAGE\` as \`$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
   build-aarch64:
     name: Build and upload ARM64 docker images
     runs-on: ubuntu-24.04-arm
